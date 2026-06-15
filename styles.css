@@ -103,16 +103,13 @@
 }
 
 .obsidianboard-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
 	touch-action: none;
 	overscroll-behavior: none;
-	background: var(--background-primary);
-	box-shadow: 0 0 0 1px var(--background-modifier-border);
-	/* Checkerboard hint for transparent sketches. */
-	background-image: linear-gradient(45deg, var(--background-secondary) 25%, transparent 25%),
-		linear-gradient(-45deg, var(--background-secondary) 25%, transparent 25%),
-		linear-gradient(45deg, transparent 75%, var(--background-secondary) 75%),
-		linear-gradient(-45deg, transparent 75%, var(--background-secondary) 75%);
-	background-size: 20px 20px;
-	background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+	/* The work-area color is set from the theme in JS; the page is drawn inside
+	   the canvas so it stays correct while panning and zooming. */
+	background: var(--background-primary-alt);
 	cursor: crosshair;
 }

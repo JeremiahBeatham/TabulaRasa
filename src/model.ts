@@ -17,6 +17,11 @@ export interface Stroke {
 	size: number;
 	/** 0..1 opacity (highlighter < 1). */
 	opacity: number;
+	/**
+	 * When true, taper the stroke from drawing speed instead of real pressure.
+	 * Set for finger/mouse input (no usable pressure) so lines look natural.
+	 */
+	simulatePressure?: boolean;
 	points: Point[];
 }
 

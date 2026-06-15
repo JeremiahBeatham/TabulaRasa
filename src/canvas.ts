@@ -13,10 +13,22 @@ export interface SketchCanvasOptions {
 	onChange: () => void;
 }
 
+const MIN_SCALE = 0.1;
+const MAX_SCALE = 8;
+/** Keep at least this many CSS px of the page on-screen when panning. */
+const PAN_MARGIN = 48;
+
+interface ViewState {
+	scale: number;
+	tx: number;
+	ty: number;
+}
+
 /**
  * Interactive drawing surface. Owns a <canvas>, handles Pointer Events with
- * pressure + coalesced events for an iOS-Notes-like feel, and maintains an
- * undo/redo stack over the SketchDoc's strokes.
+ * pressure + coalesced events for an iOS-Notes-like feel, supports two-finger
+ * pan/zoom (and wheel zoom on desktop), and maintains an undo/redo stack over
+ * the SketchDoc's strokes.
  */
 export class SketchCanvas {
 	readonly el: HTMLCanvasElement;
@@ -26,16 +38,31 @@ export class SketchCanvas {
 	private readonly options: SketchCanvasOptions;
 
 	private dpr = 1;
-	/** Maps a client pixel to a logical doc coordinate. */
-	private cssScale = 1;
+	/** Document -> CSS-pixel viewport transform. */
+	private view: ViewState = { scale: 1, tx: 0, ty: 0 };
+	private viewInitialized = false;
 
 	private activeStroke: Stroke | null = null;
 	private activePointerId: number | null = null;
 	/** True while a stylus pointer is down (used for palm rejection). */
 	private penActive = false;
 
+	/** All currently-down pointers (client coords), for pinch detection. */
+	private pointers = new Map<number, { x: number; y: number }>();
+	private inGesture = false;
+	private gestureStart: {
+		dist: number;
+		midDocX: number;
+		midDocY: number;
+	} | null = null;
+
 	private undoStack: SketchDoc["strokes"][] = [];
 	private redoStack: SketchDoc["strokes"][] = [];
+
+	// Cached theme colors for the page chrome (refreshed on resize).
+	private pageColor = "#ffffff";
+	private workColor = "#000000";
+	private borderColor = "rgba(0,0,0,0.2)";
 
 	constructor(
 		parent: HTMLElement,
@@ -63,41 +90,75 @@ export class SketchCanvas {
 		return this.doc;
 	}
 
-	/** Resize the backing canvas to fit its container while preserving aspect. */
+	/** Resize the backing canvas to fill its container (at device pixel ratio). */
 	resize(): void {
 		const parent = this.el.parentElement;
 		if (!parent) return;
 		const rect = parent.getBoundingClientRect();
 		if (rect.width === 0 || rect.height === 0) return;
 
-		// Fit the document into the available space, preserving aspect ratio.
-		const aspect = this.doc.width / this.doc.height;
-		let cssWidth = rect.width;
-		let cssHeight = cssWidth / aspect;
-		if (cssHeight > rect.height) {
-			cssHeight = rect.height;
-			cssWidth = cssHeight * aspect;
-		}
-
 		this.dpr = window.devicePixelRatio || 1;
-		this.cssScale = this.doc.width / cssWidth;
+		this.el.style.width = `${rect.width}px`;
+		this.el.style.height = `${rect.height}px`;
+		this.el.width = Math.round(rect.width * this.dpr);
+		this.el.height = Math.round(rect.height * this.dpr);
 
-		this.el.style.width = `${cssWidth}px`;
-		this.el.style.height = `${cssHeight}px`;
-		this.el.width = Math.round(this.doc.width * this.dpr);
-		this.el.height = Math.round(this.doc.height * this.dpr);
+		this.refreshThemeColors();
 
+		if (!this.viewInitialized) {
+			this.fitView();
+			this.viewInitialized = true;
+		} else {
+			this.clampView();
+		}
 		this.redraw();
 	}
 
-	/** Full re-render of the document plus any in-progress stroke. */
+	/** Center and scale the document to comfortably fit the viewport. */
+	fitView(): void {
+		const rect = this.el.getBoundingClientRect();
+		if (rect.width === 0 || rect.height === 0) return;
+		const pad = 24;
+		const sx = (rect.width - pad * 2) / this.doc.width;
+		const sy = (rect.height - pad * 2) / this.doc.height;
+		const scale = this.clampScale(Math.min(sx, sy));
+		this.view = {
+			scale,
+			tx: (rect.width - this.doc.width * scale) / 2,
+			ty: (rect.height - this.doc.height * scale) / 2,
+		};
+		this.redraw();
+	}
+
+	/** Full re-render of the page chrome, document, and any in-progress stroke. */
 	redraw(): void {
 		const { ctx } = this;
+		if (this.el.width === 0 || this.el.height === 0) return;
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
 		ctx.clearRect(0, 0, this.el.width, this.el.height);
-		ctx.scale(this.dpr, this.dpr);
+		// Map device pixels -> CSS pixels -> document units.
+		ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+		ctx.translate(this.view.tx, this.view.ty);
+		ctx.scale(this.view.scale, this.view.scale);
+
+		this.drawPage();
 		renderDocToContext(ctx, this.doc);
 		if (this.activeStroke) this.drawStroke(this.activeStroke);
+	}
+
+	/** Draw the page rectangle so the drawable bounds are clear when panned/zoomed. */
+	private drawPage(): void {
+		const { ctx, doc } = this;
+		// A transparent document shows the app background through the embed, so
+		// preview it on the same color; otherwise show the document's own color.
+		ctx.fillStyle =
+			doc.background && doc.background !== "transparent"
+				? doc.background
+				: this.pageColor;
+		ctx.fillRect(0, 0, doc.width, doc.height);
+		ctx.lineWidth = 1 / this.view.scale;
+		ctx.strokeStyle = this.borderColor;
+		ctx.strokeRect(0, 0, doc.width, doc.height);
 	}
 
 	clear(): void {
@@ -145,6 +206,7 @@ export class SketchCanvas {
 		this.el.addEventListener("pointerup", this.onPointerUp);
 		this.el.addEventListener("pointercancel", this.onPointerUp);
 		this.el.addEventListener("pointerleave", this.onPointerUp);
+		this.el.addEventListener("wheel", this.onWheel, { passive: false });
 	}
 
 	private shouldIgnore(evt: PointerEvent): boolean {
@@ -163,6 +225,15 @@ export class SketchCanvas {
 		if (evt.button !== undefined && evt.button > 0) return; // ignore right/middle
 		if (this.shouldIgnore(evt)) return;
 
+		this.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+
+		// A second pointer turns the interaction into a pan/zoom gesture.
+		if (this.pointers.size >= 2) {
+			this.enterGesture();
+			evt.preventDefault();
+			return;
+		}
+
 		if (evt.pointerType === "pen") this.penActive = true;
 		this.activePointerId = evt.pointerId;
 		this.el.setPointerCapture(evt.pointerId);
@@ -170,17 +241,29 @@ export class SketchCanvas {
 		this.pushUndo();
 		this.redoStack = [];
 
+		const simulate = evt.pointerType !== "pen" || !(evt.pressure > 0);
 		this.activeStroke = {
 			tool: this.brush.tool,
 			color: this.brush.color,
 			size: this.brush.size,
 			opacity: this.brush.opacity,
+			simulatePressure: simulate,
 			points: [this.toPoint(evt)],
 		};
 		evt.preventDefault();
 	};
 
 	private onPointerMove = (evt: PointerEvent): void => {
+		if (this.pointers.has(evt.pointerId)) {
+			this.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+		}
+
+		if (this.inGesture) {
+			this.handleGestureMove();
+			evt.preventDefault();
+			return;
+		}
+
 		if (this.activePointerId !== evt.pointerId || !this.activeStroke) return;
 		const events =
 			typeof evt.getCoalescedEvents === "function"
@@ -194,11 +277,21 @@ export class SketchCanvas {
 	};
 
 	private onPointerUp = (evt: PointerEvent): void => {
-		if (this.activePointerId !== evt.pointerId) return;
-		if (evt.pointerType === "pen") this.penActive = false;
+		this.pointers.delete(evt.pointerId);
 		if (this.el.hasPointerCapture(evt.pointerId)) {
 			this.el.releasePointerCapture(evt.pointerId);
 		}
+
+		if (this.inGesture) {
+			if (this.pointers.size < 2) {
+				this.inGesture = false;
+				this.gestureStart = null;
+			}
+			return;
+		}
+
+		if (this.activePointerId !== evt.pointerId) return;
+		if (evt.pointerType === "pen") this.penActive = false;
 		this.activePointerId = null;
 
 		const stroke = this.activeStroke;
@@ -214,14 +307,123 @@ export class SketchCanvas {
 		this.options.onChange();
 	};
 
+	private onWheel = (evt: WheelEvent): void => {
+		evt.preventDefault();
+		const factor = evt.deltaY < 0 ? 1.1 : 1 / 1.1;
+		this.zoomAt(factor, evt.clientX, evt.clientY);
+	};
+
+	// --- pan / zoom -----------------------------------------------------
+
+	/** Abandon any in-progress stroke and begin a two-finger pan/zoom gesture. */
+	private enterGesture(): void {
+		if (this.activeStroke) {
+			// Discard the dot started by the first finger and its undo entry.
+			this.undoStack.pop();
+			this.activeStroke = null;
+		}
+		if (this.activePointerId !== null) {
+			if (this.el.hasPointerCapture(this.activePointerId)) {
+				this.el.releasePointerCapture(this.activePointerId);
+			}
+			this.activePointerId = null;
+		}
+		this.penActive = false;
+		this.inGesture = true;
+		this.beginGestureFromPointers();
+		this.redraw();
+	}
+
+	private beginGestureFromPointers(): void {
+		const pts = Array.from(this.pointers.values()).slice(0, 2);
+		if (pts.length < 2) return;
+		const rect = this.el.getBoundingClientRect();
+		const midX = (pts[0].x + pts[1].x) / 2 - rect.left;
+		const midY = (pts[0].y + pts[1].y) / 2 - rect.top;
+		this.gestureStart = {
+			dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
+			midDocX: (midX - this.view.tx) / this.view.scale,
+			midDocY: (midY - this.view.ty) / this.view.scale,
+		};
+	}
+
+	private handleGestureMove(): void {
+		const pts = Array.from(this.pointers.values()).slice(0, 2);
+		if (pts.length < 2 || !this.gestureStart) return;
+		const rect = this.el.getBoundingClientRect();
+		const newDist =
+			Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+		const midX = (pts[0].x + pts[1].x) / 2 - rect.left;
+		const midY = (pts[0].y + pts[1].y) / 2 - rect.top;
+
+		this.view.scale = this.clampScale(
+			(this.gestureStart.dist > 0
+				? newDist / this.gestureStart.dist
+				: 1) * this.view.scale,
+		);
+		// Keep the document point that was under the gesture midpoint anchored.
+		this.view.tx = midX - this.gestureStart.midDocX * this.view.scale;
+		this.view.ty = midY - this.gestureStart.midDocY * this.view.scale;
+		// Re-anchor for incremental moves.
+		this.gestureStart.dist = newDist;
+		this.gestureStart.midDocX = (midX - this.view.tx) / this.view.scale;
+		this.gestureStart.midDocY = (midY - this.view.ty) / this.view.scale;
+
+		this.clampView();
+		this.redraw();
+	}
+
+	private zoomAt(factor: number, clientX: number, clientY: number): void {
+		const rect = this.el.getBoundingClientRect();
+		const px = clientX - rect.left;
+		const py = clientY - rect.top;
+		const docX = (px - this.view.tx) / this.view.scale;
+		const docY = (py - this.view.ty) / this.view.scale;
+		this.view.scale = this.clampScale(this.view.scale * factor);
+		this.view.tx = px - docX * this.view.scale;
+		this.view.ty = py - docY * this.view.scale;
+		this.clampView();
+		this.redraw();
+	}
+
+	private clampScale(scale: number): number {
+		return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+	}
+
+	/** Keep part of the page on-screen so it can't be panned entirely away. */
+	private clampView(): void {
+		const rect = this.el.getBoundingClientRect();
+		if (rect.width === 0) return;
+		const w = this.doc.width * this.view.scale;
+		const h = this.doc.height * this.view.scale;
+		this.view.tx = Math.min(
+			rect.width - PAN_MARGIN,
+			Math.max(PAN_MARGIN - w, this.view.tx),
+		);
+		this.view.ty = Math.min(
+			rect.height - PAN_MARGIN,
+			Math.max(PAN_MARGIN - h, this.view.ty),
+		);
+	}
+
+	private refreshThemeColors(): void {
+		const cs = getComputedStyle(this.el);
+		const read = (name: string, fallback: string) =>
+			cs.getPropertyValue(name).trim() || fallback;
+		this.pageColor = read("--background-primary", this.pageColor);
+		this.workColor = read("--background-primary-alt", this.workColor);
+		this.borderColor = read("--background-modifier-border", this.borderColor);
+		this.el.style.backgroundColor = this.workColor;
+	}
+
 	/** Convert a pointer event to a logical document-space point with pressure. */
 	private toPoint(evt: PointerEvent): Point {
 		const rect = this.el.getBoundingClientRect();
-		const x = (evt.clientX - rect.left) * this.cssScale;
-		const y = (evt.clientY - rect.top) * this.cssScale;
+		const x = (evt.clientX - rect.left - this.view.tx) / this.view.scale;
+		const y = (evt.clientY - rect.top - this.view.ty) / this.view.scale;
 		// Mouse/touch often report pressure 0; fall back to a neutral 0.5.
 		let p = evt.pressure;
-		if (!p || p <= 0) p = evt.pointerType === "pen" ? 0.5 : 0.5;
+		if (!p || p <= 0) p = 0.5;
 		return { x, y, p };
 	}
 
