@@ -7,10 +7,15 @@ embed sketches in notes or keep them as standalone, re-editable files.
 ## Features
 
 - ✏️ **Natural drawing** with pressure-tapered strokes (perfect-freehand) using
-  finger, Apple Pencil, mouse, or any stylus.
+  finger, Apple Pencil, mouse, or any stylus. Finger and mouse strokes taper from
+  drawing speed, so lines look hand-drawn even without real pressure.
 - 📱 **Mobile-first** — works on iPhone and iPad. Smooth Pointer-Event handling
   with coalesced events, no accidental page scrolling, and optional **palm
   rejection** when using a stylus.
+- 🤏 **Pinch to zoom and two-finger pan** to draw at any scale; wheel-zoom on
+  desktop, plus a *Fit to screen* button to recenter.
+- 🎨 **Theme-aware pen** — starts white on dark themes and black on light themes
+  so your strokes are always visible (toggleable in settings).
 - 🧰 Pen, highlighter, and eraser; color palette; multiple brush sizes; undo/redo;
   clear.
 - 💾 **Re-editable format** — sketches are saved as `.sketch` files (compact JSON
@@ -27,9 +32,13 @@ embed sketches in notes or keep them as standalone, re-editable files.
   note"*. This creates the sketch, inserts `![[Sketch ….png]]` at your cursor, and
   opens the editor.
 - **Edit later:** open the `.sketch` file from the file explorer.
-- **Export:** the embedded PNG refreshes automatically as you draw (and on close).
-  Use the toolbar *Export PNG* button or the *"Export current sketch as SVG"*
-  command for a one-off export.
+- **Zoom & pan:** pinch with two fingers (or scroll-wheel on desktop). Tap *Fit to
+  screen* to recenter the page.
+- **Save:** the embedded PNG refreshes automatically as you draw and on close. Tap
+  the **✓ Save** button to write immediately and get a confirmation showing the
+  separate image file that's embedded. The `.sketch` file always stays editable.
+- **Export:** use the toolbar *Export PNG* button or the *"Export current sketch as
+  SVG"* command for a one-off export.
 
 Settings let you choose the sketch folder, default color/brush size, palm
 rejection, canvas size, background, and PNG export resolution.

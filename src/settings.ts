@@ -5,6 +5,8 @@ export interface ObsidianBoardSettings {
 	/** Folder where new .sketch files (and PNG exports) are created. Empty = vault root. */
 	sketchFolder: string;
 	defaultColor: string;
+	/** When true, start the pen in a color that contrasts the current theme. */
+	matchPenColorToTheme: boolean;
 	defaultBrushSize: number;
 	palmRejection: boolean;
 	canvasWidth: number;
@@ -18,6 +20,7 @@ export interface ObsidianBoardSettings {
 export const DEFAULT_SETTINGS: ObsidianBoardSettings = {
 	sketchFolder: "Sketches",
 	defaultColor: "#000000",
+	matchPenColorToTheme: true,
 	defaultBrushSize: 6,
 	palmRejection: true,
 	canvasWidth: 1280,
@@ -54,7 +57,22 @@ export class ObsidianBoardSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Match pen color to theme")
+			.setDesc(
+				"Start drawing in white on a dark theme and black on a light theme, so the pen is always visible. Turn off to always use the default color below.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.matchPenColorToTheme)
+					.onChange(async (value) => {
+						this.plugin.settings.matchPenColorToTheme = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
 			.setName("Default brush color")
+			.setDesc("Used for new sketches when “Match pen color to theme” is off.")
 			.addColorPicker((picker) =>
 				picker
 					.setValue(this.plugin.settings.defaultColor)

@@ -121,6 +121,7 @@ export class SketchView extends TextFileView {
 	async onOpen(): Promise<void> {
 		this.contentEl.empty();
 		this.contentEl.addClass("obsidianboard-view");
+		this.applyThemeDefaultColor();
 		this.buildToolbar();
 		this.canvasHost = this.contentEl.createDiv({
 			cls: "obsidianboard-canvas-host",
@@ -216,8 +217,14 @@ export class SketchView extends TextFileView {
 		this.makeButton(actionGroup, "trash-2", "Clear", () => {
 			this.canvas?.clear();
 		});
+		this.makeButton(actionGroup, "maximize", "Fit to screen", () => {
+			this.canvas?.fitView();
+		});
 		this.makeButton(actionGroup, "image-down", "Export PNG", () => {
 			void this.exportPng();
+		});
+		this.makeButton(actionGroup, "check", "Save sketch", () => {
+			void this.saveAndExport();
 		});
 
 		this.selectTool(this.brush.tool);
@@ -273,6 +280,36 @@ export class SketchView extends TextFileView {
 	private refreshHistoryButtons(): void {
 		if (this.undoBtn) this.undoBtn.toggleClass("is-disabled", !this.canvas?.canUndo());
 		if (this.redoBtn) this.redoBtn.toggleClass("is-disabled", !this.canvas?.canRedo());
+	}
+
+	/** Pick a starting pen color that's visible on the current theme background. */
+	private applyThemeDefaultColor(): void {
+		if (!this.plugin.settings.matchPenColorToTheme) return;
+		const isDark = document.body.classList.contains("theme-dark");
+		this.brush.color = isDark ? "#ffffff" : "#000000";
+	}
+
+	/**
+	 * Explicitly write the .sketch source and refresh the embedded PNG, then
+	 * confirm — making it clear the drawing also lives as a separate image file.
+	 */
+	private async saveAndExport(): Promise<void> {
+		if (!this.file) {
+			new Notice("Nothing to save yet.");
+			return;
+		}
+		try {
+			const data = this.getViewData();
+			await this.app.vault.modify(this.file, data);
+			const pngPath = await this.plugin.exportSketchToPng(this.file, data);
+			const pngName = pngPath.split("/").pop() ?? pngPath;
+			new Notice(
+				`Sketch saved. Embedded image “${pngName}” updated — the .sketch file stays editable.`,
+			);
+		} catch (e) {
+			console.error(e);
+			new Notice("Save failed. See console for details.");
+		}
 	}
 
 	private async exportPng(): Promise<void> {

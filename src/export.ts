@@ -13,7 +13,8 @@ export function strokeToOutline(stroke: Stroke): number[][] {
 		thinning: 0.6,
 		smoothing: 0.5,
 		streamline: 0.5,
-		simulatePressure: false,
+		// Finger/mouse strokes have no real pressure; taper them from speed.
+		simulatePressure: stroke.simulatePressure ?? false,
 		last: true,
 	});
 }
