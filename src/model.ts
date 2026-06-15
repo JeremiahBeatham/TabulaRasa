@@ -31,6 +31,11 @@ export interface SketchDoc {
 	height: number;
 	/** "transparent" or a CSS color string. */
 	background: string;
+	/**
+	 * Vault path of the note this sketch was created from, if any. Used to
+	 * default the "add to a note" target when exporting a PNG.
+	 */
+	sourceNote?: string;
 	strokes: Stroke[];
 }
 
@@ -79,6 +84,9 @@ export function parseDoc(raw: string): SketchDoc {
 		typeof obj.height === "number" ? obj.height : DEFAULT_CANVAS_HEIGHT,
 		typeof obj.background === "string" ? obj.background : "transparent",
 	);
+	if (typeof obj.sourceNote === "string") {
+		doc.sourceNote = obj.sourceNote;
+	}
 	if (Array.isArray(obj.strokes)) {
 		doc.strokes = obj.strokes.filter(isValidStroke);
 	}

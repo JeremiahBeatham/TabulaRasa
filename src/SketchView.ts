@@ -1,10 +1,13 @@
 import {
+	App,
+	FuzzySuggestModal,
+	Modal,
+	Notice,
+	Setting,
 	TextFileView,
+	TFile,
 	WorkspaceLeaf,
 	setIcon,
-	Notice,
-	debounce,
-	Debouncer,
 } from "obsidian";
 import { SketchCanvas, BrushSettings } from "./canvas";
 import {
@@ -48,7 +51,6 @@ export class SketchView extends TextFileView {
 	private sizeButtons = new Map<number, HTMLElement>();
 	private undoBtn: HTMLElement | null = null;
 	private redoBtn: HTMLElement | null = null;
-	private schedulePngRefresh: Debouncer<[], void>;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianBoardPlugin) {
 		super(leaf);
@@ -64,18 +66,6 @@ export class SketchView extends TextFileView {
 			size: plugin.settings.defaultBrushSize,
 			opacity: 1,
 		};
-		// Keep the embedded PNG export in sync shortly after drawing stops.
-		this.schedulePngRefresh = debounce(
-			() => {
-				if (this.file) {
-					void this.plugin
-						.exportSketchToPng(this.file, this.getViewData())
-						.catch((e) => console.error("PNG auto-export failed", e));
-				}
-			},
-			1500,
-			true,
-		);
 	}
 
 	getViewType(): string {
@@ -135,11 +125,11 @@ export class SketchView extends TextFileView {
 	async onClose(): Promise<void> {
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
-		// Capture the final state into the embedded PNG before tearing down.
+		// Persist the .sketch source so leaving/closing always keeps your work.
 		if (this.file && this.canvas) {
-			await this.plugin
-				.exportSketchToPng(this.file, this.getViewData())
-				.catch((e) => console.error("PNG export on close failed", e));
+			await this.app.vault
+				.modify(this.file, this.getViewData())
+				.catch((e) => console.error("Saving sketch on close failed", e));
 		}
 		this.canvas?.destroy();
 		this.canvas = null;
@@ -156,7 +146,6 @@ export class SketchView extends TextFileView {
 			onChange: () => {
 				this.requestSave();
 				this.refreshHistoryButtons();
-				this.schedulePngRefresh();
 			},
 		});
 		// Defer sizing until layout settles (important on mobile open).
@@ -220,11 +209,11 @@ export class SketchView extends TextFileView {
 		this.makeButton(actionGroup, "maximize", "Fit to screen", () => {
 			this.canvas?.fitView();
 		});
-		this.makeButton(actionGroup, "image-down", "Export PNG", () => {
-			void this.exportPng();
-		});
 		this.makeButton(actionGroup, "check", "Save sketch", () => {
-			void this.saveAndExport();
+			void this.saveSketch();
+		});
+		this.makeButton(actionGroup, "download", "Export PNG", () => {
+			void this.exportPng();
 		});
 
 		this.selectTool(this.brush.tool);
@@ -289,43 +278,179 @@ export class SketchView extends TextFileView {
 		this.brush.color = isDark ? "#ffffff" : "#000000";
 	}
 
-	/**
-	 * Explicitly write the .sketch source and refresh the embedded PNG, then
-	 * confirm — making it clear the drawing also lives as a separate image file.
-	 */
-	private async saveAndExport(): Promise<void> {
+	/** Write the .sketch source now. No PNG is produced — that's export-only. */
+	private async saveSketch(): Promise<void> {
 		if (!this.file) {
 			new Notice("Nothing to save yet.");
 			return;
 		}
 		try {
-			const data = this.getViewData();
-			await this.app.vault.modify(this.file, data);
-			const pngPath = await this.plugin.exportSketchToPng(this.file, data);
-			const pngName = pngPath.split("/").pop() ?? pngPath;
-			new Notice(
-				`Sketch saved. Embedded image “${pngName}” updated — the .sketch file stays editable.`,
-			);
+			await this.app.vault.modify(this.file, this.getViewData());
+			new Notice("Sketch saved.");
 		} catch (e) {
 			console.error(e);
 			new Notice("Save failed. See console for details.");
 		}
 	}
 
+	/**
+	 * Generate a PNG (the only time one is created) and ask whether to embed it
+	 * in a note or just keep the image file in the vault.
+	 */
 	private async exportPng(): Promise<void> {
 		if (!this.file) {
-			new Notice("Save the sketch first.");
+			new Notice("Nothing to export yet.");
 			return;
 		}
+		new ExportChoiceModal(this.app, {
+			onAddToNote: () => void this.exportAndEmbed(),
+			onDownload: () => void this.exportToFile(),
+		}).open();
+	}
+
+	private async exportToFile(): Promise<void> {
+		if (!this.file) return;
 		try {
+			await this.app.vault.modify(this.file, this.getViewData());
 			const path = await this.plugin.exportSketchToPng(
 				this.file,
 				this.getViewData(),
 			);
-			new Notice(`Exported PNG: ${path}`);
+			new Notice(`Image saved to your vault: ${path}`);
 		} catch (e) {
 			console.error(e);
 			new Notice("PNG export failed. See console for details.");
 		}
+	}
+
+	private async exportAndEmbed(): Promise<void> {
+		if (!this.file) return;
+		const note = await this.resolveTargetNote();
+		if (!note) return;
+		try {
+			await this.app.vault.modify(this.file, this.getViewData());
+			const pngPath = await this.plugin.exportSketchToPng(
+				this.file,
+				this.getViewData(),
+			);
+			await this.embedInNote(note, pngPath);
+			// Remember the note for next time if the sketch had none.
+			if (this.canvas && !this.canvas.getDoc().sourceNote) {
+				this.canvas.getDoc().sourceNote = note.path;
+				await this.app.vault.modify(this.file, this.getViewData());
+			}
+			new Notice(`Image added to “${note.basename}”.`);
+		} catch (e) {
+			console.error(e);
+			new Notice("Export failed. See console for details.");
+		}
+	}
+
+	/** Use the sketch's origin note if it still exists, otherwise let the user pick. */
+	private resolveTargetNote(): Promise<TFile | null> {
+		const sourcePath = this.canvas?.getDoc().sourceNote;
+		if (sourcePath) {
+			const f = this.app.vault.getAbstractFileByPath(sourcePath);
+			if (f instanceof TFile && f.extension === "md") {
+				return Promise.resolve(f);
+			}
+		}
+		return new Promise((resolve) => {
+			new NotePickerModal(this.app, resolve).open();
+		});
+	}
+
+	/** Insert the embed after the sketch's link if present, else append it. */
+	private async embedInNote(note: TFile, pngPath: string): Promise<void> {
+		const pngName = pngPath.split("/").pop() ?? pngPath;
+		const embed = `![[${pngName}]]`;
+		const content = await this.app.vault.read(note);
+		if (content.includes(embed)) return; // already embedded
+
+		const sketchName = this.file?.basename ?? "";
+		const lines = content.split("\n");
+		const linkIdx = sketchName
+			? lines.findIndex((l) => l.includes(`[[${sketchName}`))
+			: -1;
+		if (linkIdx >= 0) {
+			lines.splice(linkIdx + 1, 0, embed);
+			await this.app.vault.modify(note, lines.join("\n"));
+		} else {
+			const sep = content.endsWith("\n") || content === "" ? "" : "\n";
+			await this.app.vault.modify(note, `${content}${sep}\n${embed}\n`);
+		}
+	}
+}
+
+/** Two-choice dialog shown when exporting: embed in a note, or just keep the file. */
+class ExportChoiceModal extends Modal {
+	constructor(
+		app: App,
+		private actions: { onAddToNote: () => void; onDownload: () => void },
+	) {
+		super(app);
+	}
+
+	onOpen(): void {
+		this.titleEl.setText("Export sketch as image");
+		this.contentEl.createEl("p", {
+			text: "A PNG will be created from your sketch. Where should it go?",
+		});
+		new Setting(this.contentEl)
+			.setName("Add to a note")
+			.setDesc("Create the image and embed it in a note.")
+			.addButton((b) =>
+				b
+					.setButtonText("Add to note")
+					.setCta()
+					.onClick(() => {
+						this.close();
+						this.actions.onAddToNote();
+					}),
+			);
+		new Setting(this.contentEl)
+			.setName("Just save the image")
+			.setDesc("Keep the PNG file in your vault without embedding it.")
+			.addButton((b) =>
+				b.setButtonText("Save image").onClick(() => {
+					this.close();
+					this.actions.onDownload();
+				}),
+			);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
+	}
+}
+
+/** Fuzzy picker over markdown notes for choosing an embed destination. */
+class NotePickerModal extends FuzzySuggestModal<TFile> {
+	private picked = false;
+
+	constructor(
+		app: App,
+		private onResolve: (note: TFile | null) => void,
+	) {
+		super(app);
+		this.setPlaceholder("Choose a note to add the image to…");
+	}
+
+	getItems(): TFile[] {
+		return this.app.vault.getMarkdownFiles();
+	}
+
+	getItemText(file: TFile): string {
+		return file.path;
+	}
+
+	onChooseItem(file: TFile): void {
+		this.picked = true;
+		this.onResolve(file);
+	}
+
+	onClose(): void {
+		super.onClose();
+		if (!this.picked) this.onResolve(null);
 	}
 }

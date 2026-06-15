@@ -19,26 +19,30 @@ embed sketches in notes or keep them as standalone, re-editable files.
 - 🧰 Pen, highlighter, and eraser; color palette; multiple brush sizes; undo/redo;
   clear.
 - 💾 **Re-editable format** — sketches are saved as `.sketch` files (compact JSON
-  of strokes). Reopen any sketch and keep drawing.
-- 🖼️ **Embed anywhere** — a matching PNG is auto-exported next to each sketch and
-  embedded with a standard `![[…]]` link, so it renders in reading view, search,
-  and exports. SVG export is also available.
+  of strokes). They autosave when you leave or close, and you can save anytime
+  with the ✓ button. Reopen any sketch and keep drawing.
+- 🖼️ **Images on demand** — a PNG is created only when you export. Export asks
+  whether to **embed it in a note** or **just save the image** to your vault, so
+  you don't accumulate image files you didn't ask for. SVG export is also
+  available.
 
 ## Usage
 
 - **New standalone sketch:** click the pencil ribbon icon, or run the command
-  *"Create new sketch"*.
-- **Embed in the current note:** run *"Create new sketch and embed in current
-  note"*. This creates the sketch, inserts `![[Sketch ….png]]` at your cursor, and
-  opens the editor.
-- **Edit later:** open the `.sketch` file from the file explorer.
+  *"Create new sketch"*. It stands on its own as a `.sketch` file.
+- **Sketch linked to a note:** run *"Create new sketch linked to current note"*.
+  This creates the sketch, inserts a link to it (e.g. `[[Sketch …]]`) at your
+  cursor, and opens the editor. No image is made yet — the note just links to the
+  sketch, and the sketch remembers which note it came from.
+- **Edit later:** open the `.sketch` file from the file explorer or its link.
 - **Zoom & pan:** pinch with two fingers (or scroll-wheel on desktop). Tap *Fit to
   screen* to recenter the page.
-- **Save:** the embedded PNG refreshes automatically as you draw and on close. Tap
-  the **✓ Save** button to write immediately and get a confirmation showing the
-  separate image file that's embedded. The `.sketch` file always stays editable.
-- **Export:** use the toolbar *Export PNG* button or the *"Export current sketch as
-  SVG"* command for a one-off export.
+- **Save:** sketches autosave when you leave or close. Tap **✓ Save** to write
+  immediately. Saving never creates an image — your `.sketch` is the source.
+- **Export to an image:** tap the **Export** (download) button. You're asked
+  whether to **add it to a note** (embeds `![[…]].png` — defaults to the note the
+  sketch came from, otherwise pick one) or **just save the image** to your vault.
+  The *"Export current sketch as SVG"* command is also available.
 
 Settings let you choose the sketch folder, default color/brush size, palm
 rejection, canvas size, background, and PNG export resolution.

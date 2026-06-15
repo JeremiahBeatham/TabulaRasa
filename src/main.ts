@@ -46,9 +46,9 @@ export default class ObsidianBoardPlugin extends Plugin {
 
 		this.addCommand({
 			id: "create-sketch-embed",
-			name: "Create new sketch and embed in current note",
-			editorCallback: (editor: Editor) => {
-				void this.createAndEmbedSketch(editor);
+			name: "Create new sketch linked to current note",
+			editorCallback: (editor: Editor, ctx) => {
+				void this.createAndLinkSketch(editor, ctx.file ?? null);
 			},
 		});
 
@@ -117,13 +117,17 @@ export default class ObsidianBoardPlugin extends Plugin {
 		return candidate;
 	}
 
-	/** Create a new empty .sketch file and return its TFile. */
-	async createSketchFile(): Promise<TFile> {
+	/**
+	 * Create a new empty .sketch file and return its TFile. If a source note is
+	 * given, the sketch records it so exports can default to that note.
+	 */
+	async createSketchFile(sourceNote?: string): Promise<TFile> {
 		const doc = createEmptyDoc(
 			this.settings.canvasWidth,
 			this.settings.canvasHeight,
 			this.settings.defaultBackground,
 		);
+		if (sourceNote) doc.sourceNote = sourceNote;
 		const path = await this.uniquePath(this.timestampName(), SKETCH_EXTENSION);
 		return await this.app.vault.create(path, serializeDoc(doc));
 	}
@@ -135,15 +139,20 @@ export default class ObsidianBoardPlugin extends Plugin {
 		return file;
 	}
 
-	async createAndEmbedSketch(editor: Editor): Promise<void> {
-		const file = await this.createSketchFile();
-		// Generate an initial (blank) PNG so the embed resolves immediately.
-		const pngPath = await this.exportSketchToPng(file, await this.app.vault.read(file));
-		const pngName = pngPath.split("/").pop() ?? pngPath;
-		editor.replaceSelection(`![[${pngName}]]\n`);
+	/**
+	 * Create a standalone sketch and drop a link to it in the current note (no
+	 * image is generated — a PNG is only produced when the user exports).
+	 */
+	async createAndLinkSketch(editor: Editor, note: TFile | null): Promise<void> {
+		const file = await this.createSketchFile(note?.path);
+		const link = this.app.fileManager.generateMarkdownLink(
+			file,
+			note?.path ?? "",
+		);
+		editor.replaceSelection(`${link}\n`);
 		const leaf = this.app.workspace.getLeaf(true);
 		await leaf.openFile(file);
-		new Notice("Sketch created and embedded.");
+		new Notice("Sketch created and linked in this note.");
 	}
 
 	// --- exporting ------------------------------------------------------
