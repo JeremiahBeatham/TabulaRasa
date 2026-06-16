@@ -21,6 +21,9 @@ embed sketches in notes or keep them as standalone, re-editable files.
 - 💾 **Re-editable format** — sketches are saved as `.sketch` files (compact JSON
   of strokes). They autosave when you leave or close, and you can save anytime
   with the ✓ button. Reopen any sketch and keep drawing.
+- 👁️ **Live inline previews** — create a sketch from a note and the canvas renders
+  right inside the note (no image file), staying in sync as you edit. Prefer a
+  plain link instead? Flip a toggle in settings.
 - 🖼️ **Images on demand** — a PNG is created only when you export. Export asks
   whether to **embed it in a note** or **just save the image** to your vault, so
   you don't accumulate image files you didn't ask for. SVG export is also
@@ -30,10 +33,13 @@ embed sketches in notes or keep them as standalone, re-editable files.
 
 - **New standalone sketch:** click the pencil ribbon icon, or run the command
   *"Create new sketch"*. It stands on its own as a `.sketch` file.
-- **Sketch linked to a note:** run *"Create new sketch linked to current note"*.
-  This creates the sketch, inserts a link to it (e.g. `[[Sketch …]]`) at your
-  cursor, and opens the editor. No image is made yet — the note just links to the
-  sketch, and the sketch remembers which note it came from.
+- **Sketch inside a note:** run *"Create new sketch in current note"*. This
+  creates the sketch, inserts a reference to it at your cursor, and opens the
+  editor. No image file is made — the sketch itself is shown. By default the note
+  gets a **live inline preview** of the canvas (an `![[Sketch …]]` embed rendered
+  by the plugin); switch to a plain link in settings (*"Insert sketches into notes
+  as"*). Either way the sketch remembers which note it came from. Click an inline
+  preview to open the sketch for editing.
 - **Edit later:** open the `.sketch` file from the file explorer or its link.
 - **Zoom & pan:** pinch with two fingers (or scroll-wheel on desktop). Tap *Fit to
   screen* to recenter the page.

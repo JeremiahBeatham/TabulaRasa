@@ -15,6 +15,11 @@ export interface ObsidianBoardSettings {
 	pngExportScale: number;
 	/** Default background for new sketches: "transparent" or a CSS color. */
 	defaultBackground: string;
+	/**
+	 * How a sketch is inserted into a note when created from it:
+	 * "embed" renders a live inline preview; "link" inserts a plain link.
+	 */
+	noteInsertMode: "embed" | "link";
 }
 
 export const DEFAULT_SETTINGS: ObsidianBoardSettings = {
@@ -27,6 +32,7 @@ export const DEFAULT_SETTINGS: ObsidianBoardSettings = {
 	canvasHeight: 960,
 	pngExportScale: 2,
 	defaultBackground: "transparent",
+	noteInsertMode: "embed",
 };
 
 export class ObsidianBoardSettingTab extends PluginSettingTab {
@@ -52,6 +58,23 @@ export class ObsidianBoardSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.sketchFolder)
 					.onChange(async (value) => {
 						this.plugin.settings.sketchFolder = value.trim();
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Insert sketches into notes as")
+			.setDesc(
+				"When you create a sketch from a note, choose whether the note shows a live inline preview of the canvas or just a link to the sketch.",
+			)
+			.addDropdown((dd) =>
+				dd
+					.addOption("embed", "Live preview (inline)")
+					.addOption("link", "Link")
+					.setValue(this.plugin.settings.noteInsertMode)
+					.onChange(async (value) => {
+						this.plugin.settings.noteInsertMode =
+							value === "link" ? "link" : "embed";
 						await this.plugin.saveSettings();
 					}),
 			);

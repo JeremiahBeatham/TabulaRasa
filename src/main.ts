@@ -1,5 +1,7 @@
 import {
 	Editor,
+	MarkdownPostProcessorContext,
+	MarkdownRenderChild,
 	Notice,
 	Plugin,
 	TFile,
@@ -32,6 +34,11 @@ export default class ObsidianBoardPlugin extends Plugin {
 		);
 		this.registerExtensions([SKETCH_EXTENSION], VIEW_TYPE_SKETCH);
 
+		// Render `![[…sketch]]` embeds as a live inline preview of the canvas.
+		this.registerMarkdownPostProcessor((el, ctx) => {
+			this.renderSketchEmbeds(el, ctx);
+		});
+
 		this.addRibbonIcon("pencil", "New sketch", () => {
 			void this.createAndOpenSketch();
 		});
@@ -46,7 +53,7 @@ export default class ObsidianBoardPlugin extends Plugin {
 
 		this.addCommand({
 			id: "create-sketch-embed",
-			name: "Create new sketch linked to current note",
+			name: "Create new sketch in current note",
 			editorCallback: (editor: Editor, ctx) => {
 				void this.createAndLinkSketch(editor, ctx.file ?? null);
 			},
@@ -140,19 +147,48 @@ export default class ObsidianBoardPlugin extends Plugin {
 	}
 
 	/**
-	 * Create a standalone sketch and drop a link to it in the current note (no
-	 * image is generated — a PNG is only produced when the user exports).
+	 * Create a sketch and reference it in the current note. Depending on the
+	 * "Insert sketches into notes as" setting this inserts either a live inline
+	 * preview (embed) or a plain link. No image file is ever generated.
 	 */
 	async createAndLinkSketch(editor: Editor, note: TFile | null): Promise<void> {
 		const file = await this.createSketchFile(note?.path);
+		const useEmbed = this.settings.noteInsertMode === "embed";
 		const link = this.app.fileManager.generateMarkdownLink(
 			file,
 			note?.path ?? "",
 		);
-		editor.replaceSelection(`${link}\n`);
+		editor.replaceSelection(`${useEmbed ? "!" : ""}${link}\n`);
 		const leaf = this.app.workspace.getLeaf(true);
 		await leaf.openFile(file);
-		new Notice("Sketch created and linked in this note.");
+		new Notice(
+			useEmbed
+				? "Sketch created and embedded in this note."
+				: "Sketch created and linked in this note.",
+		);
+	}
+
+	// --- inline embed rendering ----------------------------------------
+
+	/** Replace internal embeds pointing at .sketch files with a live SVG preview. */
+	private renderSketchEmbeds(
+		el: HTMLElement,
+		ctx: MarkdownPostProcessorContext,
+	): void {
+		const embeds = el.findAll(".internal-embed");
+		for (const embed of embeds) {
+			const src = embed.getAttribute("src");
+			if (!src) continue;
+			const file = this.app.metadataCache.getFirstLinkpathDest(
+				src,
+				ctx.sourcePath,
+			);
+			if (!(file instanceof TFile) || file.extension !== SKETCH_EXTENSION) {
+				continue;
+			}
+			embed.empty();
+			ctx.addChild(new SketchEmbed(embed, this, file));
+		}
 	}
 
 	// --- exporting ------------------------------------------------------
@@ -191,5 +227,50 @@ export default class ObsidianBoardPlugin extends Plugin {
 			await this.app.vault.create(path, svg);
 		}
 		new Notice(`Exported SVG: ${path}`);
+	}
+}
+
+/**
+ * Renders a .sketch file inline inside a note as an SVG preview, and keeps it
+ * in sync when the underlying sketch is edited. Clicking opens the editor.
+ */
+class SketchEmbed extends MarkdownRenderChild {
+	constructor(
+		containerEl: HTMLElement,
+		private plugin: ObsidianBoardPlugin,
+		private file: TFile,
+	) {
+		super(containerEl);
+	}
+
+	onload(): void {
+		this.containerEl.addClass("obsidianboard-embed");
+		this.containerEl.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			evt.stopPropagation();
+			void this.plugin.app.workspace.getLeaf("tab").openFile(this.file);
+		});
+		void this.render();
+		// Refresh the preview whenever the sketch is saved elsewhere.
+		this.registerEvent(
+			this.plugin.app.vault.on("modify", (f) => {
+				if (f.path === this.file.path) void this.render();
+			}),
+		);
+	}
+
+	private async render(): Promise<void> {
+		try {
+			const raw = await this.plugin.app.vault.cachedRead(this.file);
+			const doc = parseDoc(raw);
+			const svg = new DOMParser()
+				.parseFromString(renderDocToSvg(doc), "image/svg+xml")
+				.documentElement;
+			this.containerEl.empty();
+			this.containerEl.appendChild(svg);
+		} catch (e) {
+			console.error("Failed to render sketch embed", e);
+			this.containerEl.setText("Could not render sketch preview.");
+		}
 	}
 }

@@ -113,3 +113,20 @@
 	background: var(--background-primary-alt);
 	cursor: crosshair;
 }
+
+/* Inline preview of a .sketch file embedded in a note. */
+.obsidianboard-embed {
+	display: block;
+	cursor: pointer;
+	line-height: 0;
+	margin: 4px 0;
+}
+
+.obsidianboard-embed svg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+}
