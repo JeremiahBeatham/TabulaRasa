@@ -42,7 +42,7 @@ embed sketches in notes or keep them as standalone, re-editable files.
 
 ## Usage
 
-- **New standalone sketch:** click the pencil ribbon icon, or run the command
+- **New standalone sketch:** click the brush ribbon icon, or run the command
   *"Create new sketch"*. It stands on its own as a `.sketch` file.
 - **Sketch inside a note:** run *"Create new sketch in current note"*. This
   creates the sketch, inserts a reference to it at your cursor, and opens the
@@ -70,7 +70,7 @@ rejection, canvas size, background, and PNG export resolution.
 
 Until Tabula Rasa is in the community store, install it with
 [BRAT](https://github.com/TfTHacker/obsidian42-brat): add the beta plugin
-`jeremiahbeatham/obsidianboard`, then enable **Tabula Rasa** in
+`JeremiahBeatham/TabulaRasa`, then enable **Tabula Rasa** in
 *Settings → Community plugins*. BRAT keeps it updated as new releases ship.
 
 ### Manual

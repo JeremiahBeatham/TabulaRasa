@@ -21,18 +21,18 @@ issues. Phases are intent, not hard commitments, and may reorder based on feedba
 
 ## 🔜 Next (UX polish, ~v0.2–0.3)
 
-- [#6 — Better tool icon (consistent, no fallback "?")](https://github.com/jeremiahbeatham/obsidianboard/issues/6)
-- [#7 — Audit: which controls belong in settings vs on the canvas](https://github.com/jeremiahbeatham/obsidianboard/issues/7)
-- [#8 — On-canvas canvas resize & aspect-ratio controls](https://github.com/jeremiahbeatham/obsidianboard/issues/8)
-- [#10 — Better brush-size selection UX](https://github.com/jeremiahbeatham/obsidianboard/issues/10)
-- [#11 — Better brush-color selection UX (custom picker + recents)](https://github.com/jeremiahbeatham/obsidianboard/issues/11)
+- [#6 — Better tool icon (consistent, no fallback "?")](https://github.com/JeremiahBeatham/TabulaRasa/issues/6)
+- [#7 — Audit: which controls belong in settings vs on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
+- [#8 — On-canvas canvas resize & aspect-ratio controls](https://github.com/JeremiahBeatham/TabulaRasa/issues/8)
+- [#10 — Better brush-size selection UX](https://github.com/JeremiahBeatham/TabulaRasa/issues/10)
+- [#11 — Better brush-color selection UX (custom picker + recents)](https://github.com/JeremiahBeatham/TabulaRasa/issues/11)
 
 ## 🧭 Later (bigger features)
 
-- [#9 — Pinch-to-rotate ("twist") the canvas](https://github.com/jeremiahbeatham/obsidianboard/issues/9)
-- [#12 — Additional eraser modes (partial/segment + area)](https://github.com/jeremiahbeatham/obsidianboard/issues/12)
-- [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/jeremiahbeatham/obsidianboard/issues/13)
-- [#14 — Smart snapping / shape recognition (straight line, circle)](https://github.com/jeremiahbeatham/obsidianboard/issues/14)
+- [#9 — Pinch-to-rotate ("twist") the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/9)
+- [#12 — Additional eraser modes (partial/segment + area)](https://github.com/JeremiahBeatham/TabulaRasa/issues/12)
+- [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)
+- [#14 — Smart snapping / shape recognition (straight line, circle)](https://github.com/JeremiahBeatham/TabulaRasa/issues/14)
 
 ## 🏪 Distribution
 
