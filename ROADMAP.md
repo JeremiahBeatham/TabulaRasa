@@ -18,12 +18,15 @@ issues. Phases are intent, not hard commitments, and may reorder based on feedba
 - **Live inline previews** of `.sketch` embeds in notes (Reading view + Live
   Preview), kept in sync and click-to-edit.
 - Rebrand to **Tabula Rasa** and community-store prep (LICENSE, compliant id/name).
+- Consistent bundled tool icon across ribbon, view tab, and commands
+  ([#6](https://github.com/JeremiahBeatham/TabulaRasa/issues/6), v0.2.1).
+- On-canvas canvas resize: aspect presets (square, 4:3, 16:9, A4), anchor or
+  scale-to-fit, and fit-to-drawing
+  ([#8](https://github.com/JeremiahBeatham/TabulaRasa/issues/8), v0.3.0).
 
-## 🔜 Next (UX polish, ~v0.2–0.3)
+## 🔜 Next (UX polish)
 
-- [#6 — Better tool icon (consistent, no fallback "?")](https://github.com/JeremiahBeatham/TabulaRasa/issues/6)
 - [#7 — Audit: which controls belong in settings vs on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
-- [#8 — On-canvas canvas resize & aspect-ratio controls](https://github.com/JeremiahBeatham/TabulaRasa/issues/8)
 - [#10 — Better brush-size selection UX](https://github.com/JeremiahBeatham/TabulaRasa/issues/10)
 - [#11 — Better brush-color selection UX (custom picker + recents)](https://github.com/JeremiahBeatham/TabulaRasa/issues/11)
 

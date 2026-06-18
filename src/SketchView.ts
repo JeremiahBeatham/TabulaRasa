@@ -9,7 +9,13 @@ import {
 	WorkspaceLeaf,
 	setIcon,
 } from "obsidian";
-import { SketchCanvas, BrushSettings } from "./canvas";
+import {
+	SketchCanvas,
+	BrushSettings,
+	CanvasAnchor,
+	MIN_CANVAS_SIZE,
+	MAX_CANVAS_SIZE,
+} from "./canvas";
 import {
 	SketchDoc,
 	ToolName,
@@ -18,7 +24,7 @@ import {
 	serializeDoc,
 } from "./model";
 import type TabulaRasaPlugin from "./main";
-import { TABULA_RASA_ICON_ID } from "./icon";
+import { TABULA_RASA_ICON_ID, TABULA_RASA_RESIZE_ICON_ID } from "./icon";
 
 export const VIEW_TYPE_SKETCH = "tabula-rasa-sketch-view";
 
@@ -207,6 +213,12 @@ export class SketchView extends TextFileView {
 		this.makeButton(actionGroup, "trash-2", "Clear", () => {
 			this.canvas?.clear();
 		});
+		this.makeButton(
+			actionGroup,
+			TABULA_RASA_RESIZE_ICON_ID,
+			"Canvas size",
+			() => this.openResizeModal(),
+		);
 		this.makeButton(actionGroup, "maximize", "Fit to screen", () => {
 			this.canvas?.fitView();
 		});
@@ -265,6 +277,19 @@ export class SketchView extends TextFileView {
 		this.sizeButtons.forEach((btn, key) =>
 			btn.toggleClass("is-active", key === size),
 		);
+	}
+
+	private openResizeModal(): void {
+		const doc = this.canvas?.getDoc();
+		if (!doc) return;
+		new ResizeCanvasModal(this.app, {
+			width: doc.width,
+			height: doc.height,
+			hasContent: doc.strokes.length > 0,
+			onApply: (w, h, anchor, scaleToFit) =>
+				this.canvas?.resizeCanvas(w, h, anchor, scaleToFit),
+			onFitToContent: () => this.canvas?.fitCanvasToContent(),
+		}).open();
 	}
 
 	private refreshHistoryButtons(): void {
@@ -453,5 +478,175 @@ class NotePickerModal extends FuzzySuggestModal<TFile> {
 	onClose(): void {
 		super.onClose();
 		if (!this.picked) this.onResolve(null);
+	}
+}
+
+interface ResizeActions {
+	width: number;
+	height: number;
+	hasContent: boolean;
+	onApply: (
+		width: number,
+		height: number,
+		anchor: CanvasAnchor,
+		scaleToFit: boolean,
+	) => void;
+	onFitToContent: () => void;
+}
+
+const RESIZE_PRESETS: { label: string; width: number; height: number }[] = [
+	{ label: "Square", width: 1280, height: 1280 },
+	{ label: "4:3", width: 1280, height: 960 },
+	{ label: "16:9", width: 1280, height: 720 },
+	{ label: "A4 portrait", width: 1240, height: 1754 },
+	{ label: "A4 landscape", width: 1754, height: 1240 },
+];
+
+const ANCHOR_OPTIONS: { value: CanvasAnchor; label: string }[] = [
+	{ value: "top-left", label: "Top left" },
+	{ value: "top", label: "Top" },
+	{ value: "top-right", label: "Top right" },
+	{ value: "left", label: "Left" },
+	{ value: "center", label: "Center" },
+	{ value: "right", label: "Right" },
+	{ value: "bottom-left", label: "Bottom left" },
+	{ value: "bottom", label: "Bottom" },
+	{ value: "bottom-right", label: "Bottom right" },
+];
+
+/** Dialog for changing the canvas dimensions / aspect ratio from the page. */
+class ResizeCanvasModal extends Modal {
+	private width: number;
+	private height: number;
+	private anchor: CanvasAnchor = "center";
+	private scaleToFit = false;
+	private widthInput: HTMLInputElement | null = null;
+	private heightInput: HTMLInputElement | null = null;
+
+	constructor(
+		app: App,
+		private actions: ResizeActions,
+	) {
+		super(app);
+		this.width = actions.width;
+		this.height = actions.height;
+	}
+
+	onOpen(): void {
+		this.titleEl.setText("Canvas size");
+
+		const presets = new Setting(this.contentEl)
+			.setName("Presets")
+			.setDesc("Apply a common size or aspect ratio.");
+		for (const p of RESIZE_PRESETS) {
+			presets.addButton((b) =>
+				b.setButtonText(p.label).onClick(() => {
+					this.width = p.width;
+					this.height = p.height;
+					this.syncInputs();
+				}),
+			);
+		}
+
+		new Setting(this.contentEl).setName("Width").setDesc("Pixels.").addText(
+			(t) => {
+				t.inputEl.type = "number";
+				t.setValue(String(this.width));
+				this.widthInput = t.inputEl;
+				t.onChange((v) => {
+					this.width = Number(v);
+				});
+			},
+		);
+
+		new Setting(this.contentEl)
+			.setName("Height")
+			.setDesc("Pixels.")
+			.addText((t) => {
+				t.inputEl.type = "number";
+				t.setValue(String(this.height));
+				this.heightInput = t.inputEl;
+				t.onChange((v) => {
+					this.height = Number(v);
+				});
+			});
+
+		new Setting(this.contentEl)
+			.setName("Anchor")
+			.setDesc("Where your drawing stays when the canvas size changes.")
+			.addDropdown((dd) => {
+				for (const a of ANCHOR_OPTIONS) dd.addOption(a.value, a.label);
+				dd.setValue(this.anchor);
+				dd.onChange((v) => {
+					this.anchor = v as CanvasAnchor;
+				});
+			});
+
+		new Setting(this.contentEl)
+			.setName("Scale drawing to fit")
+			.setDesc(
+				"Resize your existing strokes to fill the new canvas instead of just repositioning them.",
+			)
+			.addToggle((t) =>
+				t.setValue(this.scaleToFit).onChange((v) => {
+					this.scaleToFit = v;
+				}),
+			);
+
+		new Setting(this.contentEl)
+			.setName("Fit to drawing")
+			.setDesc(
+				this.actions.hasContent
+					? "Shrink the canvas to tightly wrap your drawing."
+					: "Draw something first to use this.",
+			)
+			.addButton((b) => {
+				b.setButtonText("Fit to drawing");
+				b.setDisabled(!this.actions.hasContent);
+				b.onClick(() => {
+					this.close();
+					this.actions.onFitToContent();
+				});
+			});
+
+		new Setting(this.contentEl)
+			.addButton((b) =>
+				b
+					.setButtonText("Apply")
+					.setCta()
+					.onClick(() => this.apply()),
+			)
+			.addButton((b) =>
+				b.setButtonText("Cancel").onClick(() => this.close()),
+			);
+	}
+
+	private syncInputs(): void {
+		if (this.widthInput) this.widthInput.value = String(this.width);
+		if (this.heightInput) this.heightInput.value = String(this.height);
+	}
+
+	private apply(): void {
+		const w = Math.round(this.width);
+		const h = Math.round(this.height);
+		if (
+			!Number.isFinite(w) ||
+			!Number.isFinite(h) ||
+			w < MIN_CANVAS_SIZE ||
+			h < MIN_CANVAS_SIZE ||
+			w > MAX_CANVAS_SIZE ||
+			h > MAX_CANVAS_SIZE
+		) {
+			new Notice(
+				`Enter a width and height between ${MIN_CANVAS_SIZE} and ${MAX_CANVAS_SIZE} px.`,
+			);
+			return;
+		}
+		this.close();
+		this.actions.onApply(w, h, this.anchor, this.scaleToFit);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
 	}
 }

@@ -17,11 +17,45 @@ const MIN_SCALE = 0.1;
 const MAX_SCALE = 8;
 /** Keep at least this many CSS px of the page on-screen when panning. */
 const PAN_MARGIN = 48;
+/** Bounds for a sketch's logical canvas dimensions. */
+export const MIN_CANVAS_SIZE = 64;
+export const MAX_CANVAS_SIZE = 8192;
 
 interface ViewState {
 	scale: number;
 	tx: number;
 	ty: number;
+}
+
+/** Where existing content is anchored when the canvas is resized. */
+export type CanvasAnchor =
+	| "top-left"
+	| "top"
+	| "top-right"
+	| "left"
+	| "center"
+	| "right"
+	| "bottom-left"
+	| "bottom"
+	| "bottom-right";
+
+const ANCHOR_FACTORS: Record<CanvasAnchor, { x: number; y: number }> = {
+	"top-left": { x: 0, y: 0 },
+	top: { x: 0.5, y: 0 },
+	"top-right": { x: 1, y: 0 },
+	left: { x: 0, y: 0.5 },
+	center: { x: 0.5, y: 0.5 },
+	right: { x: 1, y: 0.5 },
+	"bottom-left": { x: 0, y: 1 },
+	bottom: { x: 0.5, y: 1 },
+	"bottom-right": { x: 1, y: 1 },
+};
+
+/** Undo/redo captures the document state we let users change: size + strokes. */
+interface DocSnapshot {
+	width: number;
+	height: number;
+	strokes: Stroke[];
 }
 
 /**
@@ -56,8 +90,8 @@ export class SketchCanvas {
 		midDocY: number;
 	} | null = null;
 
-	private undoStack: SketchDoc["strokes"][] = [];
-	private redoStack: SketchDoc["strokes"][] = [];
+	private undoStack: DocSnapshot[] = [];
+	private redoStack: DocSnapshot[] = [];
 
 	// Cached theme colors for the page chrome (refreshed on resize).
 	private pageColor = "#ffffff";
@@ -179,19 +213,36 @@ export class SketchCanvas {
 	undo(): void {
 		const prev = this.undoStack.pop();
 		if (!prev) return;
-		this.redoStack.push(this.doc.strokes.slice());
-		this.doc.strokes = prev;
-		this.redraw();
+		this.redoStack.push(this.snapshot());
+		this.applySnapshot(prev);
 		this.options.onChange();
 	}
 
 	redo(): void {
 		const next = this.redoStack.pop();
 		if (!next) return;
-		this.undoStack.push(this.doc.strokes.slice());
-		this.doc.strokes = next;
-		this.redraw();
+		this.undoStack.push(this.snapshot());
+		this.applySnapshot(next);
 		this.options.onChange();
+	}
+
+	private snapshot(): DocSnapshot {
+		return {
+			width: this.doc.width,
+			height: this.doc.height,
+			strokes: this.doc.strokes.slice(),
+		};
+	}
+
+	/** Restore a snapshot, refitting the view only when the canvas size changed. */
+	private applySnapshot(s: DocSnapshot): void {
+		const sizeChanged =
+			s.width !== this.doc.width || s.height !== this.doc.height;
+		this.doc.width = s.width;
+		this.doc.height = s.height;
+		this.doc.strokes = s.strokes;
+		if (sizeChanged) this.fitView();
+		else this.redraw();
 	}
 
 	destroy(): void {
@@ -464,8 +515,112 @@ export class SketchCanvas {
 	}
 
 	private pushUndo(): void {
-		this.undoStack.push(this.doc.strokes.slice());
+		this.undoStack.push(this.snapshot());
 		// Cap history to keep memory in check on mobile.
 		if (this.undoStack.length > 50) this.undoStack.shift();
+	}
+
+	// --- canvas sizing --------------------------------------------------
+
+	private clampDimension(n: number): number {
+		if (!Number.isFinite(n)) return MIN_CANVAS_SIZE;
+		return Math.round(
+			Math.min(MAX_CANVAS_SIZE, Math.max(MIN_CANVAS_SIZE, n)),
+		);
+	}
+
+	/**
+	 * Resize the logical canvas. Existing strokes are either repositioned via
+	 * `anchor` (keeping their real size) or, when `scaleToFit` is set, uniformly
+	 * scaled so the drawing fills the new canvas. Undoable.
+	 */
+	resizeCanvas(
+		width: number,
+		height: number,
+		anchor: CanvasAnchor = "center",
+		scaleToFit = false,
+	): void {
+		const newW = this.clampDimension(width);
+		const newH = this.clampDimension(height);
+		const oldW = this.doc.width;
+		const oldH = this.doc.height;
+		if (newW === oldW && newH === oldH) return;
+
+		this.pushUndo();
+		this.redoStack = [];
+
+		const factor = scaleToFit ? Math.min(newW / oldW, newH / oldH) : 1;
+		const a = ANCHOR_FACTORS[anchor];
+		const offsetX = (newW - oldW * factor) * a.x;
+		const offsetY = (newH - oldH * factor) * a.y;
+		this.transformStrokes(factor, offsetX, offsetY);
+
+		this.doc.width = newW;
+		this.doc.height = newH;
+		this.fitView();
+		this.options.onChange();
+	}
+
+	/**
+	 * Shrink (or grow) the canvas to tightly wrap the existing drawing, leaving a
+	 * uniform `padding` margin. No-op when there are no strokes. Undoable.
+	 */
+	fitCanvasToContent(padding = 48): void {
+		const bounds = this.contentBounds();
+		if (!bounds) return;
+
+		this.pushUndo();
+		this.redoStack = [];
+
+		const newW = this.clampDimension(bounds.maxX - bounds.minX + padding * 2);
+		const newH = this.clampDimension(bounds.maxY - bounds.minY + padding * 2);
+		this.transformStrokes(1, padding - bounds.minX, padding - bounds.minY);
+
+		this.doc.width = newW;
+		this.doc.height = newH;
+		this.fitView();
+		this.options.onChange();
+	}
+
+	/**
+	 * Replace strokes with copies whose points are scaled by `factor` and shifted
+	 * by (dx, dy). We build new objects so snapshots already on the undo stack
+	 * (which share the previous stroke instances) stay intact.
+	 */
+	private transformStrokes(factor: number, dx: number, dy: number): void {
+		if (factor === 1 && dx === 0 && dy === 0) return;
+		this.doc.strokes = this.doc.strokes.map((stroke) => ({
+			...stroke,
+			size: stroke.size * factor,
+			points: stroke.points.map((p) => ({
+				x: p.x * factor + dx,
+				y: p.y * factor + dy,
+				p: p.p,
+			})),
+		}));
+	}
+
+	/** Bounding box of all stroke points (inflated by each stroke's half-width). */
+	private contentBounds(): {
+		minX: number;
+		minY: number;
+		maxX: number;
+		maxY: number;
+	} | null {
+		let minX = Infinity,
+			minY = Infinity,
+			maxX = -Infinity,
+			maxY = -Infinity;
+		for (const stroke of this.doc.strokes) {
+			const r = stroke.size / 2;
+			for (const pt of stroke.points) {
+				minX = Math.min(minX, pt.x - r);
+				minY = Math.min(minY, pt.y - r);
+				maxX = Math.max(maxX, pt.x + r);
+				maxY = Math.max(maxY, pt.y + r);
+			}
+		}
+		if (!Number.isFinite(minX)) return null;
+		return { minX, minY, maxX, maxY };
 	}
 }

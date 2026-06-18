@@ -1,6 +1,6 @@
 {
   "name": "tabula-rasa",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Finger- and Apple Pencil-friendly sketching plugin for Obsidian.",
   "main": "main.js",
   "scripts": {

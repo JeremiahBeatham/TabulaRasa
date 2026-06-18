@@ -25,6 +25,10 @@ embed sketches in notes or keep them as standalone, re-editable files.
   rejection** when using a stylus.
 - 🤏 **Pinch to zoom and two-finger pan** to draw at any scale; wheel-zoom on
   desktop, plus a *Fit to screen* button to recenter.
+- 📐 **Resizable canvas** — change the page size or aspect ratio from the toolbar
+  (square, 4:3, 16:9, A4, or custom). Choose an anchor or scale your drawing to
+  the new size, or *Fit to drawing* to wrap the canvas around your strokes.
+  Resizing is undoable.
 - 🎨 **Theme-aware pen** — starts white on dark themes and black on light themes
   so your strokes are always visible (toggleable in settings).
 - 🧰 Pen, highlighter, and eraser; color palette; multiple brush sizes; undo/redo;
@@ -54,6 +58,9 @@ embed sketches in notes or keep them as standalone, re-editable files.
 - **Edit later:** open the `.sketch` file from the file explorer or its link.
 - **Zoom & pan:** pinch with two fingers (or scroll-wheel on desktop). Tap *Fit to
   screen* to recenter the page.
+- **Canvas size:** tap the resize button to change the page dimensions or aspect
+  ratio (presets or custom), choose an anchor or scale your drawing to fit, or
+  *Fit to drawing* to wrap the canvas around your strokes.
 - **Save:** sketches autosave when you leave or close. Tap **✓ Save** to write
   immediately. Saving never creates an image — your `.sketch` is the source.
 - **Export to an image:** tap the **Export** (download) button. You're asked

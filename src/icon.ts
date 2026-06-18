@@ -21,7 +21,21 @@ export const TABULA_RASA_ICON_SVG =
 	`<g transform="scale(4.1667)" style="fill:none;stroke:currentColor;` +
 	`stroke-width:2;stroke-linecap:round;stroke-linejoin:round">${BRUSH_PATHS}</g>`;
 
-/** Register the bundled icon. Call once during plugin load. */
+/** Toolbar icon for the canvas-resize action. Lucide "scaling" (MIT). */
+export const TABULA_RASA_RESIZE_ICON_ID = "tabula-rasa-resize";
+
+const SCALING_PATHS =
+	'<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />' +
+	'<path d="M14 15H9v-5" />' +
+	'<path d="M16 3h5v5" />' +
+	'<path d="M21 3 9 15" />';
+
+export const TABULA_RASA_RESIZE_ICON_SVG =
+	`<g transform="scale(4.1667)" style="fill:none;stroke:currentColor;` +
+	`stroke-width:2;stroke-linecap:round;stroke-linejoin:round">${SCALING_PATHS}</g>`;
+
+/** Register the bundled icons. Call once during plugin load. */
 export function registerTabulaRasaIcon(): void {
 	addIcon(TABULA_RASA_ICON_ID, TABULA_RASA_ICON_SVG);
+	addIcon(TABULA_RASA_RESIZE_ICON_ID, TABULA_RASA_RESIZE_ICON_SVG);
 }
