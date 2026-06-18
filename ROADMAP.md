@@ -27,6 +27,8 @@ issues. Phases are intent, not hard commitments, and may reorder based on feedba
   ([#10](https://github.com/JeremiahBeatham/TabulaRasa/issues/10), v0.4.0).
 - Color picker: custom color + recent colors alongside the palette
   ([#11](https://github.com/JeremiahBeatham/TabulaRasa/issues/11), v0.5.0).
+- Pinch-to-rotate ("twist") the canvas to draw from any angle; Fit to screen
+  resets it ([#9](https://github.com/JeremiahBeatham/TabulaRasa/issues/9), v0.6.0).
 
 ## 🔜 Next (UX polish)
 
@@ -34,7 +36,6 @@ issues. Phases are intent, not hard commitments, and may reorder based on feedba
 
 ## 🧭 Later (bigger features)
 
-- [#9 — Pinch-to-rotate ("twist") the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/9)
 - [#12 — Additional eraser modes (partial/segment + area)](https://github.com/JeremiahBeatham/TabulaRasa/issues/12)
 - [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)
 - [#14 — Smart snapping / shape recognition (straight line, circle)](https://github.com/JeremiahBeatham/TabulaRasa/issues/14)

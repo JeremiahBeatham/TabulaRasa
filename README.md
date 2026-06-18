@@ -23,8 +23,9 @@ embed sketches in notes or keep them as standalone, re-editable files.
 - 📱 **Mobile-first** — works on iPhone and iPad. Smooth Pointer-Event handling
   with coalesced events, no accidental page scrolling, and optional **palm
   rejection** when using a stylus.
-- 🤏 **Pinch to zoom and two-finger pan** to draw at any scale; wheel-zoom on
-  desktop, plus a *Fit to screen* button to recenter.
+- 🤏 **Pinch to zoom, pan, and twist to rotate** the canvas so you can draw from
+  any angle; wheel-zoom on desktop, plus a *Fit to screen* button that recenters
+  and returns the page to upright.
 - 📐 **Resizable canvas** — change the page size or aspect ratio from the toolbar
   (square, 4:3, 16:9, A4, or custom). Choose an anchor or scale your drawing to
   the new size, or *Fit to drawing* to wrap the canvas around your strokes.
@@ -57,8 +58,9 @@ embed sketches in notes or keep them as standalone, re-editable files.
   as"*). Either way the sketch remembers which note it came from. Click an inline
   preview to open the sketch for editing.
 - **Edit later:** open the `.sketch` file from the file explorer or its link.
-- **Zoom & pan:** pinch with two fingers (or scroll-wheel on desktop). Tap *Fit to
-  screen* to recenter the page.
+- **Zoom, pan & rotate:** pinch with two fingers to zoom, drag to pan, and twist
+  to rotate the canvas (or scroll-wheel to zoom on desktop). Tap *Fit to screen*
+  to recenter and straighten the page.
 - **Canvas size:** tap the resize button to change the page dimensions or aspect
   ratio (presets or custom), choose an anchor or scale your drawing to fit, or
   *Fit to drawing* to wrap the canvas around your strokes.

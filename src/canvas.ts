@@ -25,6 +25,13 @@ interface ViewState {
 	scale: number;
 	tx: number;
 	ty: number;
+	/** Canvas rotation in radians (two-finger twist). */
+	rotation: number;
+}
+
+/** Wrap an angle to (-π, π]. */
+function normalizeAngle(a: number): number {
+	return Math.atan2(Math.sin(a), Math.cos(a));
 }
 
 /** Where existing content is anchored when the canvas is resized. */
@@ -73,7 +80,7 @@ export class SketchCanvas {
 
 	private dpr = 1;
 	/** Document -> CSS-pixel viewport transform. */
-	private view: ViewState = { scale: 1, tx: 0, ty: 0 };
+	private view: ViewState = { scale: 1, tx: 0, ty: 0, rotation: 0 };
 	private viewInitialized = false;
 
 	private activeStroke: Stroke | null = null;
@@ -85,9 +92,12 @@ export class SketchCanvas {
 	private pointers = new Map<number, { x: number; y: number }>();
 	private inGesture = false;
 	private gestureStart: {
-		dist: number;
-		midDocX: number;
-		midDocY: number;
+		startDist: number;
+		startScale: number;
+		prevAngle: number;
+		/** Document point under the pinch midpoint when the gesture began. */
+		anchorDocX: number;
+		anchorDocY: number;
 	} | null = null;
 
 	private undoStack: DocSnapshot[] = [];
@@ -156,10 +166,12 @@ export class SketchCanvas {
 		const sx = (rect.width - pad * 2) / this.doc.width;
 		const sy = (rect.height - pad * 2) / this.doc.height;
 		const scale = this.clampScale(Math.min(sx, sy));
+		// Fit also returns the page to upright.
 		this.view = {
 			scale,
 			tx: (rect.width - this.doc.width * scale) / 2,
 			ty: (rect.height - this.doc.height * scale) / 2,
+			rotation: 0,
 		};
 		this.redraw();
 	}
@@ -173,6 +185,7 @@ export class SketchCanvas {
 		// Map device pixels -> CSS pixels -> document units.
 		ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 		ctx.translate(this.view.tx, this.view.ty);
+		ctx.rotate(this.view.rotation);
 		ctx.scale(this.view.scale, this.view.scale);
 
 		this.drawPage();
@@ -391,34 +404,38 @@ export class SketchCanvas {
 		const rect = this.el.getBoundingClientRect();
 		const midX = (pts[0].x + pts[1].x) / 2 - rect.left;
 		const midY = (pts[0].y + pts[1].y) / 2 - rect.top;
+		const anchor = this.screenToDoc(midX, midY);
 		this.gestureStart = {
-			dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
-			midDocX: (midX - this.view.tx) / this.view.scale,
-			midDocY: (midY - this.view.ty) / this.view.scale,
+			startDist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
+			startScale: this.view.scale,
+			prevAngle: Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x),
+			anchorDocX: anchor.x,
+			anchorDocY: anchor.y,
 		};
 	}
 
 	private handleGestureMove(): void {
 		const pts = Array.from(this.pointers.values()).slice(0, 2);
 		if (pts.length < 2 || !this.gestureStart) return;
+		const g = this.gestureStart;
 		const rect = this.el.getBoundingClientRect();
-		const newDist =
-			Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
 		const midX = (pts[0].x + pts[1].x) / 2 - rect.left;
 		const midY = (pts[0].y + pts[1].y) / 2 - rect.top;
+		const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+		const angle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
 
-		this.view.scale = this.clampScale(
-			(this.gestureStart.dist > 0
-				? newDist / this.gestureStart.dist
-				: 1) * this.view.scale,
-		);
-		// Keep the document point that was under the gesture midpoint anchored.
-		this.view.tx = midX - this.gestureStart.midDocX * this.view.scale;
-		this.view.ty = midY - this.gestureStart.midDocY * this.view.scale;
-		// Re-anchor for incremental moves.
-		this.gestureStart.dist = newDist;
-		this.gestureStart.midDocX = (midX - this.view.tx) / this.view.scale;
-		this.gestureStart.midDocY = (midY - this.view.ty) / this.view.scale;
+		// Scale is absolute from gesture start; rotation accumulates per move
+		// (unwrapped) so twisting past ±180° keeps working.
+		this.view.scale = this.clampScale((dist / g.startDist) * g.startScale);
+		this.view.rotation += normalizeAngle(angle - g.prevAngle);
+		g.prevAngle = angle;
+
+		// Keep the anchored document point pinned under the moving midpoint.
+		const c = Math.cos(this.view.rotation);
+		const s = Math.sin(this.view.rotation);
+		const sc = this.view.scale;
+		this.view.tx = midX - sc * (c * g.anchorDocX - s * g.anchorDocY);
+		this.view.ty = midY - sc * (s * g.anchorDocX + c * g.anchorDocY);
 
 		this.clampView();
 		this.redraw();
@@ -428,11 +445,14 @@ export class SketchCanvas {
 		const rect = this.el.getBoundingClientRect();
 		const px = clientX - rect.left;
 		const py = clientY - rect.top;
-		const docX = (px - this.view.tx) / this.view.scale;
-		const docY = (py - this.view.ty) / this.view.scale;
+		const doc = this.screenToDoc(px, py);
 		this.view.scale = this.clampScale(this.view.scale * factor);
-		this.view.tx = px - docX * this.view.scale;
-		this.view.ty = py - docY * this.view.scale;
+		// Re-pin the document point that was under the cursor.
+		const c = Math.cos(this.view.rotation);
+		const s = Math.sin(this.view.rotation);
+		const sc = this.view.scale;
+		this.view.tx = px - sc * (c * doc.x - s * doc.y);
+		this.view.ty = py - sc * (s * doc.x + c * doc.y);
 		this.clampView();
 		this.redraw();
 	}
@@ -441,19 +461,52 @@ export class SketchCanvas {
 		return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
 	}
 
+	/**
+	 * Screen extents (relative to the canvas, before translation) of the page's
+	 * four corners under the current scale + rotation. Used for pan clamping.
+	 */
+	private pageScreenExtents(): {
+		minX: number;
+		maxX: number;
+		minY: number;
+		maxY: number;
+	} {
+		const c = Math.cos(this.view.rotation);
+		const s = Math.sin(this.view.rotation);
+		const sc = this.view.scale;
+		const corners: [number, number][] = [
+			[0, 0],
+			[this.doc.width, 0],
+			[this.doc.width, this.doc.height],
+			[0, this.doc.height],
+		];
+		let minX = Infinity,
+			maxX = -Infinity,
+			minY = Infinity,
+			maxY = -Infinity;
+		for (const [x, y] of corners) {
+			const sx = sc * (c * x - s * y);
+			const sy = sc * (s * x + c * y);
+			minX = Math.min(minX, sx);
+			maxX = Math.max(maxX, sx);
+			minY = Math.min(minY, sy);
+			maxY = Math.max(maxY, sy);
+		}
+		return { minX, maxX, minY, maxY };
+	}
+
 	/** Keep part of the page on-screen so it can't be panned entirely away. */
 	private clampView(): void {
 		const rect = this.el.getBoundingClientRect();
 		if (rect.width === 0) return;
-		const w = this.doc.width * this.view.scale;
-		const h = this.doc.height * this.view.scale;
+		const e = this.pageScreenExtents();
 		this.view.tx = Math.min(
-			rect.width - PAN_MARGIN,
-			Math.max(PAN_MARGIN - w, this.view.tx),
+			rect.width - PAN_MARGIN - e.minX,
+			Math.max(PAN_MARGIN - e.maxX, this.view.tx),
 		);
 		this.view.ty = Math.min(
-			rect.height - PAN_MARGIN,
-			Math.max(PAN_MARGIN - h, this.view.ty),
+			rect.height - PAN_MARGIN - e.minY,
+			Math.max(PAN_MARGIN - e.maxY, this.view.ty),
 		);
 	}
 
@@ -467,11 +520,26 @@ export class SketchCanvas {
 		this.el.style.backgroundColor = this.workColor;
 	}
 
+	/** Invert the view transform: canvas-relative CSS px -> document units. */
+	private screenToDoc(px: number, py: number): { x: number; y: number } {
+		const ox = px - this.view.tx;
+		const oy = py - this.view.ty;
+		const c = Math.cos(this.view.rotation);
+		const s = Math.sin(this.view.rotation);
+		// Undo rotation (R(-θ)) then scale.
+		return {
+			x: (c * ox + s * oy) / this.view.scale,
+			y: (-s * ox + c * oy) / this.view.scale,
+		};
+	}
+
 	/** Convert a pointer event to a logical document-space point with pressure. */
 	private toPoint(evt: PointerEvent): Point {
 		const rect = this.el.getBoundingClientRect();
-		const x = (evt.clientX - rect.left - this.view.tx) / this.view.scale;
-		const y = (evt.clientY - rect.top - this.view.ty) / this.view.scale;
+		const { x, y } = this.screenToDoc(
+			evt.clientX - rect.left,
+			evt.clientY - rect.top,
+		);
 		// Mouse/touch often report pressure 0; fall back to a neutral 0.5.
 		let p = evt.pressure;
 		if (!p || p <= 0) p = 0.5;
