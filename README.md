@@ -31,8 +31,8 @@ embed sketches in notes or keep them as standalone, re-editable files.
   Resizing is undoable.
 - 🎨 **Theme-aware pen** — starts white on dark themes and black on light themes
   so your strokes are always visible (toggleable in settings).
-- 🧰 Pen, highlighter, and eraser; color palette; multiple brush sizes; undo/redo;
-  clear.
+- 🧰 Pen, highlighter, and eraser; color palette; adjustable brush size with a
+  slider, presets, and a live preview; undo/redo; clear.
 - 💾 **Re-editable format** — sketches are saved as `.sketch` files (compact JSON
   of strokes). They autosave when you leave or close, and you can save anytime
   with the ✓ button. Reopen any sketch and keep drawing.

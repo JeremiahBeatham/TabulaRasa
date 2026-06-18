@@ -23,11 +23,12 @@ issues. Phases are intent, not hard commitments, and may reorder based on feedba
 - On-canvas canvas resize: aspect presets (square, 4:3, 16:9, A4), anchor or
   scale-to-fit, and fit-to-drawing
   ([#8](https://github.com/JeremiahBeatham/TabulaRasa/issues/8), v0.3.0).
+- Brush-size picker: slider, presets, and live preview in a popover
+  ([#10](https://github.com/JeremiahBeatham/TabulaRasa/issues/10), v0.4.0).
 
 ## 🔜 Next (UX polish)
 
 - [#7 — Audit: which controls belong in settings vs on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
-- [#10 — Better brush-size selection UX](https://github.com/JeremiahBeatham/TabulaRasa/issues/10)
 - [#11 — Better brush-color selection UX (custom picker + recents)](https://github.com/JeremiahBeatham/TabulaRasa/issues/11)
 
 ## 🧭 Later (bigger features)

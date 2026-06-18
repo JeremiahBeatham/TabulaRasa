@@ -38,7 +38,9 @@ const PALETTE = [
 	"#ffffff",
 ];
 
-const BRUSH_SIZES = [3, 6, 12, 24];
+const MIN_BRUSH_SIZE = 1;
+const MAX_BRUSH_SIZE = 40;
+const SIZE_PRESETS = [2, 6, 12, 24, 40];
 
 /**
  * Full-screen editor for `.sketch` files. Extends TextFileView so Obsidian
@@ -55,9 +57,17 @@ export class SketchView extends TextFileView {
 
 	private toolButtons = new Map<ToolName, HTMLElement>();
 	private colorButtons = new Map<string, HTMLElement>();
-	private sizeButtons = new Map<number, HTMLElement>();
 	private undoBtn: HTMLElement | null = null;
 	private redoBtn: HTMLElement | null = null;
+
+	// Brush-size popover state.
+	private sizeTriggerDot: HTMLElement | null = null;
+	private sizePopover: HTMLElement | null = null;
+	private sizeSlider: HTMLInputElement | null = null;
+	private sizePreviewDot: HTMLElement | null = null;
+	private sizeValueLabel: HTMLElement | null = null;
+	private sizePresetButtons = new Map<number, HTMLElement>();
+	private closeSizePopoverHandler: ((e: Event) => void) | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: TabulaRasaPlugin) {
 		super(leaf);
@@ -130,6 +140,7 @@ export class SketchView extends TextFileView {
 	}
 
 	async onClose(): Promise<void> {
+		this.closeSizePopover();
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
 		// Persist the .sketch source so leaving/closing always keeps your work.
@@ -190,18 +201,7 @@ export class SketchView extends TextFileView {
 		}
 
 		const sizeGroup = bar.createDiv({ cls: "tabula-rasa-group" });
-		for (const size of BRUSH_SIZES) {
-			const btn = sizeGroup.createEl("button", {
-				cls: "tabula-rasa-size",
-				attr: { "aria-label": `Size ${size}`, type: "button" },
-			});
-			const dot = btn.createDiv({ cls: "tabula-rasa-size-dot" });
-			const px = Math.max(4, Math.min(22, size));
-			dot.style.width = `${px}px`;
-			dot.style.height = `${px}px`;
-			btn.addEventListener("click", () => this.selectSize(size));
-			this.sizeButtons.set(size, btn);
-		}
+		this.buildSizeControl(sizeGroup);
 
 		const actionGroup = bar.createDiv({ cls: "tabula-rasa-group" });
 		this.undoBtn = this.makeButton(actionGroup, "undo-2", "Undo", () =>
@@ -271,10 +271,139 @@ export class SketchView extends TextFileView {
 		);
 	}
 
+	// --- brush size -----------------------------------------------------
+
+	/** The toolbar trigger: a dot whose size mirrors the current brush. */
+	private buildSizeControl(parent: HTMLElement): void {
+		const trigger = parent.createEl("button", {
+			cls: "tabula-rasa-size",
+			attr: { "aria-label": "Brush size", type: "button" },
+		});
+		this.sizeTriggerDot = trigger.createDiv({ cls: "tabula-rasa-size-dot" });
+		trigger.addEventListener("click", () => this.toggleSizePopover(trigger));
+	}
+
+	private toggleSizePopover(trigger: HTMLElement): void {
+		if (this.sizePopover) this.closeSizePopover();
+		else this.openSizePopover(trigger);
+	}
+
+	private openSizePopover(trigger: HTMLElement): void {
+		const pop = this.contentEl.createDiv({ cls: "tabula-rasa-popover" });
+		this.sizePopover = pop;
+
+		const preview = pop.createDiv({ cls: "tabula-rasa-size-preview" });
+		this.sizePreviewDot = preview.createDiv({
+			cls: "tabula-rasa-size-preview-dot",
+		});
+		this.sizeValueLabel = pop.createDiv({ cls: "tabula-rasa-size-value" });
+
+		const slider = pop.createEl("input", {
+			cls: "tabula-rasa-size-slider",
+			attr: {
+				type: "range",
+				min: String(MIN_BRUSH_SIZE),
+				max: String(MAX_BRUSH_SIZE),
+				step: "1",
+				"aria-label": "Brush size",
+			},
+		});
+		this.sizeSlider = slider;
+		slider.addEventListener("input", () =>
+			this.selectSize(Number(slider.value)),
+		);
+
+		const presets = pop.createDiv({ cls: "tabula-rasa-size-presets" });
+		this.sizePresetButtons.clear();
+		for (const size of SIZE_PRESETS) {
+			const b = presets.createEl("button", {
+				cls: "tabula-rasa-size",
+				attr: { "aria-label": `Size ${size}`, type: "button" },
+			});
+			const dot = b.createDiv({ cls: "tabula-rasa-size-dot" });
+			const px = Math.max(4, Math.min(22, size));
+			dot.style.width = `${px}px`;
+			dot.style.height = `${px}px`;
+			b.addEventListener("click", () => this.selectSize(size));
+			this.sizePresetButtons.set(size, b);
+		}
+
+		this.positionPopover(pop, trigger);
+		this.updateSizeUI();
+
+		// Dismiss on outside interaction or Escape.
+		this.closeSizePopoverHandler = (e: Event) => {
+			if (e instanceof KeyboardEvent) {
+				if (e.key === "Escape") this.closeSizePopover();
+				return;
+			}
+			const target = e.target as Node;
+			if (pop.contains(target) || trigger.contains(target)) return;
+			this.closeSizePopover();
+		};
+		document.addEventListener("pointerdown", this.closeSizePopoverHandler, true);
+		document.addEventListener("keydown", this.closeSizePopoverHandler, true);
+	}
+
+	private positionPopover(pop: HTMLElement, trigger: HTMLElement): void {
+		const host = this.contentEl.getBoundingClientRect();
+		const tr = trigger.getBoundingClientRect();
+		pop.style.top = `${tr.bottom - host.top + 6}px`;
+		const maxLeft = Math.max(8, host.width - pop.offsetWidth - 8);
+		const left = Math.min(Math.max(8, tr.left - host.left), maxLeft);
+		pop.style.left = `${left}px`;
+	}
+
+	private closeSizePopover(): void {
+		if (this.closeSizePopoverHandler) {
+			document.removeEventListener(
+				"pointerdown",
+				this.closeSizePopoverHandler,
+				true,
+			);
+			document.removeEventListener(
+				"keydown",
+				this.closeSizePopoverHandler,
+				true,
+			);
+			this.closeSizePopoverHandler = null;
+		}
+		this.sizePopover?.remove();
+		this.sizePopover = null;
+		this.sizeSlider = null;
+		this.sizePreviewDot = null;
+		this.sizeValueLabel = null;
+		this.sizePresetButtons.clear();
+	}
+
 	private selectSize(size: number): void {
-		this.brush.size = size;
+		const clamped = Math.max(
+			MIN_BRUSH_SIZE,
+			Math.min(MAX_BRUSH_SIZE, Math.round(size)),
+		);
+		this.brush.size = clamped;
 		this.canvas?.setBrush(this.brush);
-		this.sizeButtons.forEach((btn, key) =>
+		this.updateSizeUI();
+	}
+
+	/** Reflect the current size on the trigger dot and (if open) the popover. */
+	private updateSizeUI(): void {
+		const size = this.brush.size;
+		if (this.sizeTriggerDot) {
+			const px = Math.max(4, Math.min(22, size));
+			this.sizeTriggerDot.style.width = `${px}px`;
+			this.sizeTriggerDot.style.height = `${px}px`;
+		}
+		if (this.sizeSlider && this.sizeSlider.value !== String(size)) {
+			this.sizeSlider.value = String(size);
+		}
+		this.sizeValueLabel?.setText(`${size} px`);
+		if (this.sizePreviewDot) {
+			const d = Math.max(2, Math.min(48, size));
+			this.sizePreviewDot.style.width = `${d}px`;
+			this.sizePreviewDot.style.height = `${d}px`;
+		}
+		this.sizePresetButtons.forEach((btn, key) =>
 			btn.toggleClass("is-active", key === size),
 		);
 	}
