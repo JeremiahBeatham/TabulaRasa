@@ -29,6 +29,8 @@ issues. Phases are intent, not hard commitments, and may reorder based on feedba
   ([#11](https://github.com/JeremiahBeatham/TabulaRasa/issues/11), v0.5.0).
 - Pinch-to-rotate ("twist") the canvas to draw from any angle; Fit to screen
   resets it ([#9](https://github.com/JeremiahBeatham/TabulaRasa/issues/9), v0.6.0).
+- Eraser modes: whole-stroke and partial (segment) erasing
+  ([#12](https://github.com/JeremiahBeatham/TabulaRasa/issues/12), v0.7.0).
 
 ## 🔜 Next (UX polish)
 
@@ -36,7 +38,6 @@ issues. Phases are intent, not hard commitments, and may reorder based on feedba
 
 ## 🧭 Later (bigger features)
 
-- [#12 — Additional eraser modes (partial/segment + area)](https://github.com/JeremiahBeatham/TabulaRasa/issues/12)
 - [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)
 - [#14 — Smart snapping / shape recognition (straight line, circle)](https://github.com/JeremiahBeatham/TabulaRasa/issues/14)
 

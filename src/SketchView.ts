@@ -13,6 +13,7 @@ import {
 	SketchCanvas,
 	BrushSettings,
 	CanvasAnchor,
+	EraserMode,
 	MIN_CANVAS_SIZE,
 	MAX_CANVAS_SIZE,
 } from "./canvas";
@@ -87,6 +88,9 @@ export class SketchView extends TextFileView {
 	private colorInput: HTMLInputElement | null = null;
 	private recentsRow: HTMLElement | null = null;
 
+	// Eraser-mode popover state.
+	private eraserModeButtons = new Map<EraserMode, HTMLElement>();
+
 	constructor(leaf: WorkspaceLeaf, plugin: TabulaRasaPlugin) {
 		super(leaf);
 		this.plugin = plugin;
@@ -100,6 +104,7 @@ export class SketchView extends TextFileView {
 			color: plugin.settings.defaultColor,
 			size: plugin.settings.defaultBrushSize,
 			opacity: 1,
+			eraserMode: plugin.settings.eraserMode,
 		};
 	}
 
@@ -201,9 +206,14 @@ export class SketchView extends TextFileView {
 		];
 		const toolGroup = bar.createDiv({ cls: "tabula-rasa-group" });
 		for (const t of tools) {
-			const btn = this.makeButton(toolGroup, t.icon, t.label, () =>
-				this.selectTool(t.tool),
-			);
+			const btn = this.makeButton(toolGroup, t.icon, t.label, () => {
+				// Tapping the eraser when it's already active opens its mode picker.
+				if (t.tool === "eraser" && this.brush.tool === "eraser") {
+					this.togglePopover(btn, (pop) => this.buildEraserPopover(pop));
+				} else {
+					this.selectTool(t.tool);
+				}
+			});
 			this.toolButtons.set(t.tool, btn);
 		}
 
@@ -370,6 +380,50 @@ export class SketchView extends TextFileView {
 		}
 	}
 
+	// --- eraser mode ----------------------------------------------------
+
+	private buildEraserPopover(pop: HTMLElement): void {
+		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Eraser" });
+		const modes: { mode: EraserMode; label: string; desc: string }[] = [
+			{
+				mode: "stroke",
+				label: "Whole stroke",
+				desc: "Remove an entire line on touch.",
+			},
+			{
+				mode: "partial",
+				label: "Partial",
+				desc: "Erase only the part you touch.",
+			},
+		];
+		this.eraserModeButtons.clear();
+		for (const m of modes) {
+			const b = pop.createEl("button", {
+				cls: "tabula-rasa-mode-option",
+				attr: { type: "button" },
+			});
+			b.createDiv({ cls: "tabula-rasa-mode-name", text: m.label });
+			b.createDiv({ cls: "tabula-rasa-mode-desc", text: m.desc });
+			b.addEventListener("click", () => this.setEraserMode(m.mode));
+			this.eraserModeButtons.set(m.mode, b);
+		}
+		this.updateEraserUI();
+	}
+
+	private setEraserMode(mode: EraserMode): void {
+		this.brush.eraserMode = mode;
+		this.canvas?.setBrush(this.brush);
+		this.plugin.settings.eraserMode = mode;
+		void this.plugin.saveSettings();
+		this.updateEraserUI();
+	}
+
+	private updateEraserUI(): void {
+		this.eraserModeButtons.forEach((btn, key) =>
+			btn.toggleClass("is-active", key === this.brush.eraserMode),
+		);
+	}
+
 	// --- shared popover -------------------------------------------------
 
 	private togglePopover(
@@ -437,6 +491,7 @@ export class SketchView extends TextFileView {
 		this.sizePresetButtons.clear();
 		this.colorInput = null;
 		this.recentsRow = null;
+		this.eraserModeButtons.clear();
 	}
 
 	// --- brush size -----------------------------------------------------
