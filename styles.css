@@ -191,6 +191,32 @@
 	color: var(--text-faint);
 }
 
+/* Eraser-mode options in the popover. */
+.tabula-rasa-mode-option {
+	width: 100%;
+	text-align: left;
+	padding: 8px 10px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.tabula-rasa-mode-option.is-active {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+.tabula-rasa-mode-name {
+	font-weight: 600;
+}
+
+.tabula-rasa-mode-desc {
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
 .tabula-rasa-canvas-host {
 	flex: 1;
 	display: flex;

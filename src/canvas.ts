@@ -1,11 +1,15 @@
 import { Point, SketchDoc, Stroke, ToolName } from "./model";
 import { renderDocToContext, strokeToOutline, fillOutline } from "./export";
 
+export type EraserMode = "stroke" | "partial";
+
 export interface BrushSettings {
 	tool: ToolName;
 	color: string;
 	size: number;
 	opacity: number;
+	/** How the eraser removes ink: whole strokes, or just the touched part. */
+	eraserMode?: EraserMode;
 }
 
 export interface SketchCanvasOptions {
@@ -555,14 +559,69 @@ export class SketchCanvas {
 		this.ctx.globalAlpha = 1;
 	}
 
-	/** Remove any stroke whose points fall within the eraser path radius. */
+	/** Erase whole strokes, or split strokes around the eraser path. */
 	private applyEraser(eraser: Stroke): void {
+		if (this.brush.eraserMode === "partial") {
+			this.applyPartialEraser(eraser);
+		} else {
+			this.applyWholeStrokeEraser(eraser);
+		}
+	}
+
+	/** Remove any stroke whose points fall within the eraser path radius. */
+	private applyWholeStrokeEraser(eraser: Stroke): void {
 		const radius = eraser.size;
 		const kept = this.doc.strokes.filter((stroke) => {
 			if (stroke.tool === "eraser") return false;
 			return !this.strokeIntersectsEraser(stroke, eraser, radius);
 		});
 		this.doc.strokes = kept;
+	}
+
+	/**
+	 * Erase only the portions of strokes under the eraser, splitting each crossed
+	 * stroke into the surviving runs of points (rebuilt as new strokes so undo
+	 * snapshots keep the originals). Runs shorter than 2 points are dropped.
+	 */
+	private applyPartialEraser(eraser: Stroke): void {
+		const radius = eraser.size / 2;
+		const result: Stroke[] = [];
+		for (const stroke of this.doc.strokes) {
+			if (stroke.tool === "eraser") continue;
+			const threshold = radius + stroke.size / 2;
+			const thresholdSq = threshold * threshold;
+			const erased = stroke.points.map((sp) =>
+				this.pointNearEraser(sp, eraser, thresholdSq),
+			);
+			if (!erased.some(Boolean)) {
+				result.push(stroke); // untouched — keep as-is
+				continue;
+			}
+			let run: Point[] = [];
+			const flush = () => {
+				if (run.length >= 2) result.push({ ...stroke, points: run });
+				run = [];
+			};
+			for (let i = 0; i < stroke.points.length; i++) {
+				if (erased[i]) flush();
+				else run.push(stroke.points[i]);
+			}
+			flush();
+		}
+		this.doc.strokes = result;
+	}
+
+	private pointNearEraser(
+		point: Point,
+		eraser: Stroke,
+		thresholdSq: number,
+	): boolean {
+		for (const ep of eraser.points) {
+			const dx = ep.x - point.x;
+			const dy = ep.y - point.y;
+			if (dx * dx + dy * dy <= thresholdSq) return true;
+		}
+		return false;
 	}
 
 	private strokeIntersectsEraser(

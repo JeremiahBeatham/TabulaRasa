@@ -22,6 +22,8 @@ export interface TabulaRasaSettings {
 	noteInsertMode: "embed" | "link";
 	/** Recently used custom brush colors (most recent first), for the color picker. */
 	recentColors: string[];
+	/** Eraser behavior: "stroke" removes whole strokes; "partial" erases the touched part. */
+	eraserMode: "stroke" | "partial";
 }
 
 export const DEFAULT_SETTINGS: TabulaRasaSettings = {
@@ -36,6 +38,7 @@ export const DEFAULT_SETTINGS: TabulaRasaSettings = {
 	defaultBackground: "transparent",
 	noteInsertMode: "embed",
 	recentColors: [],
+	eraserMode: "stroke",
 };
 
 export class TabulaRasaSettingTab extends PluginSettingTab {
