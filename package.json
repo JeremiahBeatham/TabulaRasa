@@ -1,6 +1,6 @@
 {
   "name": "tabula-rasa",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Finger- and Apple Pencil-friendly sketching plugin for Obsidian.",
   "main": "main.js",
   "scripts": {
@@ -23,7 +23,7 @@
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "builtin-modules": "^3.3.0",
-    "esbuild": "^0.20.0",
+    "esbuild": "^0.28.1",
     "obsidian": "latest",
     "tslib": "^2.6.2",
     "typescript": "^5.4.0"

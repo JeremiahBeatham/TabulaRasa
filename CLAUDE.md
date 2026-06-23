@@ -55,4 +55,4 @@ Public repo — Obsidian community plugin. TypeScript + esbuild, standard Obsidi
 
 - Reorg executed on branch `claude/claude-md-review-reorg-0vvwo6` (the session's assigned branch) rather than `TabulaRasa/reorg`.
 - Confirmed `ROADMAP.md` was not in the repo; stale references removed from CLAUDE.md and README (README now points to `docs/PHASES.md`).
-- `npm audit`: 1 moderate — `esbuild <=0.24.2` dev-server request advisory (GHSA-67mh-4wv8-2f99). Dev-only dependency; the only fix is a breaking bump to `esbuild@0.28.1`, left for a deliberate dependency upgrade rather than this docs reorg.
+- `npm audit`: was 1 moderate — `esbuild <=0.24.2` dev-server request advisory (GHSA-67mh-4wv8-2f99). **Resolved:** bumped `esbuild` `^0.20.0` → `^0.28.1` (dev-only dep) on its own branch; `npm audit` now reports 0 vulnerabilities and the production build still type-checks + bundles cleanly. Carried by the v0.8.0 version bump.
