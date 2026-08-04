@@ -5,17 +5,17 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.7.0) | Done — see below |
-| Next (UX polish) | 1 open item |
+| Shipped (v0.1.x → v0.8.0) | Done — see below |
+| Next (UX polish) | 1 open item — audit done, layout tool built |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
 
 **Active branch:** `main`
-**Last updated:** 2026-06-19
+**Last updated:** 2026-08-04
 
 ---
 
-## Shipped (v0.1.x → v0.7.0)
+## Shipped (v0.1.x → v0.8.0)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -31,9 +31,19 @@
 - [x] Color picker: custom color + recent colors alongside palette ([#11](https://github.com/JeremiahBeatham/TabulaRasa/issues/11), v0.5.0)
 - [x] Pinch-to-rotate ("twist") canvas to draw from any angle; Fit to screen resets it ([#9](https://github.com/JeremiahBeatham/TabulaRasa/issues/9), v0.6.0)
 - [x] Eraser modes: whole-stroke and partial/segment erasing ([#12](https://github.com/JeremiahBeatham/TabulaRasa/issues/12), v0.7.0)
+- [x] Maintenance: `esbuild` → `^0.28.1`, clearing the GHSA-67mh-4wv8-2f99 dev-server advisory (v0.8.0)
 
 ## Next — UX Polish
 - [ ] [#7 — Audit: which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
+  - Audit done. The canvas toolbar carries 19 controls in 4 groups; because `.tabula-rasa-group`
+    has no inner `flex-wrap`, groups wrap whole. At 375px that measures **3 rows / 169px — 26% of
+    the screen** before a stroke is drawn, and it stays 3 rows at 390px and 430px.
+  - Gaps found: background is a new-sketch default with no on-canvas control, and palm rejection
+    is settings-only despite being a live drawing behaviour. Eraser mode is canvas-only with no
+    settings default.
+  - Tooling: [`docs/tools/toolbar-arranger.html`](tools/toolbar-arranger.html) — a lo-fi arranger
+    for trying placements on the phone. It renders the real toolbar markup at true device pixels
+    and measures what the browser lays out, then emits a spec to implement from.
 
 ## Later — Bigger Features
 - [ ] [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)
