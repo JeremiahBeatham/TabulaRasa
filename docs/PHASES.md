@@ -41,9 +41,10 @@
   - Gaps found: background is a new-sketch default with no on-canvas control, and palm rejection
     is settings-only despite being a live drawing behaviour. Eraser mode is canvas-only with no
     settings default.
-  - Tooling: [`docs/tools/toolbar-arranger.html`](tools/toolbar-arranger.html) — a lo-fi arranger
-    for trying placements on the phone. It renders the real toolbar markup at true device pixels
-    and measures what the browser lays out, then emits a spec to implement from.
+  - Tooling: [`docs/tools/layout-canvas.html`](tools/layout-canvas.html) — a lo-fi wireframe canvas
+    sized to the phone (375×812 … 430×932, default 402×874) with 8px snapping for boxes and an
+    unsnapped pen layer for annotation. Emits a spec to design against. Supersedes the earlier
+    bucket-based toolbar arranger.
 
 ## Later — Bigger Features
 - [ ] [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)
