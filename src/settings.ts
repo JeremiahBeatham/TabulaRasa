@@ -20,11 +20,25 @@ export interface TabulaRasaSettings {
 	 * "embed" renders a live inline preview; "link" inserts a plain link.
 	 */
 	noteInsertMode: "embed" | "link";
-	/** Recently used custom brush colors (most recent first), for the color picker. */
-	recentColors: string[];
 	/** Eraser behavior: "stroke" removes whole strokes; "partial" erases the touched part. */
 	eraserMode: "stroke" | "partial";
+	/**
+	 * Diameter of the toolbar's circular buttons in pixels. The tap target stays
+	 * at least 44px regardless — only the drawn circle changes size.
+	 */
+	toolbarButtonSize: ToolbarButtonSize;
+	/** Three-finger gestures for undo/redo. Two fingers is pan/zoom, so it's off-limits. */
+	gesturesEnabled: boolean;
+	/** When true, three-finger swipe left undoes and right redoes (iOS's order). */
+	swipeLeftUndo: boolean;
+	/** Whether a three-finger tap also undoes. */
+	tapUndo: boolean;
 }
+
+export type ToolbarButtonSize = 24 | 32 | 40;
+export const TOOLBAR_BUTTON_SIZES: ToolbarButtonSize[] = [24, 32, 40];
+/** Apple's minimum comfortable tap target; the button's hit area never goes below it. */
+export const MIN_TAP_TARGET = 44;
 
 export const DEFAULT_SETTINGS: TabulaRasaSettings = {
 	sketchFolder: "Sketches",
@@ -37,8 +51,11 @@ export const DEFAULT_SETTINGS: TabulaRasaSettings = {
 	pngExportScale: 2,
 	defaultBackground: "transparent",
 	noteInsertMode: "embed",
-	recentColors: [],
 	eraserMode: "stroke",
+	toolbarButtonSize: 32,
+	gesturesEnabled: true,
+	swipeLeftUndo: true,
+	tapUndo: true,
 };
 
 export class TabulaRasaSettingTab extends PluginSettingTab {
@@ -124,6 +141,75 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+
+		new Setting(containerEl).setName("Toolbar").setHeading();
+
+		new Setting(containerEl)
+			.setName("Button size")
+			.setDesc(
+				"Diameter of the toolbar buttons. Smaller buttons leave more room for the canvas; the tap area stays comfortable either way.",
+			)
+			.addDropdown((dd) => {
+				for (const size of TOOLBAR_BUTTON_SIZES) {
+					dd.addOption(String(size), `${size} px`);
+				}
+				dd.setValue(String(this.plugin.settings.toolbarButtonSize));
+				dd.onChange(async (value) => {
+					const n = Number(value) as ToolbarButtonSize;
+					if (TOOLBAR_BUTTON_SIZES.includes(n)) {
+						this.plugin.settings.toolbarButtonSize = n;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOpenSketchViews();
+					}
+				});
+			});
+
+		new Setting(containerEl).setName("Gestures").setHeading();
+
+		new Setting(containerEl)
+			.setName("Three-finger undo and redo")
+			.setDesc(
+				"Swipe or tap with three fingers to undo and redo. Two-finger gestures are reserved for panning, zooming and rotating the canvas.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.gesturesEnabled)
+					.onChange(async (value) => {
+						this.plugin.settings.gesturesEnabled = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOpenSketchViews();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Swipe left to undo")
+			.setDesc(
+				"On: swipe left undoes and right redoes, matching iOS. Off: the directions are reversed.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.swipeLeftUndo)
+					.onChange(async (value) => {
+						this.plugin.settings.swipeLeftUndo = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOpenSketchViews();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Three-finger tap undoes")
+			.setDesc("A quick three-finger tap undoes the last stroke.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.tapUndo)
+					.onChange(async (value) => {
+						this.plugin.settings.tapUndo = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOpenSketchViews();
+					}),
+			);
+
+		new Setting(containerEl).setName("Drawing").setHeading();
 
 		new Setting(containerEl)
 			.setName("Palm rejection")

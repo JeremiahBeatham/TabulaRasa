@@ -1,7 +1,12 @@
 export const SKETCH_EXTENSION = "sketch";
 export const SKETCH_DOC_VERSION = 1 as const;
 
-export type ToolName = "pen" | "highlighter" | "eraser";
+/**
+ * Drawing tools. "brush" is a softer, more pressure-responsive sibling of
+ * "pen" — see TOOL_STROKE_OPTIONS in export.ts for what actually differs.
+ * The union is additive: sketches saved before a tool existed still parse.
+ */
+export type ToolName = "pen" | "brush" | "highlighter" | "eraser";
 
 export interface Point {
 	x: number;

@@ -1,5 +1,30 @@
 import { getStroke } from "perfect-freehand";
-import { SketchDoc, Stroke } from "./model";
+import { SketchDoc, Stroke, ToolName } from "./model";
+
+interface ToolStrokeOptions {
+	thinning: number;
+	smoothing: number;
+	streamline: number;
+	/** Fraction of the brush size used to taper the stroke's ends. */
+	taper: number;
+}
+
+/**
+ * Per-tool feel. These are the only thing separating one nib from another, so
+ * changing a number here changes how that tool draws everywhere at once —
+ * live canvas, PNG export and SVG export all render through strokeToOutline.
+ *
+ * The brush trades the pen's evenness for character: it swells and thins far
+ * more with pressure (high thinning), follows the hand instead of smoothing
+ * the wobble away (low streamline), and tapers at both ends like a loaded
+ * bristle leaving and lifting off the page.
+ */
+const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
+	pen: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0 },
+	brush: { thinning: 0.86, smoothing: 0.62, streamline: 0.32, taper: 0.9 },
+	highlighter: { thinning: 0.18, smoothing: 0.5, streamline: 0.55, taper: 0 },
+	eraser: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0 },
+};
 
 /**
  * Convert a stroke's points + pressure into a filled outline polygon using
@@ -8,13 +33,17 @@ import { SketchDoc, Stroke } from "./model";
  */
 export function strokeToOutline(stroke: Stroke): number[][] {
 	const inputPoints = stroke.points.map((pt) => [pt.x, pt.y, pt.p]);
+	const opts = TOOL_STROKE_OPTIONS[stroke.tool] ?? TOOL_STROKE_OPTIONS.pen;
+	const taper = opts.taper * stroke.size;
 	return getStroke(inputPoints, {
 		size: stroke.size,
-		thinning: 0.6,
-		smoothing: 0.5,
-		streamline: 0.5,
+		thinning: opts.thinning,
+		smoothing: opts.smoothing,
+		streamline: opts.streamline,
 		// Finger/mouse strokes have no real pressure; taper them from speed.
 		simulatePressure: stroke.simulatePressure ?? false,
+		start: { taper },
+		end: { taper },
 		last: true,
 	});
 }

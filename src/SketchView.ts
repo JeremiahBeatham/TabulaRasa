@@ -29,19 +29,57 @@ import { TABULA_RASA_ICON_ID, TABULA_RASA_RESIZE_ICON_ID } from "./icon";
 
 export const VIEW_TYPE_SKETCH = "tabula-rasa-sketch-view";
 
-const PALETTE = [
-	"#000000",
-	"#e03131",
-	"#1971c2",
-	"#2f9e44",
-	"#f08c00",
-	"#9c36b5",
-	"#ffffff",
-];
-
 const MIN_BRUSH_SIZE = 1;
 const MAX_BRUSH_SIZE = 40;
 const SIZE_PRESETS = [2, 6, 12, 24, 40];
+
+/**
+ * The tool list behind the brush button. The two erasers are the existing
+ * eraserMode values promoted to first-class entries — previously you had to
+ * know to re-tap the eraser to find them.
+ */
+interface ToolOption {
+	id: string;
+	tool: ToolName;
+	eraserMode?: EraserMode;
+	icon: string;
+	label: string;
+	desc: string;
+}
+
+const TOOL_OPTIONS: ToolOption[] = [
+	{ id: "pen", tool: "pen", icon: "pen", label: "Pen", desc: "Crisp, even line." },
+	{
+		id: "brush",
+		tool: "brush",
+		icon: "brush",
+		label: "Brush",
+		desc: "Soft, tapered, pressure-led.",
+	},
+	{
+		id: "highlighter",
+		tool: "highlighter",
+		icon: "highlighter",
+		label: "Highlighter",
+		desc: "Flat translucent marker.",
+	},
+	{
+		id: "eraser-object",
+		tool: "eraser",
+		eraserMode: "stroke",
+		icon: "eraser",
+		label: "Eraser — objects",
+		desc: "Removes a whole stroke on touch.",
+	},
+	{
+		id: "eraser-pixel",
+		tool: "eraser",
+		eraserMode: "partial",
+		icon: "eraser",
+		label: "Eraser — pixels",
+		desc: "Rubs out only the part you touch.",
+	},
+];
 
 /** Coerce a color to the `#rrggbb` form an <input type="color"> requires. */
 function normalizeHex(color: string): string {
@@ -66,12 +104,12 @@ export class SketchView extends TextFileView {
 	private brush: BrushSettings;
 	private resizeObserver: ResizeObserver | null = null;
 
-	private toolButtons = new Map<ToolName, HTMLElement>();
-	private colorButtons = new Map<string, HTMLElement>();
-	private undoBtn: HTMLElement | null = null;
-	private redoBtn: HTMLElement | null = null;
+	// The four toolbar buttons.
+	private toolBtn: HTMLElement | null = null;
+	private sizeBtn: HTMLElement | null = null;
+	private colorBtn: HTMLElement | null = null;
 
-	// Shared popover (brush size / color picker).
+	// Shared popover (tool list / brush size).
 	private popover: HTMLElement | null = null;
 	private popoverTrigger: HTMLElement | null = null;
 	private closePopoverHandler: ((e: Event) => void) | null = null;
@@ -83,13 +121,8 @@ export class SketchView extends TextFileView {
 	private sizeValueLabel: HTMLElement | null = null;
 	private sizePresetButtons = new Map<number, HTMLElement>();
 
-	// Color popover state.
-	private colorTrigger: HTMLElement | null = null;
+	/** Hidden <input type="color">; clicking it summons the system colour sheet. */
 	private colorInput: HTMLInputElement | null = null;
-	private recentsRow: HTMLElement | null = null;
-
-	// Eraser-mode popover state.
-	private eraserModeButtons = new Map<EraserMode, HTMLElement>();
 
 	constructor(leaf: WorkspaceLeaf, plugin: TabulaRasaPlugin) {
 		super(leaf);
@@ -184,81 +217,71 @@ export class SketchView extends TextFileView {
 		this.canvasHost.empty();
 		this.canvas = new SketchCanvas(this.canvasHost, this.doc, this.brush, {
 			palmRejection: this.plugin.settings.palmRejection,
-			onChange: () => {
-				this.requestSave();
-				this.refreshHistoryButtons();
+			gestures: {
+				enabled: this.plugin.settings.gesturesEnabled,
+				swipeLeftUndo: this.plugin.settings.swipeLeftUndo,
+				tapUndo: this.plugin.settings.tapUndo,
 			},
+			onChange: () => this.requestSave(),
 		});
 		// Defer sizing until layout settles (important on mobile open).
 		window.setTimeout(() => this.canvas?.resize(), 0);
-		this.refreshHistoryButtons();
+	}
+
+	/** Rebuild the chrome after a settings change (button size, gestures). */
+	refreshChrome(): void {
+		this.contentEl.empty();
+		this.closePopover();
+		this.buildToolbar();
+		this.canvasHost = this.contentEl.createDiv({
+			cls: "tabula-rasa-canvas-host",
+		});
+		this.rebuildCanvas();
 	}
 
 	// --- toolbar --------------------------------------------------------
 
+	/**
+	 * Four buttons, nothing else: brush, size, colour, more. Everything that used
+	 * to sit on the bar is now one tap deeper, on a gesture, or gone — the bar
+	 * previously took three rows and a quarter of the screen on a phone.
+	 */
 	private buildToolbar(): void {
 		const bar = this.contentEl.createDiv({ cls: "tabula-rasa-toolbar" });
-
-		const tools: { tool: ToolName; icon: string; label: string }[] = [
-			{ tool: "pen", icon: "pencil", label: "Pen" },
-			{ tool: "highlighter", icon: "highlighter", label: "Highlighter" },
-			{ tool: "eraser", icon: "eraser", label: "Eraser" },
-		];
-		const toolGroup = bar.createDiv({ cls: "tabula-rasa-group" });
-		for (const t of tools) {
-			const btn = this.makeButton(toolGroup, t.icon, t.label, () => {
-				// Tapping the eraser when it's already active opens its mode picker.
-				if (t.tool === "eraser" && this.brush.tool === "eraser") {
-					this.togglePopover(btn, (pop) => this.buildEraserPopover(pop));
-				} else {
-					this.selectTool(t.tool);
-				}
-			});
-			this.toolButtons.set(t.tool, btn);
-		}
-
-		const colorGroup = bar.createDiv({ cls: "tabula-rasa-group" });
-		for (const color of PALETTE) {
-			const swatch = colorGroup.createEl("button", {
-				cls: "tabula-rasa-swatch",
-				attr: { "aria-label": color, type: "button" },
-			});
-			swatch.style.backgroundColor = color;
-			swatch.addEventListener("click", () => this.selectColor(color));
-			this.colorButtons.set(color, swatch);
-		}
-		this.buildColorControl(colorGroup);
-
-		const sizeGroup = bar.createDiv({ cls: "tabula-rasa-group" });
-		this.buildSizeControl(sizeGroup);
-
-		const actionGroup = bar.createDiv({ cls: "tabula-rasa-group" });
-		this.undoBtn = this.makeButton(actionGroup, "undo-2", "Undo", () =>
-			this.canvas?.undo(),
+		bar.style.setProperty(
+			"--tr-button-size",
+			`${this.plugin.settings.toolbarButtonSize}px`,
 		);
-		this.redoBtn = this.makeButton(actionGroup, "redo-2", "Redo", () =>
-			this.canvas?.redo(),
-		);
-		this.makeButton(actionGroup, "trash-2", "Clear", () => {
-			this.canvas?.clear();
-		});
-		this.makeButton(
-			actionGroup,
-			TABULA_RASA_RESIZE_ICON_ID,
-			"Canvas size",
-			() => this.openResizeModal(),
-		);
-		this.makeButton(actionGroup, "maximize", "Fit to screen", () => {
-			this.canvas?.fitView();
-		});
-		this.makeButton(actionGroup, "check", "Save sketch", () => {
-			void this.saveSketch();
-		});
-		this.makeButton(actionGroup, "download", "Export PNG", () => {
-			void this.exportPng();
-		});
 
-		this.selectTool(this.brush.tool);
+		this.toolBtn = this.makeButton(bar, "pen", "Tool", (btn) =>
+			this.togglePopover(btn, (pop) => this.buildToolPopover(pop)),
+		);
+
+		// The size button shows a dot scaled to the current brush, so the setting
+		// is legible without opening anything.
+		this.sizeBtn = this.makeButton(bar, "", "Brush size", (btn) =>
+			this.togglePopover(btn, (pop) => this.buildSizePopover(pop)),
+		);
+		this.sizeTriggerDot = this.sizeBtn.createDiv({ cls: "tabula-rasa-size-dot" });
+
+		this.colorBtn = this.makeButton(bar, "", "Colour", () =>
+			this.openNativeColorPicker(),
+		);
+		this.colorBtn.addClass("tabula-rasa-color-btn");
+
+		this.makeButton(bar, "more-horizontal", "More", () => this.openMoreSheet());
+
+		// The colour input is never shown: tapping it is what summons the system
+		// colour sheet, which already provides a spectrum, sliders and swatches.
+		this.colorInput = bar.createEl("input", {
+			cls: "tabula-rasa-color-input",
+			attr: { type: "color", "aria-hidden": "true", tabindex: "-1" },
+		});
+		this.colorInput.addEventListener("input", () =>
+			this.selectColor(this.colorInput?.value ?? this.brush.color),
+		);
+
+		this.applyTool(this.currentToolOption());
 		this.selectColor(this.brush.color);
 		this.selectSize(this.brush.size);
 	}
@@ -267,161 +290,92 @@ export class SketchView extends TextFileView {
 		parent: HTMLElement,
 		icon: string,
 		label: string,
-		onClick: () => void,
+		onClick: (btn: HTMLElement) => void,
 	): HTMLElement {
 		const btn = parent.createEl("button", {
 			cls: "tabula-rasa-btn",
 			attr: { "aria-label": label, type: "button" },
 		});
-		setIcon(btn, icon);
-		btn.addEventListener("click", onClick);
+		if (icon) setIcon(btn, icon);
+		btn.addEventListener("click", () => onClick(btn));
 		return btn;
 	}
 
-	private selectTool(tool: ToolName): void {
-		this.brush.tool = tool;
-		// Highlighter is semi-transparent and wider; eraser uses brush size.
-		if (tool === "highlighter") {
-			this.brush.opacity = 0.4;
-		} else {
-			this.brush.opacity = 1;
+	// --- tools ------------------------------------------------------------
+
+	private currentToolOption(): ToolOption {
+		const match = TOOL_OPTIONS.find(
+			(o) =>
+				o.tool === this.brush.tool &&
+				(o.tool !== "eraser" || o.eraserMode === this.brush.eraserMode),
+		);
+		return match ?? TOOL_OPTIONS[0];
+	}
+
+	private buildToolPopover(pop: HTMLElement): void {
+		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Tool" });
+		const activeId = this.currentToolOption().id;
+		for (const option of TOOL_OPTIONS) {
+			const row = pop.createEl("button", {
+				cls: "tabula-rasa-mode-option",
+				attr: { type: "button" },
+			});
+			row.toggleClass("is-active", option.id === activeId);
+			const icon = row.createSpan({ cls: "tabula-rasa-mode-icon" });
+			setIcon(icon, option.icon);
+			const text = row.createDiv({ cls: "tabula-rasa-mode-text" });
+			text.createDiv({ cls: "tabula-rasa-mode-name", text: option.label });
+			text.createDiv({ cls: "tabula-rasa-mode-desc", text: option.desc });
+			row.addEventListener("click", () => {
+				this.applyTool(option);
+				this.closePopover();
+			});
+		}
+	}
+
+	private applyTool(option: ToolOption): void {
+		this.brush.tool = option.tool;
+		// Highlighter lays down translucent ink; everything else is opaque.
+		this.brush.opacity = option.tool === "highlighter" ? 0.4 : 1;
+		if (option.eraserMode) {
+			this.brush.eraserMode = option.eraserMode;
+			this.plugin.settings.eraserMode = option.eraserMode;
+			void this.plugin.saveSettings();
 		}
 		this.canvas?.setBrush(this.brush);
-		this.toolButtons.forEach((btn, key) =>
-			btn.toggleClass("is-active", key === tool),
-		);
+		if (this.toolBtn) {
+			setIcon(this.toolBtn, option.icon);
+			this.toolBtn.setAttribute("aria-label", option.label);
+		}
 	}
 
 	// --- color ----------------------------------------------------------
 
-	/** Trigger swatch (rainbow ring) that opens the custom-color popover. */
-	private buildColorControl(parent: HTMLElement): void {
-		const trigger = parent.createEl("button", {
-			cls: "tabula-rasa-swatch tabula-rasa-color-trigger",
-			attr: { "aria-label": "More colors", type: "button" },
-		});
-		this.colorTrigger = trigger;
-		trigger.addEventListener("click", () =>
-			this.togglePopover(trigger, (pop) => this.buildColorPopover(pop)),
-		);
+	/**
+	 * Hand colour selection to the operating system. On iOS this is the native
+	 * Colors sheet — grid, spectrum, sliders, eyedropper and its own swatches —
+	 * so there is nothing here worth rebuilding badly.
+	 */
+	private openNativeColorPicker(): void {
+		if (!this.colorInput) return;
+		this.colorInput.value = normalizeHex(this.brush.color);
+		this.colorInput.click();
 	}
 
-	private buildColorPopover(pop: HTMLElement): void {
-		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Custom color" });
-		const input = pop.createEl("input", {
-			cls: "tabula-rasa-color-input",
-			attr: { type: "color", "aria-label": "Custom color" },
-		});
-		this.colorInput = input;
-		input.value = normalizeHex(this.brush.color);
-		// Live update while dragging; commit to recents when the picker closes.
-		input.addEventListener("input", () => this.selectColor(input.value));
-		input.addEventListener("change", () =>
-			this.selectColor(input.value, true),
-		);
-
-		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Recent" });
-		this.recentsRow = pop.createDiv({ cls: "tabula-rasa-recents" });
-		this.renderRecents();
-	}
-
-	private renderRecents(): void {
-		const row = this.recentsRow;
-		if (!row) return;
-		row.empty();
-		const recents = this.plugin.settings.recentColors;
-		if (!recents.length) {
-			row.createSpan({
-				cls: "tabula-rasa-recents-empty",
-				text: "No recent colors yet.",
-			});
-			return;
-		}
-		for (const color of recents) {
-			const sw = row.createEl("button", {
-				cls: "tabula-rasa-swatch",
-				attr: { "aria-label": color, type: "button" },
-			});
-			sw.style.backgroundColor = color;
-			sw.toggleClass("is-active", color === this.brush.color);
-			sw.addEventListener("click", () => this.selectColor(color));
-		}
-	}
-
-	private addRecentColor(color: string): void {
-		if (PALETTE.includes(color)) return;
-		const norm = color.toLowerCase();
-		const list = this.plugin.settings.recentColors.filter(
-			(c) => c.toLowerCase() !== norm,
-		);
-		list.unshift(color);
-		this.plugin.settings.recentColors = list.slice(0, 8);
-		void this.plugin.saveSettings();
-		this.renderRecents();
-	}
-
-	private selectColor(color: string, addToRecents = false): void {
+	private selectColor(color: string): void {
 		this.brush.color = color;
 		this.canvas?.setBrush(this.brush);
-		if (addToRecents) this.addRecentColor(color);
 		this.updateColorUI();
 	}
 
-	/** Reflect the active color on the palette, the trigger ring, and the picker. */
+	/** The colour button is a wheel with the current colour in its centre. */
 	private updateColorUI(): void {
 		const color = this.brush.color;
-		this.colorButtons.forEach((btn, key) =>
-			btn.toggleClass("is-active", key === color),
-		);
-		this.colorTrigger?.style.setProperty("--tr-current-color", color);
+		this.colorBtn?.style.setProperty("--tr-current-color", color);
 		if (this.colorInput) {
 			const hex = normalizeHex(color);
 			if (this.colorInput.value !== hex) this.colorInput.value = hex;
 		}
-	}
-
-	// --- eraser mode ----------------------------------------------------
-
-	private buildEraserPopover(pop: HTMLElement): void {
-		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Eraser" });
-		const modes: { mode: EraserMode; label: string; desc: string }[] = [
-			{
-				mode: "stroke",
-				label: "Whole stroke",
-				desc: "Remove an entire line on touch.",
-			},
-			{
-				mode: "partial",
-				label: "Partial",
-				desc: "Erase only the part you touch.",
-			},
-		];
-		this.eraserModeButtons.clear();
-		for (const m of modes) {
-			const b = pop.createEl("button", {
-				cls: "tabula-rasa-mode-option",
-				attr: { type: "button" },
-			});
-			b.createDiv({ cls: "tabula-rasa-mode-name", text: m.label });
-			b.createDiv({ cls: "tabula-rasa-mode-desc", text: m.desc });
-			b.addEventListener("click", () => this.setEraserMode(m.mode));
-			this.eraserModeButtons.set(m.mode, b);
-		}
-		this.updateEraserUI();
-	}
-
-	private setEraserMode(mode: EraserMode): void {
-		this.brush.eraserMode = mode;
-		this.canvas?.setBrush(this.brush);
-		this.plugin.settings.eraserMode = mode;
-		void this.plugin.saveSettings();
-		this.updateEraserUI();
-	}
-
-	private updateEraserUI(): void {
-		this.eraserModeButtons.forEach((btn, key) =>
-			btn.toggleClass("is-active", key === this.brush.eraserMode),
-		);
 	}
 
 	// --- shared popover -------------------------------------------------
@@ -489,46 +443,13 @@ export class SketchView extends TextFileView {
 		this.sizePreviewDot = null;
 		this.sizeValueLabel = null;
 		this.sizePresetButtons.clear();
-		this.colorInput = null;
-		this.recentsRow = null;
-		this.eraserModeButtons.clear();
+		// colorInput deliberately survives: it lives on the toolbar, not in here.
 	}
 
 	// --- brush size -----------------------------------------------------
 
-	/** The toolbar trigger: a dot whose size mirrors the current brush. */
-	private buildSizeControl(parent: HTMLElement): void {
-		const trigger = parent.createEl("button", {
-			cls: "tabula-rasa-size",
-			attr: { "aria-label": "Brush size", type: "button" },
-		});
-		this.sizeTriggerDot = trigger.createDiv({ cls: "tabula-rasa-size-dot" });
-		trigger.addEventListener("click", () =>
-			this.togglePopover(trigger, (pop) => this.buildSizePopover(pop)),
-		);
-	}
-
 	private buildSizePopover(pop: HTMLElement): void {
-		const preview = pop.createDiv({ cls: "tabula-rasa-size-preview" });
-		this.sizePreviewDot = preview.createDiv({
-			cls: "tabula-rasa-size-preview-dot",
-		});
-		this.sizeValueLabel = pop.createDiv({ cls: "tabula-rasa-size-value" });
-
-		const slider = pop.createEl("input", {
-			cls: "tabula-rasa-size-slider",
-			attr: {
-				type: "range",
-				min: String(MIN_BRUSH_SIZE),
-				max: String(MAX_BRUSH_SIZE),
-				step: "1",
-				"aria-label": "Brush size",
-			},
-		});
-		this.sizeSlider = slider;
-		slider.addEventListener("input", () =>
-			this.selectSize(Number(slider.value)),
-		);
+		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Size" });
 
 		const presets = pop.createDiv({ cls: "tabula-rasa-size-presets" });
 		this.sizePresetButtons.clear();
@@ -545,7 +466,70 @@ export class SketchView extends TextFileView {
 			this.sizePresetButtons.set(size, b);
 		}
 
+		const slider = pop.createEl("input", {
+			cls: "tabula-rasa-size-slider",
+			attr: {
+				type: "range",
+				min: String(MIN_BRUSH_SIZE),
+				max: String(MAX_BRUSH_SIZE),
+				step: "1",
+				"aria-label": "Brush size",
+			},
+		});
+		this.sizeSlider = slider;
+		slider.addEventListener("input", () =>
+			this.selectSize(Number(slider.value)),
+		);
+
+		const preview = pop.createDiv({ cls: "tabula-rasa-size-preview" });
+		this.sizePreviewDot = preview.createDiv({
+			cls: "tabula-rasa-size-preview-dot",
+		});
+
+		// The readout doubles as the way in to typing an exact value.
+		this.sizeValueLabel = pop.createEl("button", {
+			cls: "tabula-rasa-size-value",
+			attr: { type: "button", "aria-label": "Edit brush size" },
+		});
+		this.sizeValueLabel.addEventListener("click", () => this.editSizeValue());
+
 		this.updateSizeUI();
+	}
+
+	/** Swap the pixel readout for a number field so an exact size can be typed. */
+	private editSizeValue(): void {
+		const label = this.sizeValueLabel;
+		if (!label || !label.parentElement) return;
+		const input = label.parentElement.createEl("input", {
+			cls: "tabula-rasa-size-input",
+			attr: {
+				type: "number",
+				min: String(MIN_BRUSH_SIZE),
+				max: String(MAX_BRUSH_SIZE),
+				"aria-label": "Brush size in pixels",
+			},
+		});
+		label.parentElement.insertBefore(input, label);
+		label.hide();
+		input.value = String(this.brush.size);
+		input.focus();
+		input.select();
+
+		const commit = (): void => {
+			const n = Number(input.value);
+			if (Number.isFinite(n)) this.selectSize(n);
+			input.remove();
+			label.show();
+			this.updateSizeUI();
+		};
+		input.addEventListener("blur", commit);
+		input.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") commit();
+			else if (e.key === "Escape") {
+				input.remove();
+				label.show();
+			}
+		});
 	}
 
 	private selectSize(size: number): void {
@@ -593,9 +577,29 @@ export class SketchView extends TextFileView {
 		}).open();
 	}
 
-	private refreshHistoryButtons(): void {
-		if (this.undoBtn) this.undoBtn.toggleClass("is-disabled", !this.canvas?.canUndo());
-		if (this.redoBtn) this.redoBtn.toggleClass("is-disabled", !this.canvas?.canRedo());
+	/**
+	 * Everything that isn't drawing. Undo and redo appear here as well as on the
+	 * three-finger gestures — a gesture with no visible affordance is invisible
+	 * to anyone who hasn't been told about it.
+	 */
+	private openMoreSheet(): void {
+		const doc = this.canvas?.getDoc();
+		new MoreSheet(this.app, {
+			background: doc?.background ?? "transparent",
+			canUndo: this.canvas?.canUndo() ?? false,
+			canRedo: this.canvas?.canRedo() ?? false,
+			onCanvasSize: () => this.openResizeModal(),
+			onBackground: (value) => {
+				this.canvas?.setBackground(value);
+				this.requestSave();
+			},
+			onFit: () => this.canvas?.fitView(),
+			onUndo: () => this.canvas?.undo(),
+			onRedo: () => this.canvas?.redo(),
+			onClear: () => this.canvas?.clear(),
+			onExportPng: () => void this.exportPng(),
+			onExportSvg: () => void this.plugin.exportActiveSvg(this),
+		}).open();
 	}
 
 	/** Pick a starting pen color that's visible on the current theme background. */
@@ -706,6 +710,142 @@ export class SketchView extends TextFileView {
 			const sep = content.endsWith("\n") || content === "" ? "" : "\n";
 			await this.app.vault.modify(note, `${content}${sep}\n${embed}\n`);
 		}
+	}
+}
+
+interface MoreSheetActions {
+	background: string;
+	canUndo: boolean;
+	canRedo: boolean;
+	onCanvasSize: () => void;
+	onBackground: (value: string) => void;
+	onFit: () => void;
+	onUndo: () => void;
+	onRedo: () => void;
+	onClear: () => void;
+	onExportPng: () => void;
+	onExportSvg: () => void;
+}
+
+/**
+ * The "more" bottom sheet: canvas and page settings at the top, then the
+ * commands that used to crowd the toolbar. Styled to rise from the bottom
+ * of the screen so it's reachable one-handed.
+ */
+class MoreSheet extends Modal {
+	constructor(
+		app: App,
+		private actions: MoreSheetActions,
+	) {
+		super(app);
+	}
+
+	onOpen(): void {
+		this.modalEl.addClass("tabula-rasa-sheet");
+		this.titleEl.setText("Sketch options");
+
+		new Setting(this.contentEl).setName("Canvas").setHeading();
+
+		new Setting(this.contentEl)
+			.setName("Canvas size")
+			.setDesc("Dimensions, aspect presets, or fit tightly to the drawing.")
+			.addButton((b) =>
+				b.setButtonText("Change").onClick(() => {
+					this.close();
+					this.actions.onCanvasSize();
+				}),
+			);
+
+		new Setting(this.contentEl)
+			.setName("Canvas colour")
+			.setDesc(
+				"Transparent takes the colour of whatever the sketch sits on. A solid page is easier to read light ink against.",
+			)
+			.addDropdown((dd) => {
+				dd.addOption("transparent", "Transparent");
+				dd.addOption("#ffffff", "White");
+				dd.addOption("#1e1e1e", "Dark");
+				const current = this.actions.background;
+				dd.setValue(
+					["transparent", "#ffffff", "#1e1e1e"].includes(current)
+						? current
+						: "transparent",
+				);
+				dd.onChange((value) => this.actions.onBackground(value));
+			});
+
+		new Setting(this.contentEl)
+			.setName("Fit to screen")
+			.setDesc("Reset zoom, pan and rotation.")
+			.addButton((b) =>
+				b.setButtonText("Fit").onClick(() => {
+					this.close();
+					this.actions.onFit();
+				}),
+			);
+
+		new Setting(this.contentEl).setName("Edit").setHeading();
+
+		new Setting(this.contentEl)
+			.setName("Undo and redo")
+			.setDesc("Or swipe with three fingers on the canvas.")
+			.addButton((b) =>
+				b
+					.setButtonText("Undo")
+					.setDisabled(!this.actions.canUndo)
+					.onClick(() => {
+						this.close();
+						this.actions.onUndo();
+					}),
+			)
+			.addButton((b) =>
+				b
+					.setButtonText("Redo")
+					.setDisabled(!this.actions.canRedo)
+					.onClick(() => {
+						this.close();
+						this.actions.onRedo();
+					}),
+			);
+
+		new Setting(this.contentEl)
+			.setName("Clear sketch")
+			.setDesc("Remove every stroke. This can be undone.")
+			.addButton((b) =>
+				b
+					.setButtonText("Clear")
+					.setWarning()
+					.onClick(() => {
+						this.close();
+						this.actions.onClear();
+					}),
+			);
+
+		new Setting(this.contentEl).setName("Export").setHeading();
+
+		new Setting(this.contentEl)
+			.setName("Export as PNG")
+			.setDesc("Add the image to a note, or just save it to the vault.")
+			.addButton((b) =>
+				b.setButtonText("PNG").onClick(() => {
+					this.close();
+					this.actions.onExportPng();
+				}),
+			);
+
+		new Setting(this.contentEl)
+			.setName("Export as SVG")
+			.setDesc("Save a vector copy alongside the sketch.")
+			.addButton((b) =>
+				b.setButtonText("SVG").onClick(() => {
+					this.close();
+					this.actions.onExportSvg();
+				}),
+			);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
 	}
 }
 

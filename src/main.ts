@@ -219,7 +219,15 @@ export default class TabulaRasaPlugin extends Plugin {
 		return path;
 	}
 
-	private async exportActiveSvg(view: SketchView): Promise<void> {
+	/** Rebuild open sketch views so settings changes show up without a reopen. */
+	refreshOpenSketchViews(): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_SKETCH)) {
+			const view = leaf.view;
+			if (view instanceof SketchView) view.refreshChrome();
+		}
+	}
+
+	async exportActiveSvg(view: SketchView): Promise<void> {
 		const file = view.file;
 		if (!file) return;
 		const doc = parseDoc(view.getViewData());

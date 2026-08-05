@@ -5,17 +5,17 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.7.0) | Done — see below |
-| Next (UX polish) | 1 open item |
+| Shipped (v0.1.x → v0.9.0) | Done — see below |
+| Next (UX polish) | #7 done — toolbar rebuilt to 4 buttons, 169px → 49px |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
 
 **Active branch:** `main`
-**Last updated:** 2026-06-19
+**Last updated:** 2026-08-04
 
 ---
 
-## Shipped (v0.1.x → v0.7.0)
+## Shipped (v0.1.x → v0.9.0)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -31,9 +31,28 @@
 - [x] Color picker: custom color + recent colors alongside palette ([#11](https://github.com/JeremiahBeatham/TabulaRasa/issues/11), v0.5.0)
 - [x] Pinch-to-rotate ("twist") canvas to draw from any angle; Fit to screen resets it ([#9](https://github.com/JeremiahBeatham/TabulaRasa/issues/9), v0.6.0)
 - [x] Eraser modes: whole-stroke and partial/segment erasing ([#12](https://github.com/JeremiahBeatham/TabulaRasa/issues/12), v0.7.0)
+- [x] Maintenance: `esbuild` → `^0.28.1`, clearing the GHSA-67mh-4wv8-2f99 dev-server advisory (v0.8.0)
+- [x] Four-button toolbar, new brush tool, native iOS colour picker, three-finger undo/redo
+      ([#7](https://github.com/JeremiahBeatham/TabulaRasa/issues/7), v0.9.0)
 
 ## Next — UX Polish
-- [ ] [#7 — Audit: which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
+- [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
+  - **Audit.** The old toolbar carried 19 controls in 4 groups. Because `.tabula-rasa-group` has no
+    inner `flex-wrap`, groups wrap whole, so at 375px it measured **3 rows / 169px — 26% of the
+    screen** before a stroke was drawn, and stayed 3 rows at 390px and 430px too.
+  - **Rebuilt to four buttons** — brush, size, colour, more — measured at **1 row / 49px**, a 120px
+    saving (−71%). The bar no longer wraps by design.
+  - Tools moved into a list behind the brush button: pen, **brush (new)**, highlighter/marker, and
+    the two erasers (objects / pixels) promoted from a hidden re-tap to first-class entries.
+  - Colour now opens the **native iOS Colors sheet** via `<input type="color">`; the 7-swatch
+    palette and the in-plugin recents list are gone, since the system picker already provides both.
+  - Undo/redo became **three-finger gestures** (two fingers is pan/zoom, so it was unavailable), and
+    are also listed in the "more" sheet so they stay discoverable. The explicit Save button was
+    dropped — autosave already covered it.
+  - Both audit gaps closed: **canvas colour** is now editable per sketch in the "more" sheet, and
+    eraser mode has a real home in the tool list.
+  - Toolbar button size is a setting (24 / 32 / 40, default 32); the tap target stays ≥44px at all
+    three so the smallest option is still usable.
 
 ## Later — Bigger Features
 - [ ] [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)
