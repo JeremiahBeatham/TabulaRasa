@@ -99,9 +99,11 @@
 }
 
 /*
- * Colour button: a spectrum ring with the current colour in its centre. The ring
- * is painted as two stacked circles rather than a border, so it can't inflate the
- * button past --tr-button-size the way a 3px border did.
+ * Colour control. The <input type="color"> is the visible swatch, restyled into a
+ * circle — not hidden behind one. iOS only raises the system Colors sheet for a
+ * genuine tap on a genuine input; an invisible input, or one nested inside a
+ * <button> (invalid HTML), is ignored. Its wrapper is a plain div for the same
+ * reason, and draws the spectrum ring behind it.
  */
 .tabula-rasa-color-btn::before {
 	background: conic-gradient(
@@ -116,35 +118,36 @@
 	);
 }
 
-.tabula-rasa-color-btn::after {
-	content: "";
-	position: absolute;
+input.tabula-rasa-color-input {
+	position: relative;
+	z-index: 1;
+	-webkit-appearance: none;
+	appearance: none;
 	width: calc(var(--tr-button-size) - 6px);
 	height: calc(var(--tr-button-size) - 6px);
-	border-radius: 50%;
-	background: var(--tr-current-color, var(--text-normal));
-	pointer-events: none;
-	z-index: 1;
-}
-
-/*
- * The input *is* the button: stretched over the swatch and invisible, so a real
- * finger tap lands on it. iOS only raises the system Colors sheet for a genuine
- * tap — a scripted .click() on an offscreen input is ignored, which is why the
- * button did nothing before.
- */
-input.tabula-rasa-color-input {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
 	margin: 0;
 	padding: 0;
 	border: none;
+	border-radius: 50%;
 	background: transparent;
-	opacity: 0;
 	cursor: pointer;
-	z-index: 2;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* WebKit paints the chosen colour in these inner parts. */
+input.tabula-rasa-color-input::-webkit-color-swatch-wrapper {
+	padding: 0;
+	border-radius: 50%;
+}
+
+input.tabula-rasa-color-input::-webkit-color-swatch {
+	border: none;
+	border-radius: 50%;
+}
+
+input.tabula-rasa-color-input::-moz-color-swatch {
+	border: none;
+	border-radius: 50%;
 }
 
 .tabula-rasa-size {
