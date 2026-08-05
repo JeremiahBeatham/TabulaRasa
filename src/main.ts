@@ -131,13 +131,38 @@ export default class TabulaRasaPlugin extends Plugin {
 	}
 
 	/**
+	 * Dimensions for a new sketch. Fitting to the screen gives a portrait page the
+	 * size of the device you're drawing on, which is what you want on a phone; the
+	 * fixed setting is the fallback for anyone who wants a consistent page.
+	 */
+	newCanvasSize(): { width: number; height: number } {
+		if (!this.settings.fitNewSketchesToScreen) {
+			return {
+				width: this.settings.canvasWidth,
+				height: this.settings.canvasHeight,
+			};
+		}
+		const w = Math.round(window.innerWidth);
+		const h = Math.round(window.innerHeight);
+		if (!w || !h) {
+			return {
+				width: this.settings.canvasWidth,
+				height: this.settings.canvasHeight,
+			};
+		}
+		// Portrait regardless of how the device is currently held.
+		return { width: Math.min(w, h), height: Math.max(w, h) };
+	}
+
+	/**
 	 * Create a new empty .sketch file and return its TFile. If a source note is
 	 * given, the sketch records it so exports can default to that note.
 	 */
 	async createSketchFile(sourceNote?: string): Promise<TFile> {
+		const size = this.newCanvasSize();
 		const doc = createEmptyDoc(
-			this.settings.canvasWidth,
-			this.settings.canvasHeight,
+			size.width,
+			size.height,
 			this.settings.defaultBackground,
 		);
 		if (sourceNote) doc.sourceNote = sourceNote;

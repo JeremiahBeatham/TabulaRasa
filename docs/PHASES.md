@@ -5,8 +5,8 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.10.1) | Done — see below |
-| Next (UX polish) | #7 done — 4 buttons in Obsidian's header, no chrome of our own |
+| Shipped (v0.1.x → v0.10.2) | Done — see below |
+| Next (UX polish) | #7 done; each menu/dropdown now its own refinement item |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
 
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.10.1)
+## Shipped (v0.1.x → v0.10.2)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -39,6 +39,9 @@
 - [x] Fixes from device testing: multi-finger taps were misread as drags (the centroid shifts when a
       finger joins), redo was cleared on every finger-down, the colour input is now a real visible
       input, and the bar reads brush → size → colour → settings (v0.10.1)
+- [x] Colour swatch clipped to a true circle at button size; gesture tolerances eased by ~a third so
+      double-taps don't demand perfect stillness; new sketches default to a portrait canvas the size
+      of the screen (v0.10.2)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -63,6 +66,24 @@
     eraser mode has a real home in the tool list.
   - Toolbar button size is a setting (24 / 32 / 40, default 32); the tap target stays ≥44px at all
     three so the smallest option is still usable.
+
+## Next — Refine each surface
+
+Now the bar is settled, each menu gets dissected on its own rather than designed in
+one pass. Deliberately separate items so each can be looked at, argued about and
+reworked in isolation.
+
+- [ ] **Tool dropdown** — what belongs in the list, ordering, whether the erasers
+      stay as two entries, icons, and whether size/colour should be reachable from
+      inside it.
+- [ ] **Size dropdown** — preset scale values, slider feel, the typed-value entry,
+      and whether a live stroke preview is worth the space.
+- [ ] **Colour flow** — the system sheet handles picking; open question is what (if
+      anything) belongs around it, e.g. a small set of pinned colours.
+- [ ] **Settings sheet** — grouping and ordering of canvas / edit / export, what
+      should be promoted or demoted, and how it behaves as a bottom sheet.
+- [ ] **Plugin settings tab** — which defaults still earn their place now that
+      several moved onto the canvas.
 
 ## Later — Bigger Features
 - [ ] [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)

@@ -126,15 +126,16 @@ export class SketchView extends TextFileView {
 	private sizeValueLabel: HTMLElement | null = null;
 	private sizePresetButtons = new Map<number, HTMLElement>();
 
-	/** Hidden <input type="color">; clicking it summons the system colour sheet. */
+	/** The visible colour swatch; tapping it summons the system colour sheet. */
 	private colorInput: HTMLInputElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: TabulaRasaPlugin) {
 		super(leaf);
 		this.plugin = plugin;
+		const size = plugin.newCanvasSize();
 		this.doc = createEmptyDoc(
-			plugin.settings.canvasWidth,
-			plugin.settings.canvasHeight,
+			size.width,
+			size.height,
 			plugin.settings.defaultBackground,
 		);
 		this.brush = {
@@ -176,9 +177,10 @@ export class SketchView extends TextFileView {
 	}
 
 	clear(): void {
+		const size = this.plugin.newCanvasSize();
 		this.doc = createEmptyDoc(
-			this.plugin.settings.canvasWidth,
-			this.plugin.settings.canvasHeight,
+			size.width,
+			size.height,
 			this.plugin.settings.defaultBackground,
 		);
 		if (this.canvas) this.rebuildCanvas();
@@ -309,7 +311,12 @@ export class SketchView extends TextFileView {
 			cls: "tabula-rasa-btn tabula-rasa-color-btn",
 		});
 		this.actionEls.push(this.colorBtn);
-		this.colorInput = this.colorBtn.createEl("input", {
+		// The input goes inside a circular clipping mask. WebKit gives colour inputs
+		// their own intrinsic box and doesn't fully honour width/height, which is why
+		// the swatch rendered as an oversized oval; masking makes the shape ours
+		// regardless of what the platform does to the input itself.
+		const swatch = this.colorBtn.createSpan({ cls: "tabula-rasa-color-swatch" });
+		this.colorInput = swatch.createEl("input", {
 			cls: "tabula-rasa-color-input",
 			attr: { type: "color", "aria-label": "Colour" },
 		});

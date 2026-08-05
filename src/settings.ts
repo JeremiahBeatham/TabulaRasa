@@ -9,6 +9,12 @@ export interface TabulaRasaSettings {
 	matchPenColorToTheme: boolean;
 	defaultBrushSize: number;
 	palmRejection: boolean;
+	/**
+	 * When true, new sketches get a portrait canvas sized to the screen instead of
+	 * the fixed dimensions below, so a fresh sketch fills the page you're drawing on.
+	 */
+	fitNewSketchesToScreen: boolean;
+	/** Fallback dimensions for new sketches when not fitting to the screen. */
 	canvasWidth: number;
 	canvasHeight: number;
 	/** Pixel scale used when exporting PNGs for embedding. */
@@ -45,8 +51,9 @@ export const DEFAULT_SETTINGS: TabulaRasaSettings = {
 	matchPenColorToTheme: true,
 	defaultBrushSize: 6,
 	palmRejection: true,
-	canvasWidth: 1280,
-	canvasHeight: 960,
+	fitNewSketchesToScreen: true,
+	canvasWidth: 960,
+	canvasHeight: 1280,
 	pngExportScale: 2,
 	defaultBackground: "transparent",
 	noteInsertMode: "embed",
@@ -211,8 +218,22 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Fit new sketches to the screen")
+			.setDesc(
+				"New sketches get a portrait canvas the size of the screen, so a fresh sketch fills the page. Turn off to always use the fixed size below.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.fitNewSketchesToScreen)
+					.onChange(async (value) => {
+						this.plugin.settings.fitNewSketchesToScreen = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
 			.setName("Canvas width")
-			.setDesc("Logical width of new sketches in pixels.")
+			.setDesc("Width of new sketches in pixels, when not fitting to the screen.")
 			.addText((text) =>
 				text
 					.setValue(String(this.plugin.settings.canvasWidth))
@@ -227,7 +248,7 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Canvas height")
-			.setDesc("Logical height of new sketches in pixels.")
+			.setDesc("Height of new sketches in pixels, when not fitting to the screen.")
 			.addText((text) =>
 				text
 					.setValue(String(this.plugin.settings.canvasHeight))
