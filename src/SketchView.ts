@@ -111,6 +111,8 @@ export class SketchView extends TextFileView {
 	private colorBtn: HTMLElement | null = null;
 	/** Everything we put in the header, so it can be torn down and rebuilt. */
 	private actionEls: HTMLElement[] = [];
+	/** Obsidian's own first header action; ours are seated ahead of it. */
+	private actionAnchor: HTMLElement | null = null;
 
 	// Shared popover (tool list / brush size).
 	private popover: HTMLElement | null = null;
@@ -285,25 +287,28 @@ export class SketchView extends TextFileView {
 			`${this.plugin.settings.toolbarButtonSize}px`,
 		);
 
-		this.toolBtn = this.makeAction("pen", "Tool", (btn) =>
+		const row = this.headerActions();
+
+		this.toolBtn = this.makeAction(row, "pen", "Tool", (btn) =>
 			this.togglePopover(btn, (pop) => this.buildToolPopover(pop)),
 		);
 
 		// The size button shows a dot scaled to the current brush, so the setting
 		// is legible without opening anything.
-		this.sizeBtn = this.makeAction("", "Brush size", (btn) =>
+		this.sizeBtn = this.makeAction(row, "", "Brush size", (btn) =>
 			this.togglePopover(btn, (pop) => this.buildSizePopover(pop)),
 		);
 		this.sizeTriggerDot = this.sizeBtn.createDiv({ cls: "tabula-rasa-size-dot" });
 
-		// The colour control is the <input type="color"> itself, stretched over the
-		// swatch and made invisible. iOS only raises the system Colors sheet for a
-		// genuine tap on the input — a synthetic .click() on a hidden one is
-		// ignored, which is why the button did nothing before.
-		this.colorBtn = this.makeAction("", "Colour", () => {
-			/* the overlaid input handles activation */
+		// The colour control is a real, visible <input type="color"> — restyled into
+		// the swatch rather than hidden behind it. iOS opens the system Colors sheet
+		// for a genuine tap on a genuine input; an invisible one, or one nested
+		// inside a <button> (which is invalid HTML), is ignored. That's why the two
+		// earlier attempts did nothing.
+		this.colorBtn = row.createDiv({
+			cls: "tabula-rasa-btn tabula-rasa-color-btn",
 		});
-		this.colorBtn.addClass("tabula-rasa-color-btn");
+		this.actionEls.push(this.colorBtn);
 		this.colorInput = this.colorBtn.createEl("input", {
 			cls: "tabula-rasa-color-input",
 			attr: { type: "color", "aria-label": "Colour" },
@@ -313,9 +318,18 @@ export class SketchView extends TextFileView {
 			this.selectColor(this.colorInput?.value ?? this.brush.color),
 		);
 
-		this.makeAction("more-horizontal", "Sketch options", () =>
+		this.makeAction(row, "settings", "Sketch settings", () =>
 			this.openMoreSheet(),
 		);
+
+		// createEl appends, which would land us to the right of Obsidian's "...".
+		// Re-seat the row in order ahead of it so it reads
+		// brush → size → colour → settings → Obsidian's own menu.
+		if (this.actionAnchor && this.actionAnchor.parentElement === row) {
+			for (const el of this.actionEls) {
+				if (el.parentElement === row) row.insertBefore(el, this.actionAnchor);
+			}
+		}
 
 		this.applyTool(this.currentToolOption());
 		this.selectColor(this.brush.color);
@@ -323,18 +337,39 @@ export class SketchView extends TextFileView {
 	}
 
 	/**
-	 * addAction() puts the button in the view header's action row, to the left of
-	 * Obsidian's own "..." — exactly where we want it — and returns the element so
-	 * we can swap in custom content like the colour wheel or the size dot.
+	 * Our controls go in the view header's action row, immediately left of
+	 * Obsidian's own "..." (which can't be moved). We build the elements directly
+	 * rather than via addAction() so their order is ours to set and so the colour
+	 * control can be a plain div — addAction returns a <button>, and an <input>
+	 * inside a <button> is invalid HTML that iOS won't activate.
 	 */
+	private headerActions(): HTMLElement {
+		const existing = this.containerEl.querySelector<HTMLElement>(".view-actions");
+		if (existing) {
+			// Anchor before whatever Obsidian already put there, so ours sit to its
+			// left and read brush → size → colour → settings.
+			this.actionAnchor = existing.firstElementChild as HTMLElement | null;
+			return existing;
+		}
+		// No header (unusual layouts): fall back to a strip above the canvas.
+		this.actionAnchor = null;
+		const fallback = this.contentEl.createDiv({ cls: "tabula-rasa-toolbar" });
+		this.actionEls.push(fallback);
+		return fallback;
+	}
+
 	private makeAction(
+		row: HTMLElement,
 		icon: string,
 		label: string,
 		onClick: (btn: HTMLElement) => void,
 	): HTMLElement {
-		const btn = this.addAction(icon || "circle", label, () => onClick(btn));
-		btn.addClass("tabula-rasa-btn");
-		if (!icon) btn.empty();
+		const btn = row.createEl("button", {
+			cls: "clickable-icon view-action tabula-rasa-btn",
+			attr: { "aria-label": label, type: "button" },
+		});
+		if (icon) setIcon(btn, icon);
+		btn.addEventListener("click", () => onClick(btn));
 		this.actionEls.push(btn);
 		return btn;
 	}

@@ -59,11 +59,17 @@ Conventions worth knowing before touching this area:
   which raises the native iOS Colors sheet. Don't rebuild a palette or recents list.
 - **The bar lives in Obsidian's view header** (via `addAction()`), not in a strip of our own. The
   filename is hidden to make room and is renameable from the "more" sheet.
-- **Gestures are double-taps**: two fingers undo, three redo. They're told apart from two-finger
-  pan/zoom by *travel*, not finger count — a tap that moves is a pan. Both are also in the "more"
+- **Gestures are double-taps**: two fingers undo, three redo. They're told apart from pan/zoom by
+  *travel and spread*, not finger count. Two traps here, both hit once already: the centroid jumps
+  when a finger joins (so re-baseline on every finger-count change, or taps read as 50px drags), and
+  a pinch can hold its centroid still (so spread must be checked too). Both are also in the "more"
   sheet so they stay discoverable.
-- **The colour control is the `<input type="color">` itself**, stretched invisibly over the swatch.
-  iOS only opens the native Colors sheet on a real tap; a scripted `.click()` does nothing.
+- **Never clear `redoStack` on finger-down** — every gesture starts with a touch, so that destroys
+  redo history before the gesture can fire. Clear it when a stroke commits.
+- **The colour control is a real, visible `<input type="color">`** restyled into the swatch, inside a
+  `div` (never a `<button>` — nesting an input in one is invalid HTML). iOS only opens the native
+  Colors sheet for a genuine tap on a genuine input; invisible inputs and scripted `.click()` are
+  both ignored. Two attempts failed that way before this stuck.
 - **Per-tool stroke feel lives in one table** (`TOOL_STROKE_OPTIONS` in `src/export.ts`) so the
   live canvas and both export paths stay in agreement.
 

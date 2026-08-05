@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.10.0) | Done — see below |
+| Shipped (v0.1.x → v0.10.1) | Done — see below |
 | Next (UX polish) | #7 done — toolbar rebuilt to 4 buttons, 169px → 49px |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.10.0)
+## Shipped (v0.1.x → v0.10.1)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -35,7 +35,10 @@
 - [x] Four-button toolbar, new brush tool, native iOS colour picker, three-finger undo/redo
       ([#7](https://github.com/JeremiahBeatham/TabulaRasa/issues/7), v0.9.0)
 - [x] Toolbar moved into Obsidian's view header; gestures remapped to two-finger double-tap undo /
-      three-finger double-tap redo; colour button fixed; rename from the "more" sheet (v0.10.0)
+      three-finger double-tap redo; rename from the "more" sheet (v0.10.0)
+- [x] Fixes from device testing: multi-finger taps were misread as drags (the centroid shifts when a
+      finger joins), redo was cleared on every finger-down, the colour input is now a real visible
+      input, and the bar reads brush → size → colour → settings (v0.10.1)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)

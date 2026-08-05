@@ -324,7 +324,9 @@ export class SketchCanvas {
 		if (this.pointers.size === 1) {
 			this.tracker = new TouchSequenceTracker(this.pointerList());
 		} else {
-			this.tracker?.update(this.pointerList());
+			// Re-baseline rather than update: a new finger shifts the centroid, and
+			// that shift is not the user moving their hand.
+			this.tracker?.rebase(this.pointerList());
 		}
 
 		// A second pointer turns the interaction into a pan/zoom gesture.
@@ -338,8 +340,10 @@ export class SketchCanvas {
 		this.activePointerId = evt.pointerId;
 		this.el.setPointerCapture(evt.pointerId);
 
+		// Note: the redo stack is cleared when a stroke actually commits, not here.
+		// Clearing it on finger-down destroyed redo history for any gesture that
+		// starts with a touch — which is every one of them.
 		this.pushUndo();
-		this.redoStack = [];
 
 		const simulate = evt.pointerType !== "pen" || !(evt.pressure > 0);
 		this.activeStroke = {
@@ -416,6 +420,8 @@ export class SketchCanvas {
 		this.activeStroke = null;
 		if (!stroke) return;
 
+		// A committed stroke is a new branch of history, so redo is no longer valid.
+		this.redoStack = [];
 		if (stroke.tool === "eraser") {
 			this.applyEraser(stroke);
 		} else {
