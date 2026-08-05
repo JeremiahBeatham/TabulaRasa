@@ -8,22 +8,38 @@
 }
 
 /*
- * Four circular buttons and nothing else. No wrapping: if this bar ever needs
- * a second row, something has been added that belongs in the "more" sheet.
+ * The tools live in Obsidian's own view header, next to its "..." menu, so the
+ * sketch gains no chrome of its own. The filename is hidden to make room —
+ * it's readable and editable in the "more" sheet instead.
  */
-.tabula-rasa-toolbar {
+.tabula-rasa-leaf {
+	/* Positioning context for the tool/size popovers, which hang off the header. */
+	position: relative;
 	--tr-button-size: 32px;
 	/* Apple's minimum comfortable target. The circle may be smaller than this;
 	   the tappable box never is. */
 	--tr-tap-target: 44px;
+}
+
+.tabula-rasa-leaf .view-header-title-container,
+.tabula-rasa-leaf .view-header-breadcrumb,
+.tabula-rasa-leaf .view-header-title {
+	display: none;
+}
+
+/* Let the action row take the width the title gave up. */
+.tabula-rasa-leaf .view-header {
+	height: auto;
+	min-height: calc(var(--tr-tap-target) + 4px);
+}
+
+.tabula-rasa-leaf .view-actions {
 	display: flex;
 	align-items: center;
-	gap: 4px;
-	padding: 2px 6px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background: transparent;
-	/* Respect iOS safe area / notch. */
-	padding-top: max(2px, env(safe-area-inset-top));
+	gap: 2px;
+	flex: 1;
+	justify-content: flex-start;
+	padding-right: 4px;
 }
 
 /*
@@ -31,7 +47,7 @@
  * --tr-tap-target so a 24px button is still comfortable to hit. Sizing the
  * circle with a pseudo-element keeps the two independent.
  */
-.tabula-rasa-btn {
+.tabula-rasa-btn.tabula-rasa-btn {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
@@ -39,8 +55,11 @@
 	width: max(var(--tr-button-size), var(--tr-tap-target));
 	height: max(var(--tr-button-size), var(--tr-tap-target));
 	padding: 0;
+	margin: 0;
 	border: none;
+	border-radius: 50%;
 	background: transparent;
+	box-shadow: none;
 	color: var(--text-normal);
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
@@ -79,35 +98,53 @@
 	color: var(--text-on-accent);
 }
 
-/* Colour button: a spectrum ring with the current colour in the middle. */
+/*
+ * Colour button: a spectrum ring with the current colour in its centre. The ring
+ * is painted as two stacked circles rather than a border, so it can't inflate the
+ * button past --tr-button-size the way a 3px border did.
+ */
 .tabula-rasa-color-btn::before {
-	background:
-		linear-gradient(
-			var(--tr-current-color, var(--text-normal)),
-			var(--tr-current-color, var(--text-normal))
-		)
-		padding-box,
-		conic-gradient(
-			from 0deg,
-			#ff0000,
-			#ffff00,
-			#00ff00,
-			#00ffff,
-			#0000ff,
-			#ff00ff,
-			#ff0000
-		)
-		border-box;
-	border: 3px solid transparent;
+	background: conic-gradient(
+		from 0deg,
+		#ff0000,
+		#ffff00,
+		#00ff00,
+		#00ffff,
+		#0000ff,
+		#ff00ff,
+		#ff0000
+	);
 }
 
-/* Present but never seen: tapping it is what opens the system colour sheet. */
+.tabula-rasa-color-btn::after {
+	content: "";
+	position: absolute;
+	width: calc(var(--tr-button-size) - 6px);
+	height: calc(var(--tr-button-size) - 6px);
+	border-radius: 50%;
+	background: var(--tr-current-color, var(--text-normal));
+	pointer-events: none;
+	z-index: 1;
+}
+
+/*
+ * The input *is* the button: stretched over the swatch and invisible, so a real
+ * finger tap lands on it. iOS only raises the system Colors sheet for a genuine
+ * tap — a scripted .click() on an offscreen input is ignored, which is why the
+ * button did nothing before.
+ */
 input.tabula-rasa-color-input {
 	position: absolute;
-	width: 1px;
-	height: 1px;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
 	opacity: 0;
-	pointer-events: none;
+	cursor: pointer;
+	z-index: 2;
 }
 
 .tabula-rasa-size {

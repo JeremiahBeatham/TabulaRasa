@@ -1,13 +1,15 @@
 /**
- * Three-finger gesture recognition for undo/redo.
+ * Multi-finger double-tap gestures for undo/redo.
  *
- * Why three fingers and not two: the canvas already turns *any* second pointer
- * into a pan/zoom/twist gesture, so every two-finger combination is spoken for.
- * Three fingers is also what iOS itself uses for undo/redo, so the gesture is
- * one users are likely to already know.
+ *   two fingers, double tap  → undo
+ *   three fingers, double tap → redo
  *
- * The classification is a pure function over a recorded track so it can be
- * tested without synthesising real multi-touch.
+ * Two-finger *dragging* is pan/zoom/twist, so a two-finger gesture can only
+ * mean undo when the fingers didn't travel. That's the whole trick here: taps
+ * are recognised by the absence of movement, which keeps them out of the way
+ * of panning entirely.
+ *
+ * Classification is pure so it can be tested without synthesising multi-touch.
  */
 
 export type GestureAction = "undo" | "redo";
@@ -17,41 +19,29 @@ export interface PointerSample {
 	y: number;
 }
 
-/** A completed multi-finger gesture, reduced to the parts we classify on. */
-export interface GestureTrack {
-	/** Peak simultaneous pointers. Exactly 3 is required to mean anything. */
-	maxPointers: number;
-	/** Centroid of the pointers when the gesture began. */
-	startX: number;
-	startY: number;
-	/** Centroid when the last finger lifted. */
-	endX: number;
-	endY: number;
+/** One completed touch — every finger down, then every finger up again. */
+export interface TouchSequence {
+	/** Peak simultaneous pointers during the touch. */
+	fingers: number;
+	/** Furthest the centroid strayed from where it started, in CSS px. */
+	travel: number;
 	durationMs: number;
+	/** When the last finger lifted. */
+	endedAt: number;
 }
 
 export interface GestureSettings {
 	enabled: boolean;
-	/** Apple's order: swipe left undoes, swipe right redoes. */
-	swipeLeftUndo: boolean;
-	/** Whether a three-finger tap also undoes. */
-	tapUndo: boolean;
 }
 
-export const DEFAULT_GESTURE_SETTINGS: GestureSettings = {
-	enabled: true,
-	swipeLeftUndo: true,
-	tapUndo: true,
-};
+export const DEFAULT_GESTURE_SETTINGS: GestureSettings = { enabled: true };
 
-/** Minimum horizontal travel (CSS px) before a drag counts as a swipe. */
-export const SWIPE_MIN_DISTANCE = 48;
-/** A swipe must be this much more horizontal than vertical, so scrolls don't count. */
-export const SWIPE_AXIS_RATIO = 1.5;
-/** Maximum centroid travel for the gesture to still read as a tap. */
-export const TAP_MAX_TRAVEL = 16;
-/** Maximum duration for a tap. */
-export const TAP_MAX_MS = 400;
+/** Beyond this much centroid movement it's a drag, not a tap. */
+export const TAP_MAX_TRAVEL = 18;
+/** A tap has to be brisk; longer means a hold or a slow pan. */
+export const TAP_MAX_MS = 320;
+/** Maximum gap between the two taps of a double tap. */
+export const DOUBLE_TAP_MAX_GAP_MS = 450;
 
 export function centroid(points: PointerSample[]): PointerSample {
 	if (!points.length) return { x: 0, y: 0 };
@@ -64,67 +54,96 @@ export function centroid(points: PointerSample[]): PointerSample {
 	return { x: x / points.length, y: y / points.length };
 }
 
-/**
- * Decide what a finished gesture meant. Returns null for anything ambiguous —
- * a missed gesture is recoverable, a wrongly-fired undo destroys work.
- */
-export function classifyGesture(
-	track: GestureTrack,
-	settings: GestureSettings = DEFAULT_GESTURE_SETTINGS,
-): GestureAction | null {
-	if (!settings.enabled) return null;
-	// Exactly three: two is pan/zoom, four or more is probably a system gesture.
-	if (track.maxPointers !== 3) return null;
+export function isTap(seq: TouchSequence): boolean {
+	return seq.travel <= TAP_MAX_TRAVEL && seq.durationMs <= TAP_MAX_MS;
+}
 
-	const dx = track.endX - track.startX;
-	const dy = track.endY - track.startY;
-	const travel = Math.hypot(dx, dy);
-
-	if (travel <= TAP_MAX_TRAVEL) {
-		if (track.durationMs > TAP_MAX_MS) return null;
-		return settings.tapUndo ? "undo" : null;
-	}
-
-	const horizontal = Math.abs(dx) >= SWIPE_MIN_DISTANCE &&
-		Math.abs(dx) > Math.abs(dy) * SWIPE_AXIS_RATIO;
-	if (!horizontal) return null;
-
-	const wentLeft = dx < 0;
-	if (settings.swipeLeftUndo) return wentLeft ? "undo" : "redo";
-	return wentLeft ? "redo" : "undo";
+/** Which action a given finger count maps to, if any. */
+export function actionForFingers(fingers: number): GestureAction | null {
+	if (fingers === 2) return "undo";
+	if (fingers === 3) return "redo";
+	return null;
 }
 
 /**
- * Accumulates live pointer positions into a GestureTrack. Kept deliberately
- * thin — all the judgement lives in classifyGesture.
+ * Feeds completed touches in and reports an action when two matching taps
+ * arrive close enough together.
  */
-export class GestureTracker {
-	private startPoint: PointerSample;
-	private endPoint: PointerSample;
-	private maxPointers: number;
+export class DoubleTapRecognizer {
+	private pending: { fingers: number; at: number } | null = null;
+
+	/** Returns an action if this touch completed a double tap, else null. */
+	push(
+		seq: TouchSequence,
+		settings: GestureSettings = DEFAULT_GESTURE_SETTINGS,
+	): GestureAction | null {
+		if (!settings.enabled) {
+			this.pending = null;
+			return null;
+		}
+		if (!isTap(seq)) {
+			// A drag in the middle of things breaks any half-finished double tap.
+			this.pending = null;
+			return null;
+		}
+		const action = actionForFingers(seq.fingers);
+		if (!action) {
+			this.pending = null;
+			return null;
+		}
+
+		const prior = this.pending;
+		if (
+			prior &&
+			prior.fingers === seq.fingers &&
+			seq.endedAt - prior.at <= DOUBLE_TAP_MAX_GAP_MS
+		) {
+			// Consume the pair so a triple tap doesn't fire twice.
+			this.pending = null;
+			return action;
+		}
+
+		this.pending = { fingers: seq.fingers, at: seq.endedAt };
+		return null;
+	}
+
+	reset(): void {
+		this.pending = null;
+	}
+}
+
+/**
+ * Accumulates live pointer positions into a TouchSequence. Thin on purpose —
+ * the judgement lives in DoubleTapRecognizer.
+ */
+export class TouchSequenceTracker {
+	private origin: PointerSample;
+	private fingers: number;
+	private travel = 0;
 	private startedAt: number;
 
 	constructor(points: PointerSample[], now: number = Date.now()) {
-		this.startPoint = centroid(points);
-		this.endPoint = this.startPoint;
-		this.maxPointers = points.length;
+		this.origin = centroid(points);
+		this.fingers = points.length;
 		this.startedAt = now;
 	}
 
 	update(points: PointerSample[]): void {
 		if (!points.length) return;
-		this.maxPointers = Math.max(this.maxPointers, points.length);
-		this.endPoint = centroid(points);
+		this.fingers = Math.max(this.fingers, points.length);
+		const c = centroid(points);
+		this.travel = Math.max(
+			this.travel,
+			Math.hypot(c.x - this.origin.x, c.y - this.origin.y),
+		);
 	}
 
-	finish(now: number = Date.now()): GestureTrack {
+	finish(now: number = Date.now()): TouchSequence {
 		return {
-			maxPointers: this.maxPointers,
-			startX: this.startPoint.x,
-			startY: this.startPoint.y,
-			endX: this.endPoint.x,
-			endY: this.endPoint.y,
+			fingers: this.fingers,
+			travel: this.travel,
 			durationMs: now - this.startedAt,
+			endedAt: now,
 		};
 	}
 }
