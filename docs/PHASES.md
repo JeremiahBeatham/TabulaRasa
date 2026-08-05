@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.8.0) | Done — see below |
+| Shipped (v0.1.x → v0.9.0) | Done — see below |
 | Next (UX polish) | #7 done — toolbar rebuilt to 4 buttons, 169px → 49px |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.8.0)
+## Shipped (v0.1.x → v0.9.0)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -32,6 +32,8 @@
 - [x] Pinch-to-rotate ("twist") canvas to draw from any angle; Fit to screen resets it ([#9](https://github.com/JeremiahBeatham/TabulaRasa/issues/9), v0.6.0)
 - [x] Eraser modes: whole-stroke and partial/segment erasing ([#12](https://github.com/JeremiahBeatham/TabulaRasa/issues/12), v0.7.0)
 - [x] Maintenance: `esbuild` → `^0.28.1`, clearing the GHSA-67mh-4wv8-2f99 dev-server advisory (v0.8.0)
+- [x] Four-button toolbar, new brush tool, native iOS colour picker, three-finger undo/redo
+      ([#7](https://github.com/JeremiahBeatham/TabulaRasa/issues/7), v0.9.0)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
