@@ -118,18 +118,43 @@
 	);
 }
 
-input.tabula-rasa-color-input {
+/*
+ * The swatch is a circular mask. WebKit gives <input type="color"> its own
+ * intrinsic box and won't fully honour width/height on it, which rendered the
+ * button as an oversized oval — clipping to a circle we control makes the shape
+ * ours no matter what the platform does inside.
+ */
+.tabula-rasa-color-swatch {
 	position: relative;
 	z-index: 1;
-	-webkit-appearance: none;
-	appearance: none;
+	display: block;
+	flex: none;
 	width: calc(var(--tr-button-size) - 6px);
 	height: calc(var(--tr-button-size) - 6px);
+	aspect-ratio: 1;
+	border-radius: 50%;
+	overflow: hidden;
+}
+
+input.tabula-rasa-color-input {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	/* Oversized then centred, so the input's own chrome falls outside the mask
+	   and only its colour fill shows through. */
+	width: 200%;
+	height: 200%;
+	transform: translate(-50%, -50%);
+	min-width: 0;
+	min-height: 0;
 	margin: 0;
 	padding: 0;
 	border: none;
-	border-radius: 50%;
+	border-radius: 0;
+	box-shadow: none;
 	background: transparent;
+	-webkit-appearance: none;
+	appearance: none;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 }
@@ -137,17 +162,17 @@ input.tabula-rasa-color-input {
 /* WebKit paints the chosen colour in these inner parts. */
 input.tabula-rasa-color-input::-webkit-color-swatch-wrapper {
 	padding: 0;
-	border-radius: 50%;
+	border: none;
 }
 
 input.tabula-rasa-color-input::-webkit-color-swatch {
 	border: none;
-	border-radius: 50%;
+	border-radius: 0;
 }
 
 input.tabula-rasa-color-input::-moz-color-swatch {
 	border: none;
-	border-radius: 50%;
+	border-radius: 0;
 }
 
 .tabula-rasa-size {

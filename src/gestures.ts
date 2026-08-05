@@ -41,14 +41,22 @@ export interface GestureSettings {
 
 export const DEFAULT_GESTURE_SETTINGS: GestureSettings = { enabled: true };
 
+/*
+ * Tolerances. These were initially tight enough that undo/redo demanded a
+ * lightning-fast tap with no movement at all, so each has been eased by roughly
+ * a third. They stay comfortably clear of real pans and pinches, which travel and
+ * spread by an order of magnitude more than these limits — a pan is typically
+ * 100px+ of centroid movement, a pinch 80px+ of spread change.
+ */
+
 /** Beyond this much centroid movement it's a drag, not a tap. */
-export const TAP_MAX_TRAVEL = 18;
+export const TAP_MAX_TRAVEL = 26;
 /** A tap has to be brisk; longer means a hold or a slow pan. */
-export const TAP_MAX_MS = 320;
+export const TAP_MAX_MS = 420;
 /** Maximum gap between the two taps of a double tap. */
-export const DOUBLE_TAP_MAX_GAP_MS = 450;
+export const DOUBLE_TAP_MAX_GAP_MS = 650;
 /** Beyond this much change in finger separation it's a pinch, not a tap. */
-export const TAP_MAX_SPREAD = 16;
+export const TAP_MAX_SPREAD = 22;
 
 export function centroid(points: PointerSample[]): PointerSample {
 	if (!points.length) return { x: 0, y: 0 };
