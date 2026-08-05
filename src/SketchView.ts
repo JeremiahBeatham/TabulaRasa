@@ -7,6 +7,7 @@ import {
 	TextFileView,
 	TFile,
 	WorkspaceLeaf,
+	normalizePath,
 	setIcon,
 } from "obsidian";
 import {
@@ -104,10 +105,12 @@ export class SketchView extends TextFileView {
 	private brush: BrushSettings;
 	private resizeObserver: ResizeObserver | null = null;
 
-	// The four toolbar buttons.
+	// The four controls, added to Obsidian's view header via addAction().
 	private toolBtn: HTMLElement | null = null;
 	private sizeBtn: HTMLElement | null = null;
 	private colorBtn: HTMLElement | null = null;
+	/** Everything we put in the header, so it can be torn down and rebuilt. */
+	private actionEls: HTMLElement[] = [];
 
 	// Shared popover (tool list / brush size).
 	private popover: HTMLElement | null = null;
@@ -197,6 +200,10 @@ export class SketchView extends TextFileView {
 
 	async onClose(): Promise<void> {
 		this.closePopover();
+		// The header belongs to Obsidian, so leave it as we found it.
+		for (const el of this.actionEls) el.remove();
+		this.actionEls = [];
+		this.containerEl.removeClass("tabula-rasa-leaf");
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
 		// Persist the .sketch source so leaving/closing always keeps your work.
@@ -217,11 +224,7 @@ export class SketchView extends TextFileView {
 		this.canvasHost.empty();
 		this.canvas = new SketchCanvas(this.canvasHost, this.doc, this.brush, {
 			palmRejection: this.plugin.settings.palmRejection,
-			gestures: {
-				enabled: this.plugin.settings.gesturesEnabled,
-				swipeLeftUndo: this.plugin.settings.swipeLeftUndo,
-				tapUndo: this.plugin.settings.tapUndo,
-			},
+			gestures: { enabled: this.plugin.settings.gesturesEnabled },
 			onChange: () => this.requestSave(),
 		});
 		// Defer sizing until layout settles (important on mobile open).
@@ -230,55 +233,88 @@ export class SketchView extends TextFileView {
 
 	/** Rebuild the chrome after a settings change (button size, gestures). */
 	refreshChrome(): void {
-		this.contentEl.empty();
 		this.closePopover();
 		this.buildToolbar();
-		this.canvasHost = this.contentEl.createDiv({
-			cls: "tabula-rasa-canvas-host",
-		});
 		this.rebuildCanvas();
+	}
+
+	/**
+	 * Rename the sketch file. Obsidian's fileManager keeps links in other notes
+	 * pointing at it, which a plain vault rename would not.
+	 */
+	private async renameSketch(name: string): Promise<void> {
+		const file = this.file;
+		const trimmed = name.trim();
+		if (!file || !trimmed || trimmed === file.basename) return;
+		if (/[\\/:]/.test(trimmed)) {
+			new Notice("A sketch name can't contain \\ / or :");
+			return;
+		}
+		const dir = file.parent && file.parent.path !== "/" ? file.parent.path : "";
+		const target = normalizePath(
+			`${dir ? dir + "/" : ""}${trimmed}.${file.extension}`,
+		);
+		if (this.app.vault.getAbstractFileByPath(target)) {
+			new Notice(`“${trimmed}” already exists.`);
+			return;
+		}
+		try {
+			await this.app.fileManager.renameFile(file, target);
+			new Notice(`Renamed to “${trimmed}”.`);
+		} catch (e) {
+			console.error(e);
+			new Notice("Rename failed. See console for details.");
+		}
 	}
 
 	// --- toolbar --------------------------------------------------------
 
 	/**
-	 * Four buttons, nothing else: brush, size, colour, more. Everything that used
-	 * to sit on the bar is now one tap deeper, on a gesture, or gone — the bar
-	 * previously took three rows and a quarter of the screen on a phone.
+	 * Four controls — brush, size, colour, more — living in Obsidian's own view
+	 * header next to its "..." menu, rather than in a bar of our own below it.
+	 * That costs the sketch zero vertical space: the only chrome on screen is
+	 * Obsidian's, which is the point. The filename is hidden to make room.
 	 */
 	private buildToolbar(): void {
-		const bar = this.contentEl.createDiv({ cls: "tabula-rasa-toolbar" });
-		bar.style.setProperty(
+		for (const el of this.actionEls) el.remove();
+		this.actionEls = [];
+
+		this.containerEl.addClass("tabula-rasa-leaf");
+		this.containerEl.style.setProperty(
 			"--tr-button-size",
 			`${this.plugin.settings.toolbarButtonSize}px`,
 		);
 
-		this.toolBtn = this.makeButton(bar, "pen", "Tool", (btn) =>
+		this.toolBtn = this.makeAction("pen", "Tool", (btn) =>
 			this.togglePopover(btn, (pop) => this.buildToolPopover(pop)),
 		);
 
 		// The size button shows a dot scaled to the current brush, so the setting
 		// is legible without opening anything.
-		this.sizeBtn = this.makeButton(bar, "", "Brush size", (btn) =>
+		this.sizeBtn = this.makeAction("", "Brush size", (btn) =>
 			this.togglePopover(btn, (pop) => this.buildSizePopover(pop)),
 		);
 		this.sizeTriggerDot = this.sizeBtn.createDiv({ cls: "tabula-rasa-size-dot" });
 
-		this.colorBtn = this.makeButton(bar, "", "Colour", () =>
-			this.openNativeColorPicker(),
-		);
-		this.colorBtn.addClass("tabula-rasa-color-btn");
-
-		this.makeButton(bar, "more-horizontal", "More", () => this.openMoreSheet());
-
-		// The colour input is never shown: tapping it is what summons the system
-		// colour sheet, which already provides a spectrum, sliders and swatches.
-		this.colorInput = bar.createEl("input", {
-			cls: "tabula-rasa-color-input",
-			attr: { type: "color", "aria-hidden": "true", tabindex: "-1" },
+		// The colour control is the <input type="color"> itself, stretched over the
+		// swatch and made invisible. iOS only raises the system Colors sheet for a
+		// genuine tap on the input — a synthetic .click() on a hidden one is
+		// ignored, which is why the button did nothing before.
+		this.colorBtn = this.makeAction("", "Colour", () => {
+			/* the overlaid input handles activation */
 		});
+		this.colorBtn.addClass("tabula-rasa-color-btn");
+		this.colorInput = this.colorBtn.createEl("input", {
+			cls: "tabula-rasa-color-input",
+			attr: { type: "color", "aria-label": "Colour" },
+		});
+		this.colorInput.value = normalizeHex(this.brush.color);
 		this.colorInput.addEventListener("input", () =>
 			this.selectColor(this.colorInput?.value ?? this.brush.color),
+		);
+
+		this.makeAction("more-horizontal", "Sketch options", () =>
+			this.openMoreSheet(),
 		);
 
 		this.applyTool(this.currentToolOption());
@@ -286,18 +322,20 @@ export class SketchView extends TextFileView {
 		this.selectSize(this.brush.size);
 	}
 
-	private makeButton(
-		parent: HTMLElement,
+	/**
+	 * addAction() puts the button in the view header's action row, to the left of
+	 * Obsidian's own "..." — exactly where we want it — and returns the element so
+	 * we can swap in custom content like the colour wheel or the size dot.
+	 */
+	private makeAction(
 		icon: string,
 		label: string,
 		onClick: (btn: HTMLElement) => void,
 	): HTMLElement {
-		const btn = parent.createEl("button", {
-			cls: "tabula-rasa-btn",
-			attr: { "aria-label": label, type: "button" },
-		});
-		if (icon) setIcon(btn, icon);
-		btn.addEventListener("click", () => onClick(btn));
+		const btn = this.addAction(icon || "circle", label, () => onClick(btn));
+		btn.addClass("tabula-rasa-btn");
+		if (!icon) btn.empty();
+		this.actionEls.push(btn);
 		return btn;
 	}
 
@@ -351,17 +389,6 @@ export class SketchView extends TextFileView {
 
 	// --- color ----------------------------------------------------------
 
-	/**
-	 * Hand colour selection to the operating system. On iOS this is the native
-	 * Colors sheet — grid, spectrum, sliders, eyedropper and its own swatches —
-	 * so there is nothing here worth rebuilding badly.
-	 */
-	private openNativeColorPicker(): void {
-		if (!this.colorInput) return;
-		this.colorInput.value = normalizeHex(this.brush.color);
-		this.colorInput.click();
-	}
-
 	private selectColor(color: string): void {
 		this.brush.color = color;
 		this.canvas?.setBrush(this.brush);
@@ -393,7 +420,10 @@ export class SketchView extends TextFileView {
 		build: (pop: HTMLElement) => void,
 	): void {
 		this.closePopover();
-		const pop = this.contentEl.createDiv({ cls: "tabula-rasa-popover" });
+		// Hosted on the leaf, not contentEl: the triggers live in the view header,
+		// which sits above contentEl, so anchoring to contentEl would place the
+		// popover off the top of the canvas.
+		const pop = this.containerEl.createDiv({ cls: "tabula-rasa-popover" });
 		this.popover = pop;
 		this.popoverTrigger = trigger;
 		build(pop);
@@ -414,7 +444,7 @@ export class SketchView extends TextFileView {
 	}
 
 	private positionPopover(pop: HTMLElement, trigger: HTMLElement): void {
-		const host = this.contentEl.getBoundingClientRect();
+		const host = this.containerEl.getBoundingClientRect();
 		const tr = trigger.getBoundingClientRect();
 		pop.style.top = `${tr.bottom - host.top + 6}px`;
 		const maxLeft = Math.max(8, host.width - pop.offsetWidth - 8);
@@ -588,6 +618,8 @@ export class SketchView extends TextFileView {
 			background: doc?.background ?? "transparent",
 			canUndo: this.canvas?.canUndo() ?? false,
 			canRedo: this.canvas?.canRedo() ?? false,
+			name: this.file?.basename ?? "",
+			onRename: (name) => void this.renameSketch(name),
 			onCanvasSize: () => this.openResizeModal(),
 			onBackground: (value) => {
 				this.canvas?.setBackground(value);
@@ -717,6 +749,8 @@ interface MoreSheetActions {
 	background: string;
 	canUndo: boolean;
 	canRedo: boolean;
+	name: string;
+	onRename: (name: string) => void;
 	onCanvasSize: () => void;
 	onBackground: (value: string) => void;
 	onFit: () => void;
@@ -743,6 +777,31 @@ class MoreSheet extends Modal {
 	onOpen(): void {
 		this.modalEl.addClass("tabula-rasa-sheet");
 		this.titleEl.setText("Sketch options");
+
+		// The filename is hidden from the header to make room for the tools, so
+		// this is now the only place to read or change it.
+		let pendingName = this.actions.name;
+		new Setting(this.contentEl)
+			.setName("Name")
+			.setDesc("Renaming updates links to this sketch in your notes.")
+			.addText((t) => {
+				t.setValue(this.actions.name);
+				t.onChange((v) => {
+					pendingName = v;
+				});
+				t.inputEl.addEventListener("keydown", (e) => {
+					if (e.key === "Enter") {
+						this.close();
+						this.actions.onRename(pendingName);
+					}
+				});
+			})
+			.addButton((b) =>
+				b.setButtonText("Rename").onClick(() => {
+					this.close();
+					this.actions.onRename(pendingName);
+				}),
+			);
 
 		new Setting(this.contentEl).setName("Canvas").setHeading();
 

@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.9.0) | Done — see below |
+| Shipped (v0.1.x → v0.10.0) | Done — see below |
 | Next (UX polish) | #7 done — toolbar rebuilt to 4 buttons, 169px → 49px |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.9.0)
+## Shipped (v0.1.x → v0.10.0)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -34,6 +34,8 @@
 - [x] Maintenance: `esbuild` → `^0.28.1`, clearing the GHSA-67mh-4wv8-2f99 dev-server advisory (v0.8.0)
 - [x] Four-button toolbar, new brush tool, native iOS colour picker, three-finger undo/redo
       ([#7](https://github.com/JeremiahBeatham/TabulaRasa/issues/7), v0.9.0)
+- [x] Toolbar moved into Obsidian's view header; gestures remapped to two-finger double-tap undo /
+      three-finger double-tap redo; colour button fixed; rename from the "more" sheet (v0.10.0)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -46,9 +48,12 @@
     the two erasers (objects / pixels) promoted from a hidden re-tap to first-class entries.
   - Colour now opens the **native iOS Colors sheet** via `<input type="color">`; the 7-swatch
     palette and the in-plugin recents list are gone, since the system picker already provides both.
-  - Undo/redo became **three-finger gestures** (two fingers is pan/zoom, so it was unavailable), and
-    are also listed in the "more" sheet so they stay discoverable. The explicit Save button was
-    dropped — autosave already covered it.
+  - Undo/redo became **double-tap gestures** — two fingers to undo, three to redo — recognised by
+    the fingers not travelling, so they don't collide with two-finger pan/zoom. Also listed in the
+    "more" sheet so they stay discoverable. The explicit Save button was dropped — autosave already
+    covered it.
+  - The four buttons live in **Obsidian's own view header** beside its "..." menu, so the sketch adds
+    no chrome of its own. The filename is hidden there and is renameable from the "more" sheet.
   - Both audit gaps closed: **canvas colour** is now editable per sketch in the "more" sheet, and
     eraser mode has a real home in the tool list.
   - Toolbar button size is a setting (24 / 32 / 40, default 32); the tap target stays ≥44px at all

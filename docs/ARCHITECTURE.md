@@ -34,17 +34,24 @@ styles.css      — UI styling
 - **Live inline preview by default**, plain-link as opt-in toggle.
 - **Theme-aware pen color** (white on dark, black on light) so strokes stay visible.
 - **Mobile-first input handling**: coalesced pointer events, scroll suppression, optional palm rejection.
-- **Four-button toolbar** (brush, size, colour, more). The bar deliberately does not wrap — anything
-  that would need a second row belongs in the "more" sheet instead. It previously ran to three rows
-  and 169px on a phone; it is now one row and 49px.
+- **Four-button toolbar** (brush, size, colour, more). It deliberately does not wrap — anything that
+  would need a second row belongs in the "more" sheet instead. The old bar ran to three rows and
+  169px of its own on a phone; the tools now sit in Obsidian's existing header and cost the sketch
+  no vertical space at all.
 - **Button size is decoupled from tap target.** The drawn circle follows the user's 24/32/40 setting
   while the button's hit box stays at ≥44px, so a small toolbar never becomes a hard-to-hit one.
-- **The system owns colour.** The colour button clicks a hidden `<input type="color">`, which on iOS
-  raises the native Colors sheet (grid, spectrum, sliders, eyedropper, swatches). No in-plugin
-  palette or recents list competes with it.
-- **Undo/redo are three-finger gestures.** Two-finger input is already pan/zoom/rotate, so it cannot
-  be overloaded; three fingers also matches iOS convention. Both actions are additionally listed in
-  the "more" sheet, because a gesture with no visible affordance is undiscoverable.
+- **The system owns colour.** The native iOS Colors sheet (grid, spectrum, sliders, eyedropper,
+  swatches) is the picker; no in-plugin palette or recents list competes with it.
+- **The toolbar lives in Obsidian's view header**, added via `addAction()`, next to Obsidian's own
+  "..." menu. The sketch therefore adds no chrome of its own; the filename is hidden to make room
+  and is instead read/edited in the "more" sheet.
+- **Undo/redo are double-tap gestures**: two fingers to undo, three to redo. They are recognised by
+  the fingers *not* travelling, which is what keeps them clear of two-finger pan/zoom/rotate — a tap
+  and a drag are distinguished by movement, not by finger count. Both actions are additionally
+  listed in the "more" sheet, because a gesture with no visible affordance is undiscoverable.
+- **Colour is the input element itself.** The `<input type="color">` is stretched transparently over
+  the colour swatch so a real finger tap lands on it. iOS only raises the system Colors sheet for a
+  genuine user tap; a scripted `.click()` on a hidden input is ignored.
 - **Per-tool stroke parameters** live in one table in `export.ts`, so a tool's feel is defined once
   and applies identically to the live canvas, PNG export and SVG export.
 - **BRAT-first distribution** ahead of community-store approval.

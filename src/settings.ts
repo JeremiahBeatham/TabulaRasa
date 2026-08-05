@@ -27,12 +27,11 @@ export interface TabulaRasaSettings {
 	 * at least 44px regardless — only the drawn circle changes size.
 	 */
 	toolbarButtonSize: ToolbarButtonSize;
-	/** Three-finger gestures for undo/redo. Two fingers is pan/zoom, so it's off-limits. */
+	/**
+	 * Double-tap gestures: two fingers to undo, three to redo. Recognised by the
+	 * fingers *not* travelling, which keeps them clear of two-finger pan/zoom.
+	 */
 	gesturesEnabled: boolean;
-	/** When true, three-finger swipe left undoes and right redoes (iOS's order). */
-	swipeLeftUndo: boolean;
-	/** Whether a three-finger tap also undoes. */
-	tapUndo: boolean;
 }
 
 export type ToolbarButtonSize = 24 | 32 | 40;
@@ -54,8 +53,6 @@ export const DEFAULT_SETTINGS: TabulaRasaSettings = {
 	eraserMode: "stroke",
 	toolbarButtonSize: 32,
 	gesturesEnabled: true,
-	swipeLeftUndo: true,
-	tapUndo: true,
 };
 
 export class TabulaRasaSettingTab extends PluginSettingTab {
@@ -167,43 +164,15 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName("Gestures").setHeading();
 
 		new Setting(containerEl)
-			.setName("Three-finger undo and redo")
+			.setName("Double-tap to undo and redo")
 			.setDesc(
-				"Swipe or tap with three fingers to undo and redo. Two-finger gestures are reserved for panning, zooming and rotating the canvas.",
+				"Double-tap with two fingers to undo, three fingers to redo. Dragging two fingers still pans and zooms — only taps that stay put count as gestures.",
 			)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.gesturesEnabled)
 					.onChange(async (value) => {
 						this.plugin.settings.gesturesEnabled = value;
-						await this.plugin.saveSettings();
-						this.plugin.refreshOpenSketchViews();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Swipe left to undo")
-			.setDesc(
-				"On: swipe left undoes and right redoes, matching iOS. Off: the directions are reversed.",
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.swipeLeftUndo)
-					.onChange(async (value) => {
-						this.plugin.settings.swipeLeftUndo = value;
-						await this.plugin.saveSettings();
-						this.plugin.refreshOpenSketchViews();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Three-finger tap undoes")
-			.setDesc("A quick three-finger tap undoes the last stroke.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.tapUndo)
-					.onChange(async (value) => {
-						this.plugin.settings.tapUndo = value;
 						await this.plugin.saveSettings();
 						this.plugin.refreshOpenSketchViews();
 					}),

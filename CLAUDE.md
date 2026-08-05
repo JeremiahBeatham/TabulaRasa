@@ -57,8 +57,13 @@ Conventions worth knowing before touching this area:
   ≥44px. Don't collapse those back together.
 - **Colour is the operating system's job.** The button clicks a hidden `<input type="color">`,
   which raises the native iOS Colors sheet. Don't rebuild a palette or recents list.
-- **Two-finger gestures are reserved** for pan/zoom/rotate. Undo/redo are three-finger, and are
-  also surfaced in the "more" sheet so they remain discoverable.
+- **The bar lives in Obsidian's view header** (via `addAction()`), not in a strip of our own. The
+  filename is hidden to make room and is renameable from the "more" sheet.
+- **Gestures are double-taps**: two fingers undo, three redo. They're told apart from two-finger
+  pan/zoom by *travel*, not finger count — a tap that moves is a pan. Both are also in the "more"
+  sheet so they stay discoverable.
+- **The colour control is the `<input type="color">` itself**, stretched invisibly over the swatch.
+  iOS only opens the native Colors sheet on a real tap; a scripted `.click()` does nothing.
 - **Per-tool stroke feel lives in one table** (`TOOL_STROKE_OPTIONS` in `src/export.ts`) so the
   live canvas and both export paths stay in agreement.
 
