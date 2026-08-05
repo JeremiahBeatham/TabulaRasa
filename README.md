@@ -4,7 +4,7 @@ Finger- and Apple Pencil-friendly sketching for [Obsidian](https://obsidian.md).
 Draw the way you do in the native iOS Notes app — directly in your vault — then
 embed sketches in notes or keep them as standalone, re-editable files.
 
-> **Status:** working MVP (v0.2.0). Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
+> **Status:** working MVP (v0.10.1). Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
 > today; a community-plugins submission is in progress. See where we are and where
 > we're going in **[docs/PHASES.md](docs/PHASES.md)**.
 
@@ -26,18 +26,27 @@ embed sketches in notes or keep them as standalone, re-editable files.
 - 🤏 **Pinch to zoom, pan, and twist to rotate** the canvas so you can draw from
   any angle; wheel-zoom on desktop, plus a *Fit to screen* button that recenters
   and returns the page to upright.
-- 📐 **Resizable canvas** — change the page size or aspect ratio from the toolbar
-  (square, 4:3, 16:9, A4, or custom). Choose an anchor or scale your drawing to
-  the new size, or *Fit to drawing* to wrap the canvas around your strokes.
-  Resizing is undoable.
+- 🫙 **Almost no UI** — four small circular buttons (tool, size, colour, settings)
+  sit in Obsidian's own view header, so the sketch adds no chrome of its own.
+  Their size is adjustable (24 / 32 / 40 px) and the tap area stays comfortable
+  either way.
+- 📐 **Resizable canvas** — change the page size or aspect ratio from the settings
+  sheet (square, 4:3, 16:9, A4, or custom). Choose an anchor or scale your drawing
+  to the new size, or *Fit to drawing* to wrap the canvas around your strokes.
+  Resizing is undoable. The page colour is editable per sketch too.
 - 🎨 **Theme-aware pen** — starts white on dark themes and black on light themes
   so your strokes are always visible (toggleable in settings).
-- 🧰 Pen, highlighter, and an eraser with **whole-stroke** and **partial** modes;
-  a color palette plus a custom color picker with recent colors; adjustable brush
-  size with a slider, presets, and a live preview; undo/redo; clear.
+- 🧰 **Tools in one tap** — pen, brush (soft and pressure-led), highlighter, and
+  erasers for whole objects or just the pixels you touch. Adjustable brush size
+  with presets, a slider, and a typed-in exact value.
+- 🌈 **The system colour picker** — tapping the colour wheel opens iOS's own
+  Colors sheet, with its spectrum, sliders, eyedropper and swatches. Nothing
+  half-rebuilt in-plugin to compete with it.
+- 👌 **Double-tap gestures** — two fingers to undo, three to redo. Dragging two
+  fingers still pans and zooms; only taps that stay put count as gestures. Both
+  actions are in the settings sheet too, so they're never hidden.
 - 💾 **Re-editable format** — sketches are saved as `.sketch` files (compact JSON
-  of strokes). They autosave when you leave or close, and you can save anytime
-  with the ✓ button. Reopen any sketch and keep drawing.
+  of strokes) and autosave as you draw. Reopen any sketch and keep drawing.
 - 👁️ **Live inline previews** — create a sketch from a note and the canvas renders
   right inside the note (no image file), staying in sync as you edit. Prefer a
   plain link instead? Flip a toggle in settings.
@@ -57,24 +66,31 @@ embed sketches in notes or keep them as standalone, re-editable files.
   by the plugin); switch to a plain link in settings (*"Insert sketches into notes
   as"*). Either way the sketch remembers which note it came from. Click an inline
   preview to open the sketch for editing.
-- **Eraser modes:** tap the eraser; tap it again to choose **Whole stroke**
-  (removes a whole line) or **Partial** (erases just the part you touch).
+- **Pick a tool:** tap the tool button to choose pen, brush, highlighter, or an
+  eraser — **objects** (removes a whole line) or **pixels** (rubs out just the
+  part you touch).
+- **Undo / redo:** double-tap with two fingers to undo, three to redo. Both are
+  also in the settings sheet.
 - **Edit later:** open the `.sketch` file from the file explorer or its link.
 - **Zoom, pan & rotate:** pinch with two fingers to zoom, drag to pan, and twist
   to rotate the canvas (or scroll-wheel to zoom on desktop). Tap *Fit to screen*
   to recenter and straighten the page.
-- **Canvas size:** tap the resize button to change the page dimensions or aspect
-  ratio (presets or custom), choose an anchor or scale your drawing to fit, or
-  *Fit to drawing* to wrap the canvas around your strokes.
-- **Save:** sketches autosave when you leave or close. Tap **✓ Save** to write
-  immediately. Saving never creates an image — your `.sketch` is the source.
-- **Export to an image:** tap the **Export** (download) button. You're asked
+- **Canvas size and colour:** open the settings button to change the page
+  dimensions or aspect ratio (presets or custom), choose an anchor or scale your
+  drawing to fit, *Fit to drawing* to wrap the canvas around your strokes, or set
+  the page colour.
+- **Rename:** the filename is hidden to make room for the tools, so rename the
+  sketch from the settings sheet. Links to it in your notes follow the rename.
+- **Save:** sketches autosave — there's nothing to press. Saving never creates an
+  image; your `.sketch` is the source.
+- **Export to an image:** open the settings sheet and choose **PNG**. You're asked
   whether to **add it to a note** (embeds `![[…]].png` — defaults to the note the
   sketch came from, otherwise pick one) or **just save the image** to your vault.
-  The *"Export current sketch as SVG"* command is also available.
+  **SVG** export is there too, as is the *"Export current sketch as SVG"* command.
 
-Settings let you choose the sketch folder, default color/brush size, palm
-rejection, canvas size, background, and PNG export resolution.
+Settings let you choose the sketch folder, default colour/brush size, toolbar
+button size, gestures, palm rejection, default canvas size and background, and
+PNG export resolution.
 
 ## Installation
 
@@ -98,9 +114,8 @@ Obsidian Sync or a git client) and enable it there.
 ## Roadmap
 
 Tabula Rasa is an actively evolving MVP. See **[docs/PHASES.md](docs/PHASES.md)** for the
-shipped feature set and what's planned next (canvas resize, richer brush/color
-pickers, pinch-to-rotate, eraser modes, a selection tool, and smart shape
-snapping).
+shipped feature set and what's planned next — a selection tool (lasso/rectangle
+with move, scale, delete and duplicate) and smart shape snapping.
 
 ## Development
 
