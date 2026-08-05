@@ -33,26 +33,34 @@ Obsidian community plugin for finger/Apple Pencil sketching directly inside a va
 
 ## Reorg Status
 
-**Campaign:** BeathamBase doc standard + light refactor (active multi-repo reorg across all 20 repos)
-**Status:** Done — docs moved to `docs/`, routing table updated, README links fixed, `npm audit` run (see Notes)
+**Campaign:** BeathamBase doc standard + light refactor (multi-repo reorg across all 20 repos)
+**Status:** Complete and merged. Docs live in `docs/`, routing table above is current, README links fixed.
 
-### BeathamBase doc standard
-Root keeps only: `README.md`, `CLAUDE.md`, `LICENSE` (if present), `SECURITY.md` (if present). Everything else goes in `docs/`. CLAUDE.md must have a routing table pointing to `docs/` paths.
+Root keeps only `README.md`, `CLAUDE.md`, `LICENSE`. Everything else goes in `docs/`.
 
-### What needs to happen
+- `ROADMAP.md` confirmed absent; stale references removed (README points at `docs/PHASES.md`).
+- `npm audit` was 1 moderate — `esbuild <=0.24.2` dev-server advisory (GHSA-67mh-4wv8-2f99).
+  Resolved by bumping `esbuild` `^0.20.0` → `^0.28.1` (dev-only); now 0 vulnerabilities.
+  Shipped as **v0.8.0**.
 
-1. **Branch:** `TabulaRasa/reorg`
-2. `mkdir docs` then `git mv` these root files into it: `ARCHITECTURE.md`, `PERSONAS.md`, `PHASES.md`, `PRD.md`, `TEAM.md`
-3. Keep `LICENSE` at root (BeathamBase standard allows it)
-4. Update this CLAUDE.md: add routing table pointing to `docs/` paths; remove/update the `ROADMAP.md` reference in Dev Constraints (it doesn't appear to exist at root)
-5. Update `README.md` if it links to root-level docs
-6. Run `npm audit` — check for vulnerabilities in the esbuild-based TypeScript build
-7. **No rename needed** — `TabulaRasa` is already PascalCase
-8. **PR → squash merge → delete branch**
+---
 
-### Notes
-Public repo — Obsidian community plugin. TypeScript + esbuild, standard Obsidian plugin scaffolding (`manifest.json`, `versions.json`, `version-bump.mjs`). Has `.editorconfig`, `.github/`, `LICENSE`.
+## Current Work
 
-- Reorg executed on branch `claude/claude-md-review-reorg-0vvwo6` (the session's assigned branch) rather than `TabulaRasa/reorg`.
-- Confirmed `ROADMAP.md` was not in the repo; stale references removed from CLAUDE.md and README (README now points to `docs/PHASES.md`).
-- `npm audit`: was 1 moderate — `esbuild <=0.24.2` dev-server request advisory (GHSA-67mh-4wv8-2f99). **Resolved:** bumped `esbuild` `^0.20.0` → `^0.28.1` (dev-only dep) on its own branch; `npm audit` now reports 0 vulnerabilities and the production build still type-checks + bundles cleanly. Carried by the v0.8.0 version bump.
+**Issue #7 — toolbar rebuild.** The sketch view's toolbar is now four circular buttons
+(brush · size · colour · more), down from 19 controls across 3 rows. Measured 169px → 49px.
+
+Conventions worth knowing before touching this area:
+
+- **The toolbar must never wrap.** If something needs a second row it belongs in the "more" sheet.
+- **Visual button size ≠ tap target.** The circle follows the 24/32/40 setting; the hit box stays
+  ≥44px. Don't collapse those back together.
+- **Colour is the operating system's job.** The button clicks a hidden `<input type="color">`,
+  which raises the native iOS Colors sheet. Don't rebuild a palette or recents list.
+- **Two-finger gestures are reserved** for pan/zoom/rotate. Undo/redo are three-finger, and are
+  also surfaced in the "more" sheet so they remain discoverable.
+- **Per-tool stroke feel lives in one table** (`TOOL_STROKE_OPTIONS` in `src/export.ts`) so the
+  live canvas and both export paths stay in agreement.
+
+**No published artifacts.** Interactive tools and mockups are deployed by Jeremiah himself; don't
+publish work to hosted artifact URLs.

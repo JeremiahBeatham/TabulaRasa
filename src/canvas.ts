@@ -1,5 +1,11 @@
 import { Point, SketchDoc, Stroke, ToolName } from "./model";
 import { renderDocToContext, strokeToOutline, fillOutline } from "./export";
+import {
+	DEFAULT_GESTURE_SETTINGS,
+	GestureSettings,
+	GestureTracker,
+	classifyGesture,
+} from "./gestures";
 
 export type EraserMode = "stroke" | "partial";
 
@@ -15,6 +21,7 @@ export interface BrushSettings {
 export interface SketchCanvasOptions {
 	palmRejection: boolean;
 	onChange: () => void;
+	gestures?: GestureSettings;
 }
 
 const MIN_SCALE = 0.1;
@@ -103,6 +110,14 @@ export class SketchCanvas {
 		anchorDocX: number;
 		anchorDocY: number;
 	} | null = null;
+
+	/** Tracks a three-finger undo/redo gesture while it's in progress. */
+	private tracker: GestureTracker | null = null;
+	/**
+	 * Set once a three-finger gesture has fired, to keep the fingers still down
+	 * from resuming pan/zoom on their way back up.
+	 */
+	private gestureConsumed = false;
 
 	private undoStack: DocSnapshot[] = [];
 	private redoStack: DocSnapshot[] = [];
@@ -219,6 +234,18 @@ export class SketchCanvas {
 		this.options.onChange();
 	}
 
+	/**
+	 * Change this sketch's background. Undoable, since it's as destructive to a
+	 * drawing's legibility as erasing — white ink on a white page vanishes.
+	 */
+	setBackground(background: string): void {
+		if (this.doc.background === background) return;
+		this.pushUndo();
+		this.doc.background = background;
+		this.redraw();
+		this.options.onChange();
+	}
+
 	canUndo(): boolean {
 		return this.undoStack.length > 0;
 	}
@@ -295,6 +322,14 @@ export class SketchCanvas {
 
 		this.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
 
+		// A third pointer escalates pan/zoom into an undo/redo gesture. Pan is
+		// suppressed for the rest of the interaction so the canvas doesn't drift
+		// while the fingers travel.
+		if (this.pointers.size === 3) {
+			this.tracker = new GestureTracker(this.pointerList());
+			this.gestureConsumed = false;
+		}
+
 		// A second pointer turns the interaction into a pan/zoom gesture.
 		if (this.pointers.size >= 2) {
 			this.enterGesture();
@@ -326,7 +361,18 @@ export class SketchCanvas {
 			this.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
 		}
 
+		if (this.tracker) {
+			this.tracker.update(this.pointerList());
+			evt.preventDefault();
+			return;
+		}
+
 		if (this.inGesture) {
+			// Don't resume panning on the fingers left over from an undo gesture.
+			if (this.gestureConsumed) {
+				evt.preventDefault();
+				return;
+			}
 			this.handleGestureMove();
 			evt.preventDefault();
 			return;
@@ -350,10 +396,26 @@ export class SketchCanvas {
 			this.el.releasePointerCapture(evt.pointerId);
 		}
 
+		// A three-finger gesture resolves the moment the first finger lifts.
+		if (this.tracker) {
+			const action = classifyGesture(
+				this.tracker.finish(),
+				this.options.gestures ?? DEFAULT_GESTURE_SETTINGS,
+			);
+			this.tracker = null;
+			this.gestureConsumed = true;
+			if (action === "undo") this.undo();
+			else if (action === "redo") this.redo();
+		}
+
 		if (this.inGesture) {
 			if (this.pointers.size < 2) {
 				this.inGesture = false;
 				this.gestureStart = null;
+				this.gestureConsumed = false;
+			} else if (!this.gestureConsumed) {
+				// Re-baseline so removing a finger doesn't jump the view.
+				this.beginGestureFromPointers();
 			}
 			return;
 		}
@@ -400,6 +462,11 @@ export class SketchCanvas {
 		this.inGesture = true;
 		this.beginGestureFromPointers();
 		this.redraw();
+	}
+
+	/** Current pointer positions in client coords, for gesture tracking. */
+	private pointerList(): { x: number; y: number }[] {
+		return Array.from(this.pointers.values());
 	}
 
 	private beginGestureFromPointers(): void {
