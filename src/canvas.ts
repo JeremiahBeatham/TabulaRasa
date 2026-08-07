@@ -30,6 +30,8 @@ const MAX_SCALE = 8;
 const PAN_MARGIN = 48;
 /** Bounds for a sketch's logical canvas dimensions. */
 export const MIN_CANVAS_SIZE = 64;
+/** Corner radius of the drawable page, in document pixels. */
+const PAGE_CORNER_RADIUS = 4;
 export const MAX_CANVAS_SIZE = 8192;
 
 interface ViewState {
@@ -209,19 +211,44 @@ export class SketchCanvas {
 		if (this.activeStroke) this.drawStroke(this.activeStroke);
 	}
 
-	/** Draw the page rectangle so the drawable bounds are clear when panned/zoomed. */
+	/**
+	 * Draw the page. The work area behind it is the same colour, so the page reads
+	 * as part of the background rather than a slab floating on it; the only thing
+	 * marking the drawable bounds is a hairline edge and a slight corner radius.
+	 */
 	private drawPage(): void {
 		const { ctx, doc } = this;
+		const radius = PAGE_CORNER_RADIUS;
 		// A transparent document shows the app background through the embed, so
 		// preview it on the same color; otherwise show the document's own color.
 		ctx.fillStyle =
 			doc.background && doc.background !== "transparent"
 				? doc.background
 				: this.pageColor;
-		ctx.fillRect(0, 0, doc.width, doc.height);
+		this.pagePath(radius);
+		ctx.fill();
+		// Hairline, so it delineates the edge without becoming a frame.
 		ctx.lineWidth = 1 / this.view.scale;
 		ctx.strokeStyle = this.borderColor;
-		ctx.strokeRect(0, 0, doc.width, doc.height);
+		this.pagePath(radius);
+		ctx.stroke();
+	}
+
+	private pagePath(radius: number): void {
+		const { ctx, doc } = this;
+		const r = Math.max(0, Math.min(radius, doc.width / 2, doc.height / 2));
+		ctx.beginPath();
+		if (typeof ctx.roundRect === "function") {
+			ctx.roundRect(0, 0, doc.width, doc.height, r);
+			return;
+		}
+		// Fallback for webviews without roundRect.
+		ctx.moveTo(r, 0);
+		ctx.arcTo(doc.width, 0, doc.width, doc.height, r);
+		ctx.arcTo(doc.width, doc.height, 0, doc.height, r);
+		ctx.arcTo(0, doc.height, 0, 0, r);
+		ctx.arcTo(0, 0, doc.width, 0, r);
+		ctx.closePath();
 	}
 
 	clear(): void {
@@ -580,7 +607,9 @@ export class SketchCanvas {
 		const read = (name: string, fallback: string) =>
 			cs.getPropertyValue(name).trim() || fallback;
 		this.pageColor = read("--background-primary", this.pageColor);
-		this.workColor = read("--background-primary-alt", this.workColor);
+		// The work area matches the page, so a dark theme reads as black-on-black
+		// and nothing frames the drawing but its own hairline edge.
+		this.workColor = this.pageColor;
 		this.borderColor = read("--background-modifier-border", this.borderColor);
 		this.el.style.backgroundColor = this.workColor;
 	}

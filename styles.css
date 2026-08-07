@@ -175,33 +175,12 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 	border-radius: 0;
 }
 
-.tabula-rasa-size {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 40px;
-	height: 40px;
-	border-radius: 10px;
-	border: none;
-	background: transparent;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
-
-.tabula-rasa-size:hover {
-	background: var(--background-modifier-hover);
-}
-
-.tabula-rasa-size.is-active {
-	background: var(--background-modifier-active-hover);
-}
-
 .tabula-rasa-size-dot {
 	border-radius: 50%;
 	background: var(--text-normal);
 }
 
-/* Brush-size popover (anchored under the size trigger). */
+/* Shared popover, anchored under whichever header button opened it. */
 .tabula-rasa-popover {
 	position: absolute;
 	z-index: 30;
@@ -215,19 +194,6 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-}
-
-.tabula-rasa-size-preview {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	height: 56px;
-}
-
-.tabula-rasa-size-preview-dot {
-	border-radius: 50%;
-	background: var(--text-normal);
 }
 
 /* Tapping the readout swaps it for the number field below. */
@@ -260,69 +226,108 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 	padding: 4px 8px;
 }
 
-.tabula-rasa-size-slider {
-	width: 100%;
+/*
+ * Popovers that stack under their trigger. Left-aligned and padded so the icon
+ * column sits directly beneath the button that opened them.
+ */
+.tabula-rasa-popover-stack {
+	align-items: stretch;
+	gap: 2px;
+	/* No left padding: the icon column has to start where the trigger button
+	   starts, so the icons read as a stack hanging off it. */
+	padding: 6px 6px 6px 0;
+	min-width: 0;
 }
 
-.tabula-rasa-size-presets {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: 6px;
-}
-
-.tabula-rasa-popover-label {
-	align-self: flex-start;
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--text-muted);
-}
-
-/* Tool list rows inside the popover. */
-.tabula-rasa-mode-option {
+.tabula-rasa-tool-row {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	width: 100%;
 	min-height: 44px;
-	text-align: left;
-	padding: 8px 10px;
-	border: 1px solid var(--background-modifier-border);
+	padding: 4px 14px 4px 0;
+	border: none;
 	border-radius: 8px;
-	background: var(--background-primary);
+	background: transparent;
 	color: var(--text-normal);
 	cursor: pointer;
+	text-align: left;
 	-webkit-tap-highlight-color: transparent;
 }
 
-.tabula-rasa-mode-option.is-active {
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 1px var(--interactive-accent);
+.tabula-rasa-tool-row:active {
+	background: var(--background-modifier-hover);
 }
 
-.tabula-rasa-mode-icon {
+.tabula-rasa-tool-row.is-active {
+	background: var(--background-modifier-hover);
+}
+
+/* Same footprint as a toolbar button, so the icons line up in a column. */
+.tabula-rasa-tool-icon {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	flex: none;
+	width: max(var(--tr-button-size), var(--tr-tap-target));
 	color: var(--text-muted);
 }
 
-.tabula-rasa-mode-option.is-active .tabula-rasa-mode-icon {
+.tabula-rasa-tool-row.is-active .tabula-rasa-tool-icon {
 	color: var(--interactive-accent);
 }
 
-.tabula-rasa-mode-text {
-	min-width: 0;
+.tabula-rasa-tool-name {
+	font-size: 15px;
+	white-space: nowrap;
 }
 
-.tabula-rasa-mode-name {
-	font-weight: 600;
+/* Presets stack; the slider stands upright beside them. */
+.tabula-rasa-size-row {
+	display: flex;
+	align-items: stretch;
+	gap: 10px;
 }
 
-.tabula-rasa-mode-desc {
-	font-size: 12px;
-	color: var(--text-muted);
+.tabula-rasa-size-presets {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+/*
+ * Vertical slider. A horizontal one is unusable inside Obsidian mobile: dragging
+ * sideways is taken as the app's back-swipe and throws you out to file
+ * navigation. touch-action keeps the drag from bubbling either way.
+ */
+.tabula-rasa-size-slider {
+	-webkit-appearance: slider-vertical;
+	appearance: slider-vertical;
+	writing-mode: vertical-lr;
+	direction: rtl;
+	width: 34px;
+	min-height: 150px;
+	margin: 0;
+	touch-action: none;
+	overscroll-behavior: none;
+}
+
+/* Same footprint as a toolbar button so the preset dots form a tidy column. */
+.tabula-rasa-size {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: max(var(--tr-button-size), var(--tr-tap-target));
+	height: 44px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.tabula-rasa-size:active,
+.tabula-rasa-size.is-active {
+	background: var(--background-modifier-hover);
 }
 
 /*
@@ -383,4 +388,50 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
 	background: var(--background-primary);
+}
+
+/*
+ * Section headings in the settings sheet. Obsidian's own setHeading() renders at
+ * about the same weight as a setting name, so sections were losing to their own
+ * contents; an icon and a size step up puts the hierarchy back.
+ */
+.tabula-rasa-sheet-heading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 20px 0 2px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	color: var(--text-normal);
+}
+
+.tabula-rasa-sheet-heading:first-child {
+	margin-top: 4px;
+}
+
+.tabula-rasa-sheet-heading-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-accent);
+}
+
+.tabula-rasa-sheet-heading-text {
+	font-size: 17px;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+}
+
+/* Option titles sit a step below their heading. */
+.tabula-rasa-sheet-body .setting-item-name {
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.tabula-rasa-sheet-body .setting-item-description {
+	font-size: 12px;
+}
+
+.tabula-rasa-sheet-body .setting-item {
+	padding: 10px 0;
+	border-top: none;
 }

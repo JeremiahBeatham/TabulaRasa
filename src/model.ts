@@ -2,11 +2,18 @@ export const SKETCH_EXTENSION = "sketch";
 export const SKETCH_DOC_VERSION = 1 as const;
 
 /**
- * Drawing tools. "brush" is a softer, more pressure-responsive sibling of
- * "pen" — see TOOL_STROKE_OPTIONS in export.ts for what actually differs.
+ * Drawing tools. See TOOL_STROKE_OPTIONS in export.ts for what separates them.
  * The union is additive: sketches saved before a tool existed still parse.
+ *
+ * "brush" is retained only so strokes saved by v0.9.0–v0.10.2 keep rendering;
+ * it is no longer offered in the UI and behaves as "crayon", which replaced it.
  */
-export type ToolName = "pen" | "brush" | "highlighter" | "eraser";
+export type ToolName =
+	| "pen"
+	| "crayon"
+	| "brush"
+	| "highlighter"
+	| "eraser";
 
 export interface Point {
 	x: number;

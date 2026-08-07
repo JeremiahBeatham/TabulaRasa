@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.10.2) | Done — see below |
+| Shipped (v0.1.x → v0.10.3) | Done — see below |
 | Next (UX polish) | #7 done; each menu/dropdown now its own refinement item |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.10.2)
+## Shipped (v0.1.x → v0.10.3)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -42,6 +42,10 @@
 - [x] Colour swatch clipped to a true circle at button size; gesture tolerances eased by ~a third so
       double-taps don't demand perfect stillness; new sketches default to a portrait canvas the size
       of the screen (v0.10.2)
+- [x] Black-on-black canvas with a hairline edge and 4px corners; tool list cut to pen / crayon /
+      marker / eraser as an icon stack under the trigger; crayon replaces the brush with a textured,
+      heavier stroke; size dropdown gets a **vertical** slider (a horizontal one was read as
+      Obsidian's back-swipe); settings-sheet headings gain icons; rename auto-saves (v0.10.3)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -82,8 +86,11 @@ reworked in isolation.
       anything) belongs around it, e.g. a small set of pinned colours.
 - [ ] **Settings sheet** — grouping and ordering of canvas / edit / export, what
       should be promoted or demoted, and how it behaves as a bottom sheet.
+      Headings now carry icons; the grouping itself is still open.
 - [ ] **Plugin settings tab** — which defaults still earn their place now that
       several moved onto the canvas.
+- Card-sorting tool for the two above: [`docs/tools/settings-card-sort.html`](tools/settings-card-sort.html)
+  — all 28 existing options as draggable cards across renameable sections, exporting the grouping.
 
 ## Later — Bigger Features
 - [ ] [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)

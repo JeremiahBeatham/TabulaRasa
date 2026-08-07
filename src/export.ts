@@ -7,6 +7,14 @@ interface ToolStrokeOptions {
 	streamline: number;
 	/** Fraction of the brush size used to taper the stroke's ends. */
 	taper: number;
+	/** Multiplier on the brush size, so a tool can run heavier by default. */
+	weight: number;
+	/**
+	 * Ragged edge, in fractions of the brush size. Perfect-freehand returns a
+	 * smooth polygon; nudging its vertices outward and inward roughens the
+	 * silhouette, which is what reads as wax or charcoal rather than ink.
+	 */
+	grain: number;
 }
 
 /**
@@ -19,12 +27,61 @@ interface ToolStrokeOptions {
  * the wobble away (low streamline), and tapers at both ends like a loaded
  * bristle leaving and lifting off the page.
  */
-const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
-	pen: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0 },
-	brush: { thinning: 0.86, smoothing: 0.62, streamline: 0.32, taper: 0.9 },
-	highlighter: { thinning: 0.18, smoothing: 0.5, streamline: 0.55, taper: 0 },
-	eraser: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0 },
+const CRAYON_OPTIONS: ToolStrokeOptions = {
+	thinning: 0.42,
+	smoothing: 0.34,
+	streamline: 0.28,
+	taper: 0.25,
+	weight: 1.7,
+	grain: 0.16,
 };
+
+const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
+	pen: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0, weight: 1, grain: 0 },
+	crayon: CRAYON_OPTIONS,
+	// Legacy alias: strokes saved as "brush" before the crayon rename.
+	brush: CRAYON_OPTIONS,
+	highlighter: {
+		thinning: 0.18,
+		smoothing: 0.5,
+		streamline: 0.55,
+		taper: 0,
+		weight: 1.25,
+		grain: 0,
+	},
+	eraser: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0, weight: 1, grain: 0 },
+};
+
+/**
+ * Deterministic pseudo-random in [-1, 1] from an integer. Must be stable: the
+ * live canvas and both export paths render the same stroke, so a real RNG would
+ * make a drawing shimmer as it redrew and differ from its own export.
+ */
+function jitter(seed: number): number {
+	const x = Math.sin(seed * 12.9898) * 43758.5453;
+	return (x - Math.floor(x)) * 2 - 1;
+}
+
+/**
+ * Roughen an outline by pushing each vertex along its own normal. Applied after
+ * perfect-freehand so the stroke keeps its shape and only its edge turns grainy.
+ */
+function roughen(outline: number[][], amount: number): number[][] {
+	if (amount <= 0 || outline.length < 3) return outline;
+	const n = outline.length;
+	return outline.map(([x, y], i) => {
+		const [px, py] = outline[(i - 1 + n) % n];
+		const [nx, ny] = outline[(i + 1) % n];
+		// Normal of the local tangent, so vertices move perpendicular to the edge.
+		let tx = ny - py;
+		let ty = -(nx - px);
+		const len = Math.hypot(tx, ty) || 1;
+		tx /= len;
+		ty /= len;
+		const d = jitter(i + 1) * amount;
+		return [x + tx * d, y + ty * d];
+	});
+}
 
 /**
  * Convert a stroke's points + pressure into a filled outline polygon using
@@ -34,9 +91,10 @@ const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
 export function strokeToOutline(stroke: Stroke): number[][] {
 	const inputPoints = stroke.points.map((pt) => [pt.x, pt.y, pt.p]);
 	const opts = TOOL_STROKE_OPTIONS[stroke.tool] ?? TOOL_STROKE_OPTIONS.pen;
-	const taper = opts.taper * stroke.size;
-	return getStroke(inputPoints, {
-		size: stroke.size,
+	const size = stroke.size * opts.weight;
+	const taper = opts.taper * size;
+	const outline = getStroke(inputPoints, {
+		size,
 		thinning: opts.thinning,
 		smoothing: opts.smoothing,
 		streamline: opts.streamline,
@@ -46,6 +104,7 @@ export function strokeToOutline(stroke: Stroke): number[][] {
 		end: { taper },
 		last: true,
 	});
+	return roughen(outline, opts.grain * size);
 }
 
 /** Build an SVG path "d" string from an outline polygon. */
