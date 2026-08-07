@@ -45,40 +45,26 @@ interface ToolOption {
 	eraserMode?: EraserMode;
 	icon: string;
 	label: string;
-	desc: string;
 }
 
+/**
+ * Four tools, named plainly and with no descriptions — the list is a stack of
+ * icons directly beneath the trigger, so the icon column lines up with the
+ * button and the names read off to the right.
+ *
+ * Only the whole-stroke eraser is offered; partial/pixel erasing is still in
+ * the engine but wasn't good enough to put in front of anyone.
+ */
 const TOOL_OPTIONS: ToolOption[] = [
-	{ id: "pen", tool: "pen", icon: "pen", label: "Pen", desc: "Crisp, even line." },
+	{ id: "pen", tool: "pen", icon: "pen", label: "Pen" },
+	{ id: "crayon", tool: "crayon", icon: "pencil", label: "Crayon" },
+	{ id: "marker", tool: "highlighter", icon: "highlighter", label: "Marker" },
 	{
-		id: "brush",
-		tool: "brush",
-		icon: "brush",
-		label: "Brush",
-		desc: "Soft, tapered, pressure-led.",
-	},
-	{
-		id: "highlighter",
-		tool: "highlighter",
-		icon: "highlighter",
-		label: "Highlighter",
-		desc: "Flat translucent marker.",
-	},
-	{
-		id: "eraser-object",
+		id: "eraser",
 		tool: "eraser",
 		eraserMode: "stroke",
 		icon: "eraser",
-		label: "Eraser — objects",
-		desc: "Removes a whole stroke on touch.",
-	},
-	{
-		id: "eraser-pixel",
-		tool: "eraser",
-		eraserMode: "partial",
-		icon: "eraser",
-		label: "Eraser — pixels",
-		desc: "Rubs out only the part you touch.",
+		label: "Eraser",
 	},
 ];
 
@@ -393,19 +379,17 @@ export class SketchView extends TextFileView {
 	}
 
 	private buildToolPopover(pop: HTMLElement): void {
-		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Tool" });
+		pop.addClass("tabula-rasa-popover-stack");
 		const activeId = this.currentToolOption().id;
 		for (const option of TOOL_OPTIONS) {
 			const row = pop.createEl("button", {
-				cls: "tabula-rasa-mode-option",
+				cls: "tabula-rasa-tool-row",
 				attr: { type: "button" },
 			});
 			row.toggleClass("is-active", option.id === activeId);
-			const icon = row.createSpan({ cls: "tabula-rasa-mode-icon" });
+			const icon = row.createSpan({ cls: "tabula-rasa-tool-icon" });
 			setIcon(icon, option.icon);
-			const text = row.createDiv({ cls: "tabula-rasa-mode-text" });
-			text.createDiv({ cls: "tabula-rasa-mode-name", text: option.label });
-			text.createDiv({ cls: "tabula-rasa-mode-desc", text: option.desc });
+			row.createSpan({ cls: "tabula-rasa-tool-name", text: option.label });
 			row.addEventListener("click", () => {
 				this.applyTool(option);
 				this.closePopover();
@@ -521,9 +505,14 @@ export class SketchView extends TextFileView {
 	// --- brush size -----------------------------------------------------
 
 	private buildSizePopover(pop: HTMLElement): void {
-		pop.createDiv({ cls: "tabula-rasa-popover-label", text: "Size" });
+		pop.addClass("tabula-rasa-popover-stack");
 
-		const presets = pop.createDiv({ cls: "tabula-rasa-size-presets" });
+		// Presets stack under the button; the slider stands vertically beside them.
+		// A horizontal slider is unusable here — dragging one sideways is read as
+		// Obsidian's back-swipe and throws you out to file navigation.
+		const row = pop.createDiv({ cls: "tabula-rasa-size-row" });
+
+		const presets = row.createDiv({ cls: "tabula-rasa-size-presets" });
 		this.sizePresetButtons.clear();
 		for (const size of SIZE_PRESETS) {
 			const b = presets.createEl("button", {
@@ -538,7 +527,7 @@ export class SketchView extends TextFileView {
 			this.sizePresetButtons.set(size, b);
 		}
 
-		const slider = pop.createEl("input", {
+		const slider = row.createEl("input", {
 			cls: "tabula-rasa-size-slider",
 			attr: {
 				type: "range",
@@ -546,17 +535,13 @@ export class SketchView extends TextFileView {
 				max: String(MAX_BRUSH_SIZE),
 				step: "1",
 				"aria-label": "Brush size",
+				orient: "vertical",
 			},
 		});
 		this.sizeSlider = slider;
 		slider.addEventListener("input", () =>
 			this.selectSize(Number(slider.value)),
 		);
-
-		const preview = pop.createDiv({ cls: "tabula-rasa-size-preview" });
-		this.sizePreviewDot = preview.createDiv({
-			cls: "tabula-rasa-size-preview-dot",
-		});
 
 		// The readout doubles as the way in to typing an exact value.
 		this.sizeValueLabel = pop.createEl("button", {
@@ -816,36 +801,55 @@ class MoreSheet extends Modal {
 		super(app);
 	}
 
+	/**
+	 * Section headings carry an icon and are set larger than the option titles
+	 * beneath them. Obsidian's own setHeading() renders at roughly the same weight
+	 * as a setting name, which left the sections losing to their own contents.
+	 */
+	private heading(icon: string, text: string): void {
+		const h = this.contentEl.createDiv({ cls: "tabula-rasa-sheet-heading" });
+		const ic = h.createSpan({ cls: "tabula-rasa-sheet-heading-icon" });
+		setIcon(ic, icon);
+		h.createSpan({ cls: "tabula-rasa-sheet-heading-text", text });
+	}
+
 	onOpen(): void {
 		this.modalEl.addClass("tabula-rasa-sheet");
 		this.titleEl.setText("Sketch options");
+		this.contentEl.addClass("tabula-rasa-sheet-body");
+		this.heading("file-pen", "Sketch");
 
 		// The filename is hidden from the header to make room for the tools, so
 		// this is now the only place to read or change it.
-		let pendingName = this.actions.name;
+		// No confirm button: the field commits itself shortly after you stop typing,
+		// and on blur or Enter. Debounced so a rename isn't attempted per keystroke.
 		new Setting(this.contentEl)
 			.setName("Name")
-			.setDesc("Renaming updates links to this sketch in your notes.")
+			.setDesc("Saves as you type. Links to this sketch in your notes follow it.")
 			.addText((t) => {
 				t.setValue(this.actions.name);
-				t.onChange((v) => {
-					pendingName = v;
+				let timer: number | null = null;
+				const commit = (): void => {
+					if (timer !== null) {
+						window.clearTimeout(timer);
+						timer = null;
+					}
+					this.actions.onRename(t.inputEl.value);
+				};
+				t.onChange(() => {
+					if (timer !== null) window.clearTimeout(timer);
+					timer = window.setTimeout(commit, 700);
 				});
+				t.inputEl.addEventListener("blur", commit);
 				t.inputEl.addEventListener("keydown", (e) => {
 					if (e.key === "Enter") {
-						this.close();
-						this.actions.onRename(pendingName);
+						e.preventDefault();
+						commit();
 					}
 				});
-			})
-			.addButton((b) =>
-				b.setButtonText("Rename").onClick(() => {
-					this.close();
-					this.actions.onRename(pendingName);
-				}),
-			);
+			});
 
-		new Setting(this.contentEl).setName("Canvas").setHeading();
+		this.heading("frame", "Canvas");
 
 		new Setting(this.contentEl)
 			.setName("Canvas size")
@@ -885,7 +889,7 @@ class MoreSheet extends Modal {
 				}),
 			);
 
-		new Setting(this.contentEl).setName("Edit").setHeading();
+		this.heading("history", "Edit");
 
 		new Setting(this.contentEl)
 			.setName("Undo and redo")
@@ -922,7 +926,7 @@ class MoreSheet extends Modal {
 					}),
 			);
 
-		new Setting(this.contentEl).setName("Export").setHeading();
+		this.heading("download", "Export");
 
 		new Setting(this.contentEl)
 			.setName("Export as PNG")

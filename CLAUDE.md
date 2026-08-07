@@ -71,7 +71,13 @@ Conventions worth knowing before touching this area:
   Colors sheet for a genuine tap on a genuine input; invisible inputs and scripted `.click()` are
   both ignored. Two attempts failed that way before this stuck.
 - **Per-tool stroke feel lives in one table** (`TOOL_STROKE_OPTIONS` in `src/export.ts`) so the
-  live canvas and both export paths stay in agreement.
+  live canvas and both export paths stay in agreement. Any randomness there (crayon's grain) must be
+  seeded and deterministic — a real RNG makes a drawing shimmer on redraw and differ from its export.
+- **Sliders in popovers must be vertical.** A horizontal drag inside Obsidian mobile is taken as the
+  app's back-swipe and throws you out to file navigation.
+- **`ToolName` keeps `"brush"`** purely so sketches saved by v0.9.0–v0.10.2 still render; it aliases
+  to `crayon` and is not offered in the UI.
 
-**No published artifacts.** Interactive tools and mockups are deployed by Jeremiah himself; don't
-publish work to hosted artifact URLs.
+**Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
+sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he
+explicitly asks for an artifact.

@@ -1,0 +1,856 @@
+<title>Settings Card Sort — Tabula Rasa</title>
+
+<style>
+	:root {
+		--bg: #f5f6f8;
+		--surface: #ffffff;
+		--surface-2: #eceef2;
+		--line: #d8dce3;
+		--line-strong: #b6bcc7;
+		--ink: #14171c;
+		--ink-2: #454c58;
+		--ink-3: #6f7784;
+		--accent: #9a5b12;
+		--accent-ink: #ffffff;
+		--accent-soft: #f6e7d4;
+		--drop: #b1741f;
+		--shadow: 0 1px 2px rgba(20, 23, 28, 0.05), 0 10px 26px rgba(20, 23, 28, 0.07);
+		--ui: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+		--mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--bg: #0d0f12; --surface: #16191e; --surface-2: #1e232a;
+			--line: #282e37; --line-strong: #3a424e;
+			--ink: #e8ecef; --ink-2: #aeb6c1; --ink-3: #7e8794;
+			--accent: #e0a355; --accent-ink: #241703; --accent-soft: #33260f;
+			--drop: #e0a355;
+			--shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 26px rgba(0,0,0,.4);
+		}
+	}
+
+	:root[data-theme="dark"] {
+		--bg: #0d0f12; --surface: #16191e; --surface-2: #1e232a;
+		--line: #282e37; --line-strong: #3a424e;
+		--ink: #e8ecef; --ink-2: #aeb6c1; --ink-3: #7e8794;
+		--accent: #e0a355; --accent-ink: #241703; --accent-soft: #33260f;
+		--drop: #e0a355;
+		--shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 26px rgba(0,0,0,.4);
+	}
+
+	:root[data-theme="light"] {
+		--bg: #f5f6f8; --surface: #ffffff; --surface-2: #eceef2;
+		--line: #d8dce3; --line-strong: #b6bcc7;
+		--ink: #14171c; --ink-2: #454c58; --ink-3: #6f7784;
+		--accent: #9a5b12; --accent-ink: #ffffff; --accent-soft: #f6e7d4;
+		--drop: #b1741f;
+		--shadow: 0 1px 2px rgba(20,23,28,.05), 0 10px 26px rgba(20,23,28,.07);
+	}
+
+	* { box-sizing: border-box; }
+
+	body {
+		margin: 0;
+		background: var(--bg);
+		color: var(--ink);
+		font-family: var(--ui);
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+		overscroll-behavior: none;
+	}
+
+	.wrap {
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 16px 13px 200px;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+
+	.eyebrow {
+		font-family: var(--mono);
+		font-size: 10.5px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+	}
+
+	h1 {
+		margin: 2px 0 0;
+		font-size: 21px;
+		line-height: 1.15;
+		letter-spacing: -0.02em;
+		font-weight: 650;
+	}
+
+	.lede { margin: 5px 0 0; color: var(--ink-2); font-size: 13.5px; max-width: 62ch; }
+
+	/* --- sections ------------------------------------------------------- */
+
+	.section {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 13px;
+		box-shadow: var(--shadow);
+		overflow: hidden;
+	}
+
+	.section.is-drop-target {
+		border-color: var(--drop);
+		box-shadow: 0 0 0 2px var(--drop);
+	}
+
+	.sec-head {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 10px 12px;
+		background: var(--surface-2);
+		border-bottom: 1px solid var(--line);
+	}
+
+	.sec-icon {
+		font-size: 17px;
+		line-height: 1;
+		flex: none;
+		width: 26px;
+		text-align: center;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 4px 0;
+	}
+
+	.sec-name {
+		flex: 1;
+		min-width: 0;
+		font-size: 16px;
+		font-weight: 640;
+		letter-spacing: -0.01em;
+		color: var(--ink);
+		background: transparent;
+		border: 1px solid transparent;
+		border-radius: 7px;
+		padding: 5px 7px;
+		font-family: var(--ui);
+	}
+
+	.sec-name:focus {
+		border-color: var(--accent);
+		background: var(--surface);
+		outline: none;
+	}
+
+	.sec-count {
+		font-family: var(--mono);
+		font-size: 11px;
+		color: var(--ink-3);
+		font-variant-numeric: tabular-nums;
+		flex: none;
+	}
+
+	.sec-kill {
+		flex: none;
+		width: 34px;
+		height: 34px;
+		border-radius: 8px;
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--ink-3);
+		font-size: 16px;
+		cursor: pointer;
+	}
+
+	.sec-kill:disabled { opacity: 0.25; cursor: default; }
+
+	.cards { padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 46px; }
+
+	.empty {
+		font-size: 12.5px;
+		color: var(--ink-3);
+		font-style: italic;
+		padding: 8px 6px;
+	}
+
+	/* --- cards ---------------------------------------------------------- */
+
+	.card {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		min-height: 46px;
+		padding: 7px 10px;
+		border-radius: 9px;
+		border: 1px solid var(--line-strong);
+		background: var(--surface);
+		color: var(--ink);
+		font-family: var(--ui);
+		font-size: 14px;
+		text-align: left;
+		cursor: grab;
+		touch-action: none;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.card[aria-pressed="true"] {
+		border-color: var(--accent);
+		background: var(--accent-soft);
+		box-shadow: inset 0 0 0 1px var(--accent);
+	}
+
+	.card.is-dragging { opacity: 0.35; }
+
+	.grip {
+		flex: none;
+		color: var(--ink-3);
+		font-size: 15px;
+		line-height: 1;
+		letter-spacing: -2px;
+	}
+
+	.card-name { flex: 1; min-width: 0; }
+
+	.tag {
+		flex: none;
+		font-family: var(--mono);
+		font-size: 9.5px;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		padding: 2px 5px;
+		border-radius: 4px;
+		border: 1px solid var(--line-strong);
+		color: var(--ink-3);
+	}
+
+	.tag.sheet { color: var(--accent); border-color: var(--accent); }
+
+	/* The floating copy that follows a finger during a drag. */
+	#ghost {
+		position: fixed;
+		z-index: 60;
+		pointer-events: none;
+		display: none;
+		opacity: 0.95;
+		box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+		transform: translate(-50%, -50%);
+	}
+
+	#ghost.on { display: flex; }
+
+	/* --- controls ------------------------------------------------------- */
+
+	.btn {
+		font-family: var(--ui);
+		font-size: 13.5px;
+		font-weight: 550;
+		min-height: 42px;
+		padding: 9px 14px;
+		border-radius: 9px;
+		border: 1px solid var(--line-strong);
+		background: var(--surface);
+		color: var(--ink);
+		cursor: pointer;
+	}
+
+	.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+	.btn:active { transform: translateY(1px); }
+
+	.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+	.dock {
+		position: fixed;
+		left: 0; right: 0; bottom: 0;
+		z-index: 40;
+		background: var(--surface);
+		border-top: 1px solid var(--line-strong);
+		box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.16);
+		padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.move { display: none; flex-direction: column; gap: 7px; }
+	.move.open { display: flex; }
+	.move-title { font-size: 13.5px; font-weight: 600; }
+	.move-list { display: flex; gap: 6px; flex-wrap: wrap; }
+
+	.move-list button {
+		font-family: var(--ui);
+		font-size: 12.5px;
+		min-height: 40px;
+		padding: 7px 11px;
+		border-radius: 9px;
+		border: 1px solid var(--line-strong);
+		background: var(--surface);
+		color: var(--ink);
+		cursor: pointer;
+	}
+
+	.move-list button[aria-pressed="true"] {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--accent-ink);
+		font-weight: 600;
+	}
+
+	textarea {
+		width: 100%;
+		min-height: 170px;
+		font-family: var(--mono);
+		font-size: 11.5px;
+		line-height: 1.55;
+		padding: 10px;
+		border-radius: 9px;
+		border: 1px solid var(--line-strong);
+		background: var(--surface-2);
+		color: var(--ink);
+		resize: vertical;
+	}
+
+	.panel {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 13px;
+		box-shadow: var(--shadow);
+		overflow: hidden;
+	}
+
+	.panel-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		flex-wrap: wrap;
+		padding: 10px 12px;
+		border-bottom: 1px solid var(--line);
+		background: var(--surface-2);
+	}
+
+	.panel-title {
+		font-family: var(--mono);
+		font-size: 10.5px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--ink-2);
+		margin: 0;
+		font-weight: 600;
+	}
+
+	.panel-body { padding: 12px; }
+	.hint { font-size: 12.5px; color: var(--ink-3); margin: 9px 0 0; }
+	.hint code { font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+	:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+	@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+	<header>
+		<span class="eyebrow">Tabula Rasa · Settings</span>
+		<h1>Settings Card Sort</h1>
+		<p class="lede">
+			Every setting and action that exists today, in the groups it currently sits in.
+			Drag a card to another section, or tap it and pick a destination. Rename any
+			heading, tap its emoji to change it, and add sections as you need them.
+		</p>
+	</header>
+
+	<div class="row">
+		<button class="btn" id="addSection" type="button">+ Add section</button>
+		<button class="btn" id="resetBtn" type="button">Reset</button>
+		<span style="flex:1"></span>
+		<span class="sec-count" id="tally">—</span>
+	</div>
+
+	<div id="sections"></div>
+
+	<section class="panel">
+		<div class="panel-head">
+			<h2 class="panel-title">Result</h2>
+			<button class="btn primary" id="copyBtn" type="button">Copy</button>
+		</div>
+		<div class="panel-body">
+			<textarea id="out" readonly aria-label="Sorted settings"></textarea>
+			<p class="hint" id="copyNote">
+				<code>TAB</code> marks a plugin-settings option, <code>SHEET</code> a per-sketch one.
+				Paste this back into the chat when you're happy with the grouping.
+			</p>
+		</div>
+	</section>
+</div>
+
+<button class="card" id="ghost" aria-hidden="true"><span class="card-name"></span></button>
+
+<div class="dock">
+	<div class="move" id="moveBar">
+		<span class="move-title" id="moveTitle">—</span>
+		<div class="move-list" id="moveList"></div>
+	</div>
+	<div class="row">
+		<button class="btn" id="deselect" type="button">Done</button>
+		<span style="flex:1"></span>
+		<span class="hint" style="margin:0">Drag a card, or tap to move it</span>
+	</div>
+</div>
+
+<script>
+(function () {
+	"use strict";
+
+	var STORE = "tabula-rasa-settings-card-sort-v1";
+
+	/*
+	 * Every option that exists in the plugin today.
+	 *   surface "tab"   — the plugin's settings tab (global preferences)
+	 *   surface "sheet" — the per-sketch settings sheet
+	 * Nested items are the contents of a dialog the sheet opens, listed so they
+	 * can be promoted out of it if that reads better.
+	 */
+	var ITEMS = [
+		// --- plugin settings tab, currently ungrouped at the top
+		{ id: "sketch-folder", name: "Sketch folder", surface: "tab", home: "General" },
+		{ id: "insert-as", name: "Insert sketches into notes as", surface: "tab", home: "General" },
+		{ id: "match-theme", name: "Match pen colour to theme", surface: "tab", home: "General" },
+		{ id: "default-colour", name: "Default brush colour", surface: "tab", home: "General" },
+		{ id: "default-size", name: "Default brush size", surface: "tab", home: "General" },
+		// --- plugin settings tab, currently grouped
+		{ id: "button-size", name: "Toolbar button size", surface: "tab", home: "Toolbar" },
+		{ id: "gestures", name: "Double-tap to undo and redo", surface: "tab", home: "Gestures" },
+		{ id: "palm", name: "Palm rejection", surface: "tab", home: "Drawing" },
+		{ id: "transparent-bg", name: "Transparent background (new sketches)", surface: "tab", home: "Drawing" },
+		{ id: "fit-screen", name: "Fit new sketches to the screen", surface: "tab", home: "Drawing" },
+		{ id: "canvas-w", name: "Default canvas width", surface: "tab", home: "Drawing" },
+		{ id: "canvas-h", name: "Default canvas height", surface: "tab", home: "Drawing" },
+		{ id: "png-scale", name: "PNG export scale", surface: "tab", home: "Drawing" },
+		// --- per-sketch settings sheet
+		{ id: "name", name: "Name (rename sketch)", surface: "sheet", home: "Sketch" },
+		{ id: "canvas-size", name: "Canvas size", surface: "sheet", home: "Canvas" },
+		{ id: "canvas-colour", name: "Canvas colour", surface: "sheet", home: "Canvas" },
+		{ id: "fit-view", name: "Fit to screen", surface: "sheet", home: "Canvas" },
+		{ id: "undo-redo", name: "Undo and redo", surface: "sheet", home: "Edit" },
+		{ id: "clear", name: "Clear sketch", surface: "sheet", home: "Edit" },
+		{ id: "export-png", name: "Export as PNG", surface: "sheet", home: "Export" },
+		{ id: "export-svg", name: "Export as SVG", surface: "sheet", home: "Export" },
+		// --- currently buried inside the canvas-size dialog
+		{ id: "aspect-presets", name: "Aspect presets (square, 4:3, 16:9, A4)", surface: "sheet", home: "Inside canvas size" },
+		{ id: "wh", name: "Width / height entry", surface: "sheet", home: "Inside canvas size" },
+		{ id: "anchor", name: "Anchor", surface: "sheet", home: "Inside canvas size" },
+		{ id: "scale-fit", name: "Scale drawing to fit", surface: "sheet", home: "Inside canvas size" },
+		{ id: "fit-drawing", name: "Fit to drawing", surface: "sheet", home: "Inside canvas size" },
+		// --- currently buried inside the PNG export dialog
+		{ id: "embed-note", name: "Add image to a note", surface: "sheet", home: "Inside PNG export" },
+		{ id: "save-image", name: "Just save the image", surface: "sheet", home: "Inside PNG export" }
+	];
+
+	var DEFAULT_SECTIONS = [
+		{ id: "s-sketch", icon: "🏷️", name: "Sketch" },
+		{ id: "s-canvas", icon: "🖼️", name: "Canvas" },
+		{ id: "s-edit", icon: "↩️", name: "Edit" },
+		{ id: "s-export", icon: "📤", name: "Export" },
+		{ id: "s-general", icon: "⚙️", name: "General" },
+		{ id: "s-toolbar", icon: "🔵", name: "Toolbar" },
+		{ id: "s-gestures", icon: "👌", name: "Gestures" },
+		{ id: "s-drawing", icon: "✏️", name: "Drawing" },
+		{ id: "s-canvasdlg", icon: "📐", name: "Inside canvas size" },
+		{ id: "s-exportdlg", icon: "🖨️", name: "Inside PNG export" }
+	];
+
+	var ICONS = ["🏷️","🖼️","↩️","📤","⚙️","🔵","👌","✏️","📐","🖨️","🎨","📱","🧰","💾","👁️","🤏","📝","🔧","⭐","🗂️"];
+
+	var BY_ID = {};
+	ITEMS.forEach(function (i) { BY_ID[i.id] = i; });
+
+	var state = null;
+	var selected = null;
+	var drag = null;
+	var seq = 1;
+
+	function defaultState() {
+		var sections = DEFAULT_SECTIONS.map(function (s) {
+			return {
+				id: s.id,
+				icon: s.icon,
+				name: s.name,
+				items: ITEMS.filter(function (i) { return i.home === s.name; })
+					.map(function (i) { return i.id; })
+			};
+		});
+		return { sections: sections };
+	}
+
+	function load() {
+		try {
+			var raw = localStorage.getItem(STORE);
+			if (!raw) return defaultState();
+			var s = JSON.parse(raw);
+			if (!s || !Array.isArray(s.sections)) return defaultState();
+			var seen = {};
+			s.sections.forEach(function (sec) {
+				sec.items = (sec.items || []).filter(function (id) {
+					if (!BY_ID[id] || seen[id]) return false;
+					seen[id] = 1;
+					return true;
+				});
+			});
+			// Anything added to the tool since this layout was saved lands in its home.
+			ITEMS.forEach(function (i) {
+				if (seen[i.id]) return;
+				var target = s.sections.filter(function (sec) { return sec.name === i.home; })[0]
+					|| s.sections[0];
+				if (target) target.items.push(i.id);
+			});
+			return s;
+		} catch (e) {
+			return defaultState();
+		}
+	}
+
+	function save() {
+		try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private mode */ }
+	}
+
+	function sectionOf(itemId) {
+		return state.sections.filter(function (s) { return s.items.indexOf(itemId) !== -1; })[0] || null;
+	}
+
+	function moveItem(itemId, sectionId, index) {
+		var from = sectionOf(itemId);
+		if (from) from.items = from.items.filter(function (x) { return x !== itemId; });
+		var to = state.sections.filter(function (s) { return s.id === sectionId; })[0];
+		if (!to) return;
+		if (typeof index === "number" && index >= 0 && index <= to.items.length) {
+			to.items.splice(index, 0, itemId);
+		} else {
+			to.items.push(itemId);
+		}
+		save();
+		render();
+	}
+
+	/* --- rendering ---------------------------------------------------- */
+
+	function render() {
+		var host = document.getElementById("sections");
+		host.innerHTML = "";
+
+		state.sections.forEach(function (sec) {
+			var el = document.createElement("section");
+			el.className = "section";
+			el.dataset.section = sec.id;
+
+			var head = document.createElement("div");
+			head.className = "sec-head";
+
+			var iconBtn = document.createElement("button");
+			iconBtn.type = "button";
+			iconBtn.className = "sec-icon";
+			iconBtn.textContent = sec.icon;
+			iconBtn.title = "Change icon";
+			iconBtn.setAttribute("aria-label", "Change icon for " + sec.name);
+			iconBtn.addEventListener("click", function () { cycleIcon(sec); });
+			head.appendChild(iconBtn);
+
+			var nameInput = document.createElement("input");
+			nameInput.className = "sec-name";
+			nameInput.value = sec.name;
+			nameInput.setAttribute("aria-label", "Section name");
+			nameInput.addEventListener("input", function () {
+				sec.name = nameInput.value;
+				save();
+				renderOut();
+			});
+			head.appendChild(nameInput);
+
+			var count = document.createElement("span");
+			count.className = "sec-count";
+			count.textContent = sec.items.length;
+			head.appendChild(count);
+
+			var kill = document.createElement("button");
+			kill.type = "button";
+			kill.className = "sec-kill";
+			kill.textContent = "✕";
+			kill.title = "Remove section";
+			kill.setAttribute("aria-label", "Remove section " + sec.name);
+			kill.disabled = sec.items.length > 0 || state.sections.length <= 1;
+			kill.addEventListener("click", function () {
+				state.sections = state.sections.filter(function (s) { return s !== sec; });
+				save();
+				render();
+			});
+			head.appendChild(kill);
+
+			el.appendChild(head);
+
+			var list = document.createElement("div");
+			list.className = "cards";
+			list.dataset.section = sec.id;
+			if (!sec.items.length) {
+				var e = document.createElement("p");
+				e.className = "empty";
+				e.textContent = "Empty — drop something here.";
+				list.appendChild(e);
+			}
+			sec.items.forEach(function (id) { list.appendChild(cardEl(BY_ID[id])); });
+			el.appendChild(list);
+
+			host.appendChild(el);
+		});
+
+		renderMoveBar();
+		renderOut();
+		var placed = state.sections.reduce(function (n, s) { return n + s.items.length; }, 0);
+		document.getElementById("tally").textContent =
+			placed + "/" + ITEMS.length + " placed · " + state.sections.length + " sections";
+	}
+
+	function cardEl(item) {
+		var b = document.createElement("button");
+		b.type = "button";
+		b.className = "card";
+		b.dataset.item = item.id;
+		b.setAttribute("aria-pressed", selected === item.id ? "true" : "false");
+		b.innerHTML =
+			'<span class="grip" aria-hidden="true">⋮⋮</span>' +
+			'<span class="card-name"></span>' +
+			'<span class="tag ' + (item.surface === "sheet" ? "sheet" : "") + '">' +
+			(item.surface === "sheet" ? "sheet" : "tab") + "</span>";
+		b.querySelector(".card-name").textContent = item.name;
+		attachDrag(b, item);
+		return b;
+	}
+
+	function cycleIcon(sec) {
+		var i = ICONS.indexOf(sec.icon);
+		sec.icon = ICONS[(i + 1) % ICONS.length];
+		save();
+		render();
+	}
+
+	/* --- drag (pointer events, so it works on touch) ------------------- */
+
+	function attachDrag(card, item) {
+		var startX = 0;
+		var startY = 0;
+		var moved = false;
+
+		card.addEventListener("pointerdown", function (evt) {
+			if (evt.button !== undefined && evt.button > 0) return;
+			startX = evt.clientX;
+			startY = evt.clientY;
+			moved = false;
+			drag = { id: item.id, card: card, pointerId: evt.pointerId };
+			card.setPointerCapture(evt.pointerId);
+		});
+
+		card.addEventListener("pointermove", function (evt) {
+			if (!drag || drag.id !== item.id) return;
+			var dx = evt.clientX - startX;
+			var dy = evt.clientY - startY;
+			// A few pixels of slop, so a tap isn't mistaken for a drag.
+			if (!moved && Math.hypot(dx, dy) < 8) return;
+			if (!moved) {
+				moved = true;
+				card.addClass ? card.addClass("is-dragging") : card.classList.add("is-dragging");
+				showGhost(item);
+			}
+			moveGhost(evt.clientX, evt.clientY);
+			highlightTarget(evt.clientX, evt.clientY);
+			evt.preventDefault();
+		});
+
+		function finish(evt) {
+			if (!drag || drag.id !== item.id) return;
+			card.classList.remove("is-dragging");
+			hideGhost();
+			var wasMoved = moved;
+			drag = null;
+			clearHighlight();
+			if (!wasMoved) {
+				// Treat as a tap: select, so the destination buttons appear.
+				selected = selected === item.id ? null : item.id;
+				render();
+				return;
+			}
+			var drop = dropTargetAt(evt.clientX, evt.clientY);
+			if (drop) moveItem(item.id, drop.sectionId, drop.index);
+			else render();
+		}
+
+		card.addEventListener("pointerup", finish);
+		card.addEventListener("pointercancel", finish);
+	}
+
+	function showGhost(item) {
+		var g = document.getElementById("ghost");
+		g.querySelector(".card-name").textContent = item.name;
+		g.classList.add("on");
+	}
+
+	function moveGhost(x, y) {
+		var g = document.getElementById("ghost");
+		g.style.left = x + "px";
+		g.style.top = y + "px";
+	}
+
+	function hideGhost() {
+		document.getElementById("ghost").classList.remove("on");
+	}
+
+	/** Which section is under the pointer, and where in its list to insert. */
+	function dropTargetAt(x, y) {
+		var lists = document.querySelectorAll(".cards");
+		for (var i = 0; i < lists.length; i++) {
+			var r = lists[i].getBoundingClientRect();
+			// Generous vertical padding: section headers are a natural aim point.
+			if (x >= r.left && x <= r.right && y >= r.top - 44 && y <= r.bottom + 6) {
+				var cards = lists[i].querySelectorAll(".card");
+				var index = cards.length;
+				for (var j = 0; j < cards.length; j++) {
+					var cr = cards[j].getBoundingClientRect();
+					if (y < cr.top + cr.height / 2) { index = j; break; }
+				}
+				return { sectionId: lists[i].dataset.section, index: index };
+			}
+		}
+		return null;
+	}
+
+	function highlightTarget(x, y) {
+		clearHighlight();
+		var drop = dropTargetAt(x, y);
+		if (!drop) return;
+		var sec = document.querySelector('.section[data-section="' + drop.sectionId + '"]');
+		if (sec) sec.classList.add("is-drop-target");
+	}
+
+	function clearHighlight() {
+		var els = document.querySelectorAll(".section.is-drop-target");
+		for (var i = 0; i < els.length; i++) els[i].classList.remove("is-drop-target");
+	}
+
+	/* --- tap-to-move fallback ------------------------------------------ */
+
+	function renderMoveBar() {
+		var bar = document.getElementById("moveBar");
+		if (!selected) { bar.classList.remove("open"); return; }
+		bar.classList.add("open");
+		var item = BY_ID[selected];
+		var here = sectionOf(selected);
+		document.getElementById("moveTitle").textContent = "Move “" + item.name + "” to…";
+		var list = document.getElementById("moveList");
+		list.innerHTML = "";
+		state.sections.forEach(function (sec) {
+			var b = document.createElement("button");
+			b.type = "button";
+			b.textContent = sec.icon + " " + sec.name;
+			b.setAttribute("aria-pressed", here && here.id === sec.id ? "true" : "false");
+			b.addEventListener("click", function () {
+				moveItem(selected, sec.id);
+			});
+			list.appendChild(b);
+		});
+	}
+
+	/* --- output --------------------------------------------------------- */
+
+	function renderOut() {
+		var lines = [];
+		lines.push("TABULA RASA — SETTINGS GROUPING");
+		lines.push("");
+		state.sections.forEach(function (sec) {
+			lines.push(sec.icon + "  " + (sec.name || "(unnamed)"));
+			if (!sec.items.length) {
+				lines.push("     (empty)");
+			} else {
+				sec.items.forEach(function (id) {
+					var it = BY_ID[id];
+					lines.push("     [" + (it.surface === "sheet" ? "SHEET" : "TAB  ") + "] " + it.name);
+				});
+			}
+			lines.push("");
+		});
+		lines.push("--- JSON ---");
+		lines.push(JSON.stringify({
+			sections: state.sections.map(function (sec) {
+				return {
+					icon: sec.icon,
+					name: sec.name,
+					items: sec.items.map(function (id) {
+						return { id: id, name: BY_ID[id].name, surface: BY_ID[id].surface };
+					})
+				};
+			})
+		}, null, 2));
+		document.getElementById("out").value = lines.join("\n");
+	}
+
+	/* --- wiring --------------------------------------------------------- */
+
+	document.getElementById("addSection").addEventListener("click", function () {
+		state.sections.push({
+			id: "s-new-" + seq++,
+			icon: ICONS[(state.sections.length) % ICONS.length],
+			name: "New section"
+		, items: [] });
+		save();
+		render();
+		// Put the caret straight in the new heading so it can be named.
+		var inputs = document.querySelectorAll(".sec-name");
+		var last = inputs[inputs.length - 1];
+		if (last) { last.focus(); last.select(); }
+	});
+
+	document.getElementById("resetBtn").addEventListener("click", function () {
+		state = defaultState();
+		selected = null;
+		save();
+		render();
+	});
+
+	document.getElementById("deselect").addEventListener("click", function () {
+		selected = null;
+		render();
+	});
+
+	document.getElementById("copyBtn").addEventListener("click", function () {
+		var ta = document.getElementById("out");
+		var note = document.getElementById("copyNote");
+		function manual() {
+			ta.focus();
+			ta.select();
+			note.textContent = "Clipboard access is blocked here — the text is selected, so copy it with your keyboard or the selection menu.";
+		}
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(ta.value).then(function () {
+				note.textContent = "Copied. Paste it into the chat.";
+			}, manual);
+		} else {
+			manual();
+		}
+	});
+
+	// Reserve exactly the dock's height so it never covers the output panel.
+	var dock = document.querySelector(".dock");
+	var wrapEl = document.querySelector(".wrap");
+	function syncDockInset() {
+		wrapEl.style.paddingBottom = (dock.offsetHeight + 18) + "px";
+	}
+	if (window.ResizeObserver) new ResizeObserver(syncDockInset).observe(dock);
+	window.addEventListener("resize", syncDockInset);
+
+	state = load();
+	render();
+	syncDockInset();
+
+	window.__cardSort = {
+		get state() { return state; },
+		moveItem: moveItem,
+		out: function () { return document.getElementById("out").value; }
+	};
+})();
+</script>
