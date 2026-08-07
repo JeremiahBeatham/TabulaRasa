@@ -208,7 +208,76 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 	background: var(--text-normal);
 }
 
-/* Shared popover, anchored under whichever header button opened it. */
+/*
+ * The selection tool's controls. Only on screen while something is selected, and
+ * floating over the canvas rather than occupying a row — a bar that appeared and
+ * disappeared in the layout would resize the drawing surface mid-edit.
+ *
+ * Centred and pinned to the bottom, clear of the home indicator.
+ */
+.tabula-rasa-select-bar {
+	position: absolute;
+	z-index: 25;
+	left: 50%;
+	transform: translateX(-50%);
+	bottom: max(12px, env(safe-area-inset-bottom));
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px 6px;
+	border-radius: 999px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+	/* The bar is chrome: a drag on it must never reach the canvas underneath. */
+	touch-action: manipulation;
+}
+
+/*
+ * Bar buttons share the toolbar's circle sizing but drop its filled disc — five
+ * filled circles in a row read as a strip of slabs.
+ */
+.tabula-rasa-bar-btn.tabula-rasa-bar-btn::before {
+	background: transparent;
+}
+
+.tabula-rasa-bar-btn.tabula-rasa-bar-btn:active::before {
+	background: var(--background-modifier-hover);
+}
+
+/*
+ * Dimmed rather than hidden: size and colour don't apply to the selection tool,
+ * and paste has nothing to paste until something is copied. A control that
+ * silently ignores a tap reads as broken, so say so visually.
+ */
+.tabula-rasa-btn.is-disabled {
+	opacity: 0.35;
+	pointer-events: none;
+}
+
+/* Rotate row: a div, not a button, because it contains an input. */
+.tabula-rasa-rotate-row.tabula-rasa-rotate-row {
+	gap: 6px;
+}
+
+input.tabula-rasa-rotate-input {
+	width: 4.5em;
+	min-height: 34px;
+	padding: 2px 6px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: 15px;
+	text-align: right;
+}
+
+.tabula-rasa-rotate-unit {
+	font-size: 15px;
+	color: var(--text-muted);
+}
+
+/* Shared popover, anchored under (or over) whichever button opened it. */
 .tabula-rasa-popover {
 	position: absolute;
 	z-index: 30;

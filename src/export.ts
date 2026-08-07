@@ -50,6 +50,9 @@ export const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
 		grain: 0,
 	},
 	eraser: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0, weight: 1, grain: 0 },
+	// Never used: the selection tool creates no strokes. Present so the table stays
+	// exhaustive over ToolName and a new tool can't be added without a decision.
+	select: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0, weight: 1, grain: 0 },
 };
 
 /**

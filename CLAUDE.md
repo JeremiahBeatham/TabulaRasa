@@ -99,7 +99,32 @@ Conventions worth knowing before touching this area:
   and boxed. Test harnesses must emulate those defaults, or they will report alignment and styling
   the device contradicts — this has already happened twice.
 - **`ToolName` keeps `"brush"`** purely so sketches saved by v0.9.0–v0.10.2 still render; it aliases
-  to `crayon` and is not offered in the UI.
+  to `crayon` and is not offered in the UI. `"select"` is also in the union but never lands on a
+  saved stroke — it's what the brush setting holds while the selection tool is active.
+
+**Issue #13 — selection tool.** Fifth entry in the tool list. Conventions that came out of building it:
+
+- **The lasso is always closed.** Lifting a finger snaps the shape shut; the polygon is never given a
+  duplicate first point, the ray-cast just treats it as closed. A stroke is caught at ≥50% coverage
+  (`SELECTION_MIN_COVERAGE`) — requiring all of it makes long strokes uncatchable, accepting any
+  overlap grabs what you lassoed *around*.
+- **Selection is a set of indices and is meant to be short-lived.** Dropped by undo, clear, and
+  leaving the tool. Don't make it survive those: the erasers rebuild `doc.strokes` wholesale.
+- **Transforms rebuild strokes from the originals held at drag start**, never from the current state,
+  or a drag back to where it began doesn't land there. An identity transform must restore the
+  original objects *by reference*, which is how a no-op drag is detected and its undo entry dropped.
+- **Scale handles move by the finger's travel, not to the finger.** Grabbing a handle 10px off-centre
+  otherwise jerks the edge 10px before you've moved.
+- **The middle of the box is tested for "move" before any handle.** At a 24px grab radius every
+  handle on a small selection reaches its centre, which left a selection that could be scaled from
+  every side and moved from nowhere. `insetBounds` caps the reserved band at a third of the short
+  side so a movable core always exists.
+- **Add/Remove modes don't drag-to-move.** Their boundaries almost always start inside the existing
+  box, and treating that as a move made both modes unreachable.
+- **"Clear selection" deselects; it doesn't delete.** The bar has no other way to dismiss a
+  selection, and the eraser already deletes.
+- **Icon names are checked at runtime** (`setIconSafe`), because which Lucide icons a given Obsidian
+  version bundles isn't knowable at build time and `setIcon` silently leaves the element empty.
 
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he

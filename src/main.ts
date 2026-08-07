@@ -15,6 +15,7 @@ import {
 import { SketchView, VIEW_TYPE_SKETCH } from "./SketchView";
 import {
 	SKETCH_EXTENSION,
+	Stroke,
 	createEmptyDoc,
 	parseDoc,
 	serializeDoc,
@@ -24,6 +25,13 @@ import { TABULA_RASA_ICON_ID, registerTabulaRasaIcon } from "./icon";
 
 export default class TabulaRasaPlugin extends Plugin {
 	settings!: TabulaRasaSettings;
+
+	/**
+	 * Strokes copied from a selection. Held on the plugin rather than the view so
+	 * a copy can be pasted into a different sketch. Deliberately not persisted —
+	 * it's a clipboard, and it empties when Obsidian restarts.
+	 */
+	selectionClipboard: Stroke[] | null = null;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
