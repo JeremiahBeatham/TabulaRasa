@@ -26,6 +26,7 @@ import {
 	serializeDoc,
 } from "./model";
 import { renderDocToPngBlob, renderDocToSvg } from "./export";
+import type { SelectionMode } from "./selection";
 import type TabulaRasaPlugin from "./main";
 import { TABULA_RASA_ICON_ID } from "./icon";
 
@@ -72,7 +73,47 @@ const TOOL_OPTIONS: ToolOption[] = [
 		icon: "eraser",
 		label: "Eraser",
 	},
+	// Sits last because it isn't a brush: it draws a boundary instead of ink, and
+	// neither size nor colour applies while it's active.
+	{ id: "select", tool: "select", icon: "lasso-select", label: "Selection" },
 ];
+
+/**
+ * Icon names come from Lucide via Obsidian, and which ones a given Obsidian
+ * version bundles isn't something we can check at build time. setIcon leaves the
+ * element empty for a name it doesn't know, which would ship a blank button, so
+ * fall back to one we're sure of rather than trusting the name.
+ */
+function setIconSafe(el: HTMLElement, name: string, fallback: string): void {
+	setIcon(el, name);
+	if (!el.querySelector("svg")) setIcon(el, fallback);
+}
+
+/** The three ways a new boundary combines with the existing selection. */
+const SELECTION_MODE_OPTIONS: {
+	mode: SelectionMode;
+	icon: string;
+	fallback: string;
+	label: string;
+}[] = [
+	{ mode: "replace", icon: "replace", fallback: "repeat", label: "Replace" },
+	{ mode: "add", icon: "plus", fallback: "plus-circle", label: "Add to selection" },
+	{
+		mode: "subtract",
+		icon: "minus",
+		fallback: "minus-circle",
+		label: "Remove from selection",
+	},
+];
+
+/** Default for the rotate-by field, in degrees. */
+const DEFAULT_ROTATE_DEGREES = 90;
+
+/**
+ * Which side of its trigger a popover opens on. The header buttons drop down;
+ * the selection bar sits at the bottom of the screen, so its lists go up.
+ */
+type PopoverPlacement = "below" | "above";
 
 /** Coerce a color to the `#rrggbb` form an <input type="color"> requires. */
 function normalizeHex(color: string): string {
@@ -121,6 +162,10 @@ export class SketchView extends TextFileView {
 
 	/** The visible colour swatch; tapping it summons the system colour sheet. */
 	private colorInput: HTMLInputElement | null = null;
+
+	/** The selection tool's controls. Present only while something is selected. */
+	private selectBar: HTMLElement | null = null;
+	private pasteBtn: HTMLElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: TabulaRasaPlugin) {
 		super(leaf);
@@ -223,7 +268,9 @@ export class SketchView extends TextFileView {
 			palmRejection: this.plugin.settings.palmRejection,
 			gestures: { enabled: this.plugin.settings.gesturesEnabled },
 			onChange: () => this.requestSave(),
+			onSelectionChange: () => this.syncSelectBar(),
 		});
+		this.syncSelectBar();
 		// Defer sizing until layout settles (important on mobile open).
 		window.setTimeout(() => this.canvas?.resize(), 0);
 	}
@@ -396,7 +443,7 @@ export class SketchView extends TextFileView {
 			});
 			row.toggleClass("is-active", option.id === activeId);
 			const icon = row.createSpan({ cls: "tabula-rasa-tool-icon" });
-			setIcon(icon, option.icon);
+			setIconSafe(icon, option.icon, "circle");
 			row.createSpan({ cls: "tabula-rasa-tool-name", text: option.label });
 			row.addEventListener("click", () => {
 				this.applyTool(option);
@@ -414,11 +461,31 @@ export class SketchView extends TextFileView {
 			this.plugin.settings.eraserMode = option.eraserMode;
 			void this.plugin.saveSettings();
 		}
+		// setBrush drops any selection when the tool changes away from select, so
+		// the bar has to be re-synced after it, not before.
 		this.canvas?.setBrush(this.brush);
 		if (this.toolBtn) {
-			setIcon(this.toolBtn, option.icon);
+			setIconSafe(this.toolBtn, option.icon, "circle");
 			this.toolBtn.setAttribute("aria-label", option.label);
 		}
+		this.updateInkControls();
+		this.syncSelectBar();
+	}
+
+	/**
+	 * Size and colour don't apply to the selection tool, so they're dimmed and
+	 * inert while it's active rather than silently doing nothing — a control that
+	 * ignores a tap reads as broken.
+	 */
+	private updateInkControls(): void {
+		const inks = this.brush.tool !== "select";
+		for (const el of [this.sizeBtn, this.colorBtn]) {
+			if (!el) continue;
+			el.toggleClass("is-disabled", !inks);
+			if (el instanceof HTMLButtonElement) el.disabled = !inks;
+		}
+		if (this.colorInput) this.colorInput.disabled = !inks;
+		if (!inks && this.popoverTrigger === this.sizeBtn) this.closePopover();
 	}
 
 	// --- color ----------------------------------------------------------
@@ -439,19 +506,205 @@ export class SketchView extends TextFileView {
 		}
 	}
 
+	// --- selection controls ---------------------------------------------
+
+	/**
+	 * The selection's own bar, along the bottom of the canvas. It exists only while
+	 * something is selected — there is nothing for it to act on otherwise — and it
+	 * floats over the canvas rather than taking a row of its own, so appearing and
+	 * disappearing never resizes the drawing surface mid-edit.
+	 *
+	 * Its dropdowns open *upward*, since it sits at the bottom of the screen.
+	 */
+	private syncSelectBar(): void {
+		const wanted =
+			this.brush.tool === "select" && (this.canvas?.hasSelection() ?? false);
+		if (!wanted) {
+			if (this.selectBar) {
+				if (this.popoverTrigger && this.selectBar.contains(this.popoverTrigger)) {
+					this.closePopover();
+				}
+				this.selectBar.remove();
+			}
+			this.selectBar = null;
+			this.pasteBtn = null;
+			return;
+		}
+		if (!this.selectBar) this.buildSelectBar();
+		this.updatePasteState();
+	}
+
+	private buildSelectBar(): void {
+		const bar = this.contentEl.createDiv({ cls: "tabula-rasa-select-bar" });
+		this.selectBar = bar;
+
+		// How the next boundary combines with this one.
+		const modeBtn = this.makeBarButton(
+			bar,
+			"arrow-left-right",
+			"repeat",
+			"Selection mode",
+		);
+		modeBtn.addEventListener("click", () =>
+			this.togglePopover(modeBtn, (pop) => this.buildModePopover(pop), "above"),
+		);
+
+		const transformBtn = this.makeBarButton(
+			bar,
+			"scaling",
+			"move",
+			"Transform selection",
+		);
+		transformBtn.addEventListener("click", () =>
+			this.togglePopover(
+				transformBtn,
+				(pop) => this.buildTransformPopover(pop),
+				"above",
+			),
+		);
+
+		const copyBtn = this.makeBarButton(bar, "copy", "files", "Copy selection");
+		copyBtn.addEventListener("click", () => {
+			const strokes = this.canvas?.copySelection();
+			if (!strokes) return;
+			this.plugin.selectionClipboard = strokes;
+			// Paste lighting up is the feedback; a notice on every copy would nag.
+			this.updatePasteState();
+		});
+
+		this.pasteBtn = this.makeBarButton(
+			bar,
+			"clipboard-paste",
+			"clipboard",
+			"Paste selection",
+		);
+		this.pasteBtn.addEventListener("click", () => {
+			const strokes = this.plugin.selectionClipboard;
+			if (strokes) this.canvas?.pasteStrokes(strokes);
+		});
+
+		const clearBtn = this.makeBarButton(bar, "x", "cross", "Clear selection");
+		clearBtn.addEventListener("click", () => this.canvas?.clearSelection());
+	}
+
+	private makeBarButton(
+		bar: HTMLElement,
+		icon: string,
+		fallback: string,
+		label: string,
+	): HTMLButtonElement {
+		const btn = bar.createEl("button", {
+			cls: "clickable-icon tabula-rasa-btn tabula-rasa-bar-btn",
+			attr: { "aria-label": label, type: "button" },
+		});
+		setIconSafe(btn, icon, fallback);
+		return btn;
+	}
+
+	private updatePasteState(): void {
+		const has = this.plugin.selectionClipboard !== null;
+		if (!this.pasteBtn) return;
+		this.pasteBtn.toggleClass("is-disabled", !has);
+		if (this.pasteBtn instanceof HTMLButtonElement) {
+			this.pasteBtn.disabled = !has;
+		}
+	}
+
+	private buildModePopover(pop: HTMLElement): void {
+		pop.addClass("tabula-rasa-popover-stack");
+		const current = this.canvas?.getSelectionMode() ?? "replace";
+		for (const option of SELECTION_MODE_OPTIONS) {
+			const row = pop.createEl("button", {
+				cls: "tabula-rasa-tool-row",
+				attr: { type: "button" },
+			});
+			row.toggleClass("is-active", option.mode === current);
+			const icon = row.createSpan({ cls: "tabula-rasa-tool-icon" });
+			setIconSafe(icon, option.icon, option.fallback);
+			row.createSpan({ cls: "tabula-rasa-tool-name", text: option.label });
+			row.addEventListener("click", () => {
+				this.canvas?.setSelectionMode(option.mode);
+				this.closePopover();
+			});
+		}
+	}
+
+	private buildTransformPopover(pop: HTMLElement): void {
+		pop.addClass("tabula-rasa-popover-stack");
+
+		const action = (
+			icon: string,
+			fallback: string,
+			label: string,
+			run: () => void,
+		): void => {
+			const row = pop.createEl("button", {
+				cls: "tabula-rasa-tool-row",
+				attr: { type: "button" },
+			});
+			const ic = row.createSpan({ cls: "tabula-rasa-tool-icon" });
+			setIconSafe(ic, icon, fallback);
+			row.createSpan({ cls: "tabula-rasa-tool-name", text: label });
+			row.addEventListener("click", () => {
+				run();
+				this.closePopover();
+			});
+		};
+
+		action("flip-horizontal", "move-horizontal", "Flip horizontal", () =>
+			this.canvas?.flipSelection("horizontal"),
+		);
+		action("flip-vertical", "move-vertical", "Flip vertical", () =>
+			this.canvas?.flipSelection("vertical"),
+		);
+
+		// A div, not a button: an <input> inside a <button> is invalid HTML, and iOS
+		// won't reliably focus one that is.
+		const row = pop.createDiv({ cls: "tabula-rasa-tool-row tabula-rasa-rotate-row" });
+		const ic = row.createSpan({ cls: "tabula-rasa-tool-icon" });
+		setIconSafe(ic, "rotate-cw", "refresh-cw");
+		row.createSpan({ cls: "tabula-rasa-tool-name", text: "Rotate" });
+		const input = row.createEl("input", {
+			cls: "tabula-rasa-rotate-input",
+			attr: {
+				type: "number",
+				step: "1",
+				"aria-label": "Rotate selection by degrees",
+			},
+		});
+		input.value = String(DEFAULT_ROTATE_DEGREES);
+		row.createSpan({ cls: "tabula-rasa-rotate-unit", text: "°" });
+		const apply = (): void => {
+			const n = Number(input.value);
+			if (Number.isFinite(n)) this.canvas?.rotateSelection(n);
+			this.closePopover();
+		};
+		input.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				apply();
+			}
+		});
+		// Tapping the label rotates by whatever is in the field, so the row works
+		// without a keyboard round-trip for the common 90°.
+		ic.addEventListener("click", apply);
+	}
+
 	// --- shared popover -------------------------------------------------
 
 	private togglePopover(
 		trigger: HTMLElement,
 		build: (pop: HTMLElement) => void,
+		placement: PopoverPlacement = "below",
 	): void {
 		if (this.popover && this.popoverTrigger === trigger) this.closePopover();
-		else this.openPopover(trigger, build);
+		else this.openPopover(trigger, build, placement);
 	}
 
 	private openPopover(
 		trigger: HTMLElement,
 		build: (pop: HTMLElement) => void,
+		placement: PopoverPlacement = "below",
 	): void {
 		this.closePopover();
 		// Hosted on the leaf, not contentEl: the triggers live in the view header,
@@ -461,7 +714,7 @@ export class SketchView extends TextFileView {
 		this.popover = pop;
 		this.popoverTrigger = trigger;
 		build(pop);
-		this.positionPopover(pop, trigger);
+		this.positionPopover(pop, trigger, placement);
 
 		// Dismiss on outside interaction or Escape.
 		this.closePopoverHandler = (e: Event) => {
@@ -477,10 +730,18 @@ export class SketchView extends TextFileView {
 		document.addEventListener("keydown", this.closePopoverHandler, true);
 	}
 
-	private positionPopover(pop: HTMLElement, trigger: HTMLElement): void {
+	private positionPopover(
+		pop: HTMLElement,
+		trigger: HTMLElement,
+		placement: PopoverPlacement,
+	): void {
 		const host = this.containerEl.getBoundingClientRect();
 		const tr = trigger.getBoundingClientRect();
-		pop.style.top = `${tr.bottom - host.top + 6}px`;
+		// Measured after build(), so offsetHeight is the real height.
+		pop.style.top =
+			placement === "above"
+				? `${Math.max(8, tr.top - host.top - pop.offsetHeight - 6)}px`
+				: `${tr.bottom - host.top + 6}px`;
 		const maxLeft = Math.max(8, host.width - pop.offsetWidth - 8);
 		const left = Math.min(Math.max(8, tr.left - host.left), maxLeft);
 		pop.style.left = `${left}px`;

@@ -10,9 +10,10 @@
 src/
   main.ts        — plugin entry, commands, .sketch embeds, export plumbing
   SketchView.ts  — the editor view: toolbar, popovers, modals, the "more" sheet
-  canvas.ts      — drawing surface, pan/zoom/rotate, erasers, undo stack
+  canvas.ts      — drawing surface, pan/zoom/rotate, erasers, selection, undo stack
   export.ts      — stroke geometry (perfect-freehand) + PNG/SVG rendering
   gestures.ts    — three-finger undo/redo recognition (pure, unit-testable)
+  selection.ts   — lasso hit-testing and transform matrices (pure, unit-testable)
   model.ts       — .sketch document schema and (de)serialisation
   settings.ts    — settings schema, defaults, settings tab
 manifest.json   — Obsidian plugin manifest
@@ -54,4 +55,19 @@ styles.css      — UI styling
   genuine user tap; a scripted `.click()` on a hidden input is ignored.
 - **Per-tool stroke parameters** live in one table in `export.ts`, so a tool's feel is defined once
   and applies identically to the live canvas, PNG export and SVG export.
+- **Selection is a tool, not a mode layered over drawing.** Picking it turns the same drag into a
+  boundary; size and colour dim because neither applies. Its geometry (point-in-polygon, coverage,
+  the transform matrices, handle placement) lives in `selection.ts` with no DOM, which is what makes
+  "the selection drifted" answerable without a device.
+- **A selection is a set of stroke indices, and it is deliberately short-lived.** Indices survive
+  everything you can do *while* selecting — transform, paste — and the selection is dropped by
+  anything that reshuffles the stroke array: undo, clear, or leaving the tool. Holding references
+  instead would survive reordering but not transforms, which replace stroke objects so undo snapshots
+  stay intact.
+- **Selection chrome is drawn in screen space.** The box's corners are projected through the view
+  transform, so it follows the page's rotation, but the handles are then drawn at a fixed CSS-pixel
+  radius — a handle whose size tracked zoom would be untappable at one end and enormous at the other.
+- **The middle of the box always means "move"**, checked before handles. A finger-sized grab radius
+  on a small selection otherwise reaches the centre from every side, leaving something that can be
+  scaled from anywhere and moved from nowhere.
 - **BRAT-first distribution** ahead of community-store approval.

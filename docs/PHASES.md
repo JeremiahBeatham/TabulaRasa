@@ -5,9 +5,9 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.11.2) | Done — see below |
+| Shipped (v0.1.x → v0.12.0) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
-| Later (bigger features) | #13 selection, #14 snapping — next up |
+| Later (bigger features) | #13 done; #14 snapping next |
 | Distribution | Rebrand done; community-store submission pending |
 
 **Active branch:** `main`
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.11.2)
+## Shipped (v0.1.x → v0.12.0)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -60,6 +60,9 @@
       beside it; the name field waits for typing to stop and no longer toasts on every rename; the
       crayon's grain is seeded by position rather than vertex index, which stops the stroke edge
       shimmering as you draw (v0.11.2)
+- [x] Selection tool: freehand boundary that closes itself, a bounding box with scale and rotate
+      handles, and its own bottom bar for selection mode, flip/rotate, copy, paste and clear
+      ([#13](https://github.com/JeremiahBeatham/TabulaRasa/issues/13), v0.12.0)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -91,9 +94,10 @@ Now the bar is settled, each menu gets dissected on its own rather than designed
 one pass. Deliberately separate items so each can be looked at, argued about and
 reworked in isolation.
 
-- [x] **Tool dropdown** — settled at four entries (pen, crayon, marker, eraser) as a left-aligned
-      icon stack under the trigger, no description text. The pixel eraser was cut rather than kept
-      as a second entry; size and colour stay their own buttons.
+- [x] **Tool dropdown** — settled at four drawing entries (pen, crayon, marker, eraser) as a
+      left-aligned icon stack under the trigger, no description text. The pixel eraser was cut rather
+      than kept as a second entry; size and colour stay their own buttons. Selection joined the list
+      as a fifth entry in v0.12.0.
 - [x] **Size dropdown** — presets stack under the button running largest to smallest, a vertical
       slider beside them (horizontal is Obsidian's back-swipe), and the px readout below taps into
       a text field. No live stroke preview: the presets' dots already show scale.
@@ -106,7 +110,22 @@ reworked in isolation.
       mid-drawing. Tool: [`docs/tools/settings-card-sort.html`](tools/settings-card-sort.html).
 
 ## Later — Bigger Features
-- [ ] [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)
+- [x] [#13 — Selection tool](https://github.com/JeremiahBeatham/TabulaRasa/issues/13) (v0.12.0)
+  - A fifth tool after the eraser, drawing a boundary rather than ink — so neither size nor colour
+    applies, and both controls dim while it's active.
+  - The boundary is freehand and dashed as you draw. It's **always closed**: lifting your finger
+    snaps the shape shut instead of requiring you to meet your own starting point. A stroke is caught
+    when at least half of it falls inside, which is the rule that survives both long strokes and
+    lassoing *around* something.
+  - The boundary is then replaced by an axis-aligned box with eight scale dots and a rotate handle
+    above it. Handles are drawn and hit-tested in screen space, so they're a constant size at any
+    zoom, and the box follows the page's rotation.
+  - **Its own bar** appears along the bottom while a selection exists — five controls whose lists
+    open *upward*: selection mode (Replace / Add / Remove), transform (flip horizontal, flip
+    vertical, rotate by a typed angle), then copy, paste and clear. Paste stays dim until something
+    is on the clipboard, which lives on the plugin so a copy can cross sketches.
+  - Dragging inside the box moves the selection; one drag is one undo step, and a drag that ends
+    where it began leaves no undo entry at all.
 - [ ] [#14 — Smart snapping / shape recognition (straight line, circle)](https://github.com/JeremiahBeatham/TabulaRasa/issues/14)
 
 ## Distribution

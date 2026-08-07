@@ -2,18 +2,23 @@ export const SKETCH_EXTENSION = "sketch";
 export const SKETCH_DOC_VERSION = 1 as const;
 
 /**
- * Drawing tools. See TOOL_STROKE_OPTIONS in export.ts for what separates them.
- * The union is additive: sketches saved before a tool existed still parse.
+ * Tools. See TOOL_STROKE_OPTIONS in export.ts for what separates the drawing
+ * ones. The union is additive: sketches saved before a tool existed still parse.
  *
  * "brush" is retained only so strokes saved by v0.9.0–v0.10.2 keep rendering;
  * it is no longer offered in the UI and behaves as "crayon", which replaced it.
+ *
+ * "select" lays down no ink at all — it lassos existing strokes — so it never
+ * appears on a saved Stroke. It's in the union because it's what the toolbar's
+ * brush setting holds while the selection tool is active.
  */
 export type ToolName =
 	| "pen"
 	| "crayon"
 	| "brush"
 	| "highlighter"
-	| "eraser";
+	| "eraser"
+	| "select";
 
 export interface Point {
 	x: number;

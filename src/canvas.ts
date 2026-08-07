@@ -6,6 +6,29 @@ import {
 	GestureSettings,
 	TouchSequenceTracker,
 } from "./gestures";
+import {
+	Bounds,
+	HandleId,
+	MIN_LASSO_SPAN,
+	Matrix,
+	ScaleHandle,
+	SelectionMode,
+	Vec,
+	boundsContain,
+	boundsSpan,
+	flipAbout,
+	insetBounds,
+	handlePositions,
+	isIdentity,
+	mergeSelection,
+	polygonBounds,
+	rotateAbout,
+	scaleFromHandle,
+	strokesInPolygon,
+	transformStroke,
+	translation,
+	unionBounds,
+} from "./selection";
 
 export type EraserMode = "stroke" | "partial";
 
@@ -22,6 +45,8 @@ export interface SketchCanvasOptions {
 	palmRejection: boolean;
 	onChange: () => void;
 	gestures?: GestureSettings;
+	/** Fires when the selection appears, changes or goes away. */
+	onSelectionChange?: () => void;
 }
 
 const MIN_SCALE = 0.1;
@@ -33,6 +58,17 @@ export const MIN_CANVAS_SIZE = 64;
 /** Corner radius of the drawable page, in document pixels. */
 const PAGE_CORNER_RADIUS = 4;
 export const MAX_CANVAS_SIZE = 8192;
+
+/** Drawn radius of a selection handle, in CSS px — constant at any zoom. */
+const HANDLE_RADIUS = 5.5;
+/** Hit radius for grabbing one. Fingers are bigger than the dot they aim at. */
+const HANDLE_TOUCH_RADIUS = 24;
+/** How far above the box the rotate handle floats, in CSS px. */
+const ROTATE_HANDLE_OFFSET = 34;
+/** A selection can't be squeezed below this, in document units. */
+const MIN_SELECTION_SIZE = 8;
+/** Where a pasted copy lands relative to the original, in document units. */
+const PASTE_OFFSET = 16;
 
 interface ViewState {
 	scale: number;
@@ -70,6 +106,9 @@ const ANCHOR_FACTORS: Record<CanvasAnchor, { x: number; y: number }> = {
 	bottom: { x: 0.5, y: 1 },
 	"bottom-right": { x: 1, y: 1 },
 };
+
+/** The handle a pointer landed on, or null for "none of them". */
+type HandleHit = HandleId | null;
 
 /** Undo/redo captures the document state we let users change: size + strokes. */
 interface DocSnapshot {
@@ -128,10 +167,39 @@ export class SketchCanvas {
 	private undoStack: DocSnapshot[] = [];
 	private redoStack: DocSnapshot[] = [];
 
+	// --- selection state ---
+	/** The boundary being drawn, in document units. Null when not lassoing. */
+	private lasso: Vec[] | null = null;
+	/**
+	 * Indices into doc.strokes. Indices (rather than references) because every
+	 * operation available while a selection is live — transform, paste — keeps
+	 * existing positions; anything that reshuffles the array drops the selection.
+	 */
+	private selected = new Set<number>();
+	private selectionMode: SelectionMode = "replace";
+	/** What the current pointer is doing, when the selection tool has it. */
+	private selectionInput: "lasso" | "transform" | null = null;
+	/**
+	 * A transform in progress. The originals are kept so each move recomputes from
+	 * them rather than compounding — otherwise rounding accumulates and a drag
+	 * back to where it started doesn't return the strokes there.
+	 */
+	private transformDrag: {
+		kind: "move" | "scale" | "rotate";
+		handle?: ScaleHandle;
+		/** Where the grabbed handle sat when the drag began, in document units. */
+		handleOrigin?: Vec;
+		originBounds: Bounds;
+		originStrokes: Map<number, Stroke>;
+		startDoc: Vec;
+		startAngle: number;
+	} | null = null;
+
 	// Cached theme colors for the page chrome (refreshed on resize).
 	private pageColor = "#ffffff";
 	private workColor = "#000000";
 	private borderColor = "rgba(0,0,0,0.2)";
+	private accentColor = "#4c8dff";
 
 	constructor(
 		parent: HTMLElement,
@@ -152,8 +220,15 @@ export class SketchCanvas {
 		this.registerPointerHandlers();
 	}
 
+	/**
+	 * Leaving the selection tool drops the selection. That keeps stroke indices
+	 * trustworthy — the eraser and partial-erase rebuild the stroke array — and it
+	 * matches what the bottom bar implies, since the bar is the selection's UI.
+	 */
 	setBrush(brush: BrushSettings): void {
+		const leavingSelect = this.brush.tool === "select" && brush.tool !== "select";
 		this.brush = brush;
+		if (leavingSelect) this.clearSelection();
 	}
 
 	setPalmRejection(enabled: boolean): void {
@@ -221,6 +296,7 @@ export class SketchCanvas {
 		this.drawPage();
 		renderDocToContext(ctx, this.doc);
 		if (this.activeStroke) this.drawStroke(this.activeStroke);
+		this.drawSelectionOverlay();
 	}
 
 	/**
@@ -266,6 +342,7 @@ export class SketchCanvas {
 	clear(): void {
 		this.pushUndo();
 		this.doc.strokes = [];
+		this.clearSelection();
 		this.redraw();
 		this.options.onChange();
 	}
@@ -321,6 +398,9 @@ export class SketchCanvas {
 		this.doc.width = s.width;
 		this.doc.height = s.height;
 		this.doc.strokes = s.strokes;
+		// A restored snapshot is a different stroke array, so index-based selection
+		// no longer means anything — undoing past a selection drops it.
+		this.clearSelection();
 		if (sizeChanged) this.fitView();
 		else this.redraw();
 	}
@@ -375,6 +455,16 @@ export class SketchCanvas {
 			return;
 		}
 
+		// The selection tool lays down no ink: the same drag either grabs a handle,
+		// slides the current selection, or draws a new boundary.
+		if (this.brush.tool === "select") {
+			this.activePointerId = evt.pointerId;
+			this.el.setPointerCapture(evt.pointerId);
+			this.beginSelectionInput(evt);
+			evt.preventDefault();
+			return;
+		}
+
 		if (evt.pointerType === "pen") this.penActive = true;
 		this.activePointerId = evt.pointerId;
 		this.el.setPointerCapture(evt.pointerId);
@@ -405,6 +495,12 @@ export class SketchCanvas {
 
 		if (this.inGesture) {
 			this.handleGestureMove();
+			evt.preventDefault();
+			return;
+		}
+
+		if (this.selectionInput && this.activePointerId === evt.pointerId) {
+			this.updateSelectionInput(evt);
 			evt.preventDefault();
 			return;
 		}
@@ -452,6 +548,13 @@ export class SketchCanvas {
 		}
 
 		if (this.activePointerId !== evt.pointerId) return;
+
+		if (this.selectionInput) {
+			this.activePointerId = null;
+			this.finishSelectionInput();
+			return;
+		}
+
 		if (evt.pointerType === "pen") this.penActive = false;
 		this.activePointerId = null;
 
@@ -485,6 +588,9 @@ export class SketchCanvas {
 			this.undoStack.pop();
 			this.activeStroke = null;
 		}
+		// A second finger means pan/zoom, not selection: throw away whatever the
+		// first finger had started so a pinch never half-applies a transform.
+		this.abortSelectionInput();
 		if (this.activePointerId !== null) {
 			if (this.el.hasPointerCapture(this.activePointerId)) {
 				this.el.releasePointerCapture(this.activePointerId);
@@ -623,6 +729,8 @@ export class SketchCanvas {
 		// and nothing frames the drawing but its own hairline edge.
 		this.workColor = this.pageColor;
 		this.borderColor = read("--background-modifier-border", this.borderColor);
+		// Selection chrome borrows the theme's accent so it never reads as ink.
+		this.accentColor = read("--interactive-accent", this.accentColor);
 		this.el.style.backgroundColor = this.workColor;
 	}
 
@@ -747,6 +855,421 @@ export class SketchCanvas {
 		this.undoStack.push(this.snapshot());
 		// Cap history to keep memory in check on mobile.
 		if (this.undoStack.length > 50) this.undoStack.shift();
+	}
+
+	// --- selection ------------------------------------------------------
+
+	hasSelection(): boolean {
+		return this.selected.size > 0;
+	}
+
+	selectionCount(): number {
+		return this.selected.size;
+	}
+
+	getSelectionMode(): SelectionMode {
+		return this.selectionMode;
+	}
+
+	setSelectionMode(mode: SelectionMode): void {
+		this.selectionMode = mode;
+	}
+
+	/** Deselect. The strokes stay exactly as they are — this only drops the box. */
+	clearSelection(): void {
+		if (this.selected.size === 0 && !this.lasso) return;
+		this.selected = new Set();
+		this.lasso = null;
+		this.redraw();
+		this.options.onSelectionChange?.();
+	}
+
+	selectionBounds(): Bounds | null {
+		return unionBounds(this.selectedStrokes());
+	}
+
+	private selectedStrokes(): Stroke[] {
+		const out: Stroke[] = [];
+		for (const i of this.selected) {
+			const stroke = this.doc.strokes[i];
+			if (stroke) out.push(stroke);
+		}
+		return out;
+	}
+
+	/** Deep copies, so later edits to the document don't reach into the clipboard. */
+	copySelection(): Stroke[] | null {
+		const strokes = this.selectedStrokes();
+		if (strokes.length === 0) return null;
+		return strokes.map((s) => ({
+			...s,
+			points: s.points.map((p) => ({ ...p })),
+		}));
+	}
+
+	/**
+	 * Drop copies onto the page, offset so they don't hide behind the originals,
+	 * and select them — the pasted copy is what you want to move next.
+	 */
+	pasteStrokes(strokes: Stroke[]): void {
+		if (strokes.length === 0) return;
+		this.pushUndo();
+		this.redoStack = [];
+		const shift = translation(PASTE_OFFSET, PASTE_OFFSET);
+		const start = this.doc.strokes.length;
+		const pasted = strokes.map((s) =>
+			transformStroke(
+				{ ...s, points: s.points.map((p) => ({ ...p })) },
+				shift,
+			),
+		);
+		this.doc.strokes = this.doc.strokes.concat(pasted);
+		this.selected = new Set(pasted.map((_, i) => start + i));
+		this.redraw();
+		this.options.onChange();
+		this.options.onSelectionChange?.();
+	}
+
+	flipSelection(axis: "horizontal" | "vertical"): void {
+		const bounds = this.selectionBounds();
+		if (!bounds) return;
+		this.commitTransform(flipAbout(axis, bounds));
+	}
+
+	rotateSelection(degrees: number): void {
+		const bounds = this.selectionBounds();
+		if (!bounds || !Number.isFinite(degrees) || degrees % 360 === 0) return;
+		const cx = (bounds.minX + bounds.maxX) / 2;
+		const cy = (bounds.minY + bounds.maxY) / 2;
+		this.commitTransform(rotateAbout((degrees * Math.PI) / 180, cx, cy));
+	}
+
+	private commitTransform(m: Matrix): void {
+		if (this.selected.size === 0 || isIdentity(m)) return;
+		this.pushUndo();
+		this.redoStack = [];
+		this.applyToSelection(m);
+		this.redraw();
+		this.options.onChange();
+		// The box moved, so anything reading its bounds needs to hear about it.
+		this.options.onSelectionChange?.();
+	}
+
+	/**
+	 * Rebuild the selected strokes through `m`, keeping their positions in the
+	 * array so the index-based selection stays valid. `from` supplies the originals
+	 * during a live drag so repeated moves don't compound.
+	 */
+	private applyToSelection(m: Matrix, from?: Map<number, Stroke>): void {
+		const next = this.doc.strokes.slice();
+		// An identity transform puts the originals back by reference rather than
+		// rebuilding equal-but-different objects, so a drag that ends where it began
+		// is detectably a no-op and leaves no undo entry.
+		const identity = isIdentity(m);
+		for (const i of this.selected) {
+			const base = from?.get(i) ?? next[i];
+			if (!base) continue;
+			next[i] = identity ? base : transformStroke(base, m);
+		}
+		this.doc.strokes = next;
+	}
+
+	// --- selection input ------------------------------------------------
+
+	/** Decide what this drag is: grabbing a handle, moving the box, or lassoing. */
+	private beginSelectionInput(evt: PointerEvent): void {
+		const doc = this.eventDoc(evt);
+		const bounds = this.selectionBounds();
+
+		if (bounds) {
+			// Drag-to-move only in Replace mode. Add and Remove exist to draw another
+			// boundary, and those boundaries almost always start inside the box you
+			// already have — treating that as a move made both modes unreachable for
+			// anything except a stroke sitting off on its own.
+			const canMove = this.selectionMode === "replace";
+
+			// The middle of the box is checked *before* the handles. Handles get a
+			// finger-sized grab radius, which on a small selection reaches the centre
+			// from every side — so the box could be scaled but never moved. Reserving
+			// an inner region for moving fixes that at every size without shrinking
+			// the handles' targets.
+			const inner = insetBounds(bounds, this.handleInset());
+			if (canMove && boundsContain(inner, doc.x, doc.y)) {
+				this.startTransformDrag("move", undefined, doc, bounds);
+				return;
+			}
+
+			const handle = this.handleAt(evt, bounds);
+			if (handle) {
+				this.startTransformDrag(
+					handle === "rotate" ? "rotate" : "scale",
+					handle === "rotate" ? undefined : handle,
+					doc,
+					bounds,
+				);
+				return;
+			}
+
+			// Inside the box but between handles: still a move.
+			if (canMove && boundsContain(bounds, doc.x, doc.y)) {
+				this.startTransformDrag("move", undefined, doc, bounds);
+				return;
+			}
+		}
+
+		this.selectionInput = "lasso";
+		this.lasso = [doc];
+		this.redraw();
+	}
+
+	private startTransformDrag(
+		kind: "move" | "scale" | "rotate",
+		handle: ScaleHandle | undefined,
+		startDoc: Vec,
+		originBounds: Bounds,
+	): void {
+		const originStrokes = new Map<number, Stroke>();
+		for (const i of this.selected) {
+			const stroke = this.doc.strokes[i];
+			if (stroke) originStrokes.set(i, stroke);
+		}
+		const cx = (originBounds.minX + originBounds.maxX) / 2;
+		const cy = (originBounds.minY + originBounds.maxY) / 2;
+		this.selectionInput = "transform";
+		this.transformDrag = {
+			kind,
+			handle,
+			handleOrigin: handle
+				? handlePositions(originBounds, 0).find((h) => h.id === handle)?.at
+				: undefined,
+			originBounds,
+			originStrokes,
+			startDoc,
+			startAngle: Math.atan2(startDoc.y - cy, startDoc.x - cx),
+		};
+		// Taken now so one drag is one undo step; popped again on release if the
+		// drag turned out to be a tap.
+		this.pushUndo();
+	}
+
+	private updateSelectionInput(evt: PointerEvent): void {
+		const doc = this.eventDoc(evt);
+		if (this.selectionInput === "lasso") {
+			this.lasso?.push(doc);
+			this.redraw();
+			return;
+		}
+		const drag = this.transformDrag;
+		if (!drag) return;
+		this.applyToSelection(this.dragMatrix(drag, doc), drag.originStrokes);
+		this.redraw();
+	}
+
+	private dragMatrix(
+		drag: NonNullable<SketchCanvas["transformDrag"]>,
+		doc: Vec,
+	): Matrix {
+		const b = drag.originBounds;
+		if (drag.kind === "move") {
+			return translation(doc.x - drag.startDoc.x, doc.y - drag.startDoc.y);
+		}
+		if (drag.kind === "rotate") {
+			const cx = (b.minX + b.maxX) / 2;
+			const cy = (b.minY + b.maxY) / 2;
+			const angle = Math.atan2(doc.y - cy, doc.x - cx);
+			return rotateAbout(angle - drag.startAngle, cx, cy);
+		}
+		// Move the handle by how far the finger has travelled, rather than snapping
+		// it to the finger. Grabbing a handle 10px off-centre would otherwise jerk
+		// the edge by 10px before you'd moved at all — and a drag that goes nowhere
+		// has to come out as exactly the identity, or it leaves an undo entry.
+		const origin = drag.handleOrigin ?? drag.startDoc;
+		const at = {
+			x: origin.x + (doc.x - drag.startDoc.x),
+			y: origin.y + (doc.y - drag.startDoc.y),
+		};
+		return scaleFromHandle(b, drag.handle ?? "se", at, MIN_SELECTION_SIZE);
+	}
+
+	private finishSelectionInput(): void {
+		const kind = this.selectionInput;
+		this.selectionInput = null;
+
+		if (kind === "lasso") {
+			const poly = this.lasso ?? [];
+			this.lasso = null;
+			this.resolveLasso(poly);
+			return;
+		}
+
+		const drag = this.transformDrag;
+		this.transformDrag = null;
+		if (!drag) return;
+		// Compare against the originals rather than tracking a "moved" flag: a drag
+		// that ends where it began should leave no undo entry behind.
+		const unchanged = [...drag.originStrokes].every(
+			([i, stroke]) => this.doc.strokes[i] === stroke,
+		);
+		if (unchanged) {
+			this.undoStack.pop();
+			return;
+		}
+		this.redoStack = [];
+		this.redraw();
+		this.options.onChange();
+		this.options.onSelectionChange?.();
+	}
+
+	/**
+	 * Turn a finished boundary into a selection. The path is treated as closed —
+	 * lifting your finger snaps the shape shut rather than requiring you to return
+	 * to where you started. A boundary too small to be a shape is read as a tap,
+	 * which in Replace mode is how you deselect.
+	 */
+	private resolveLasso(poly: Vec[]): void {
+		const pb = polygonBounds(poly);
+		if (!pb || poly.length < 3 || boundsSpan(pb) < MIN_LASSO_SPAN) {
+			if (this.selectionMode === "replace") this.clearSelection();
+			else this.redraw();
+			return;
+		}
+		const hit = strokesInPolygon(this.doc.strokes, poly);
+		this.selected = mergeSelection(this.selected, hit, this.selectionMode);
+		this.redraw();
+		this.options.onSelectionChange?.();
+	}
+
+	private abortSelectionInput(): void {
+		if (!this.selectionInput) return;
+		const drag = this.transformDrag;
+		if (drag) {
+			// Put the originals back and drop the undo entry the drag reserved.
+			const next = this.doc.strokes.slice();
+			for (const [i, stroke] of drag.originStrokes) next[i] = stroke;
+			this.doc.strokes = next;
+			this.undoStack.pop();
+		}
+		this.selectionInput = null;
+		this.transformDrag = null;
+		this.lasso = null;
+	}
+
+	/** The grab radius, in document units, so it's a constant size on screen. */
+	private handleInset(): number {
+		return HANDLE_TOUCH_RADIUS / this.view.scale;
+	}
+
+	/** The handle under a pointer, tested in screen space so zoom doesn't matter. */
+	private handleAt(evt: PointerEvent, bounds: Bounds): HandleHit {
+		const rect = this.el.getBoundingClientRect();
+		const px = evt.clientX - rect.left;
+		const py = evt.clientY - rect.top;
+		let best: HandleHit = null;
+		let bestDist = HANDLE_TOUCH_RADIUS;
+		for (const { id, at } of handlePositions(
+			bounds,
+			ROTATE_HANDLE_OFFSET / this.view.scale,
+		)) {
+			const s = this.docToScreen(at.x, at.y);
+			const d = Math.hypot(s.x - px, s.y - py);
+			if (d <= bestDist) {
+				bestDist = d;
+				best = id;
+			}
+		}
+		return best;
+	}
+
+	private eventDoc(evt: PointerEvent): Vec {
+		const rect = this.el.getBoundingClientRect();
+		return this.screenToDoc(evt.clientX - rect.left, evt.clientY - rect.top);
+	}
+
+	/** Document units -> canvas-relative CSS px. The inverse of screenToDoc. */
+	private docToScreen(x: number, y: number): Vec {
+		const c = Math.cos(this.view.rotation);
+		const s = Math.sin(this.view.rotation);
+		const sc = this.view.scale;
+		return {
+			x: this.view.tx + sc * (c * x - s * y),
+			y: this.view.ty + sc * (s * x + c * y),
+		};
+	}
+
+	// --- selection rendering --------------------------------------------
+
+	/**
+	 * The boundary while you draw it, then the box and handles once there's a
+	 * selection. The box and handles are drawn in *screen* space so they stay a
+	 * constant weight at any zoom; the box still follows the page's rotation,
+	 * because its corners are projected through the view transform.
+	 */
+	private drawSelectionOverlay(): void {
+		const { ctx } = this;
+		if (this.lasso && this.lasso.length > 1) {
+			ctx.save();
+			ctx.setLineDash([6 / this.view.scale, 4 / this.view.scale]);
+			ctx.lineWidth = 1.5 / this.view.scale;
+			ctx.strokeStyle = this.accentColor;
+			ctx.beginPath();
+			ctx.moveTo(this.lasso[0].x, this.lasso[0].y);
+			for (const p of this.lasso.slice(1)) ctx.lineTo(p.x, p.y);
+			// Closed as you draw, so the shape you're about to get is the shape shown.
+			ctx.closePath();
+			ctx.stroke();
+			ctx.restore();
+		}
+
+		const bounds = this.selectionBounds();
+		if (!bounds) return;
+
+		// Screen space from here on: handles are sized in CSS px.
+		ctx.save();
+		ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+		const corners = [
+			this.docToScreen(bounds.minX, bounds.minY),
+			this.docToScreen(bounds.maxX, bounds.minY),
+			this.docToScreen(bounds.maxX, bounds.maxY),
+			this.docToScreen(bounds.minX, bounds.maxY),
+		];
+		ctx.setLineDash([5, 4]);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = this.accentColor;
+		ctx.beginPath();
+		ctx.moveTo(corners[0].x, corners[0].y);
+		for (const c of corners.slice(1)) ctx.lineTo(c.x, c.y);
+		ctx.closePath();
+		ctx.stroke();
+
+		const handles = handlePositions(
+			bounds,
+			ROTATE_HANDLE_OFFSET / this.view.scale,
+		);
+		ctx.setLineDash([]);
+		// The stalk to the rotate handle, so it reads as attached to the box.
+		const rotate = handles.find((h) => h.id === "rotate");
+		if (rotate) {
+			const top = this.docToScreen(
+				(bounds.minX + bounds.maxX) / 2,
+				bounds.minY,
+			);
+			const at = this.docToScreen(rotate.at.x, rotate.at.y);
+			ctx.beginPath();
+			ctx.moveTo(top.x, top.y);
+			ctx.lineTo(at.x, at.y);
+			ctx.stroke();
+		}
+		for (const { id, at } of handles) {
+			const s = this.docToScreen(at.x, at.y);
+			ctx.beginPath();
+			ctx.arc(s.x, s.y, HANDLE_RADIUS, 0, Math.PI * 2);
+			// Filled with the page colour so a handle stays visible over ink.
+			ctx.fillStyle = id === "rotate" ? this.accentColor : this.pageColor;
+			ctx.fill();
+			ctx.stroke();
+		}
+		ctx.restore();
 	}
 
 	// --- canvas sizing --------------------------------------------------
