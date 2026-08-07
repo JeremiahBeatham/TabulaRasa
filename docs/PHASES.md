@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.10.3) | Done — see below |
+| Shipped (v0.1.x → v0.10.4) | Done — see below |
 | Next (UX polish) | #7 done; each menu/dropdown now its own refinement item |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.10.3)
+## Shipped (v0.1.x → v0.10.4)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -46,6 +46,9 @@
       marker / eraser as an icon stack under the trigger; crayon replaces the brush with a textured,
       heavier stroke; size dropdown gets a **vertical** slider (a horizontal one was read as
       Obsidian's back-swipe); settings-sheet headings gain icons; rename auto-saves (v0.10.3)
+- [x] Dropdown polish: option rows lose their fills so a panel no longer contains a grid of boxes,
+      icon columns align to their trigger, and the native vertical slider is replaced by a
+      hand-built one after it rendered as a grey block in Obsidian's webview (v0.10.4)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
