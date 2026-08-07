@@ -33,7 +33,12 @@ export const VIEW_TYPE_SKETCH = "tabula-rasa-sketch-view";
 
 const MIN_BRUSH_SIZE = 1;
 const MAX_BRUSH_SIZE = 40;
-const SIZE_PRESETS = [2, 6, 12, 24, 40];
+// Largest first: the presets stack top-to-bottom beside the slider, whose fill
+// rises from the bottom, so both read the same way — higher means bigger.
+const SIZE_PRESETS = [40, 24, 12, 6, 2];
+
+/** How long the name field waits for typing to stop before it renames the file. */
+const RENAME_IDLE_MS = 1400;
 
 /**
  * The tool list behind the brush button. The two erasers are the existing
@@ -251,8 +256,9 @@ export class SketchView extends TextFileView {
 			return;
 		}
 		try {
+			// No confirmation notice: the field is the confirmation, and a toast per
+			// rename read as nagging while typing. Failures still speak up.
 			await this.app.fileManager.renameFile(file, target);
-			new Notice(`Renamed to “${trimmed}”.`);
 		} catch (e) {
 			console.error(e);
 			new Notice("Rename failed. See console for details.");
@@ -970,8 +976,10 @@ class MoreSheet extends Modal {
 	private buildSketch(): void {
 		this.heading("file-pen", "Sketch");
 
-		// No confirm button: the field commits itself shortly after you stop typing,
-		// and on blur or Enter. Debounced so a rename isn't attempted per keystroke.
+		// No confirm button: the field commits once you've stopped typing, or at once
+		// on blur/Enter. The wait is deliberately long — at 700ms an ordinary pause
+		// mid-word renamed the file and toasted about it, so one name could rename
+		// several times on the way to being finished.
 		new Setting(this.contentEl)
 			.setName("Name")
 			.setDesc("Saves as you type. Links to this sketch in your notes follow it.")
@@ -987,7 +995,7 @@ class MoreSheet extends Modal {
 				};
 				t.onChange(() => {
 					if (timer !== null) window.clearTimeout(timer);
-					timer = window.setTimeout(commit, 700);
+					timer = window.setTimeout(commit, RENAME_IDLE_MS);
 				});
 				t.inputEl.addEventListener("blur", commit);
 				t.inputEl.addEventListener("keydown", (e) => {
