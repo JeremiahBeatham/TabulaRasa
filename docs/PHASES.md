@@ -5,8 +5,8 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.10.4) | Done — see below |
-| Next (UX polish) | #7 done; each menu/dropdown now its own refinement item |
+| Shipped (v0.1.x → v0.11.0) | Done — see below |
+| Next (UX polish) | #7 done; 3 of 5 surface refinements done |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
 
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.10.4)
+## Shipped (v0.1.x → v0.11.0)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -49,6 +49,9 @@
 - [x] Dropdown polish: option rows lose their fills so a panel no longer contains a grid of boxes,
       icon columns align to their trigger, and the native vertical slider is replaced by a
       hand-built one after it rendered as a grey block in Obsidian's webview (v0.10.4)
+- [x] Settings regrouped from a card sort: sheet becomes Sketch / Canvas / Export, tab becomes
+      General / Toolbar / Gestures / Drawing. Canvas resize and PNG-destination dialogs flattened
+      into the sheet; palm rejection moved there too (v0.11.0)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -87,13 +90,11 @@ reworked in isolation.
       and whether a live stroke preview is worth the space.
 - [ ] **Colour flow** — the system sheet handles picking; open question is what (if
       anything) belongs around it, e.g. a small set of pinned colours.
-- [ ] **Settings sheet** — grouping and ordering of canvas / edit / export, what
-      should be promoted or demoted, and how it behaves as a bottom sheet.
-      Headings now carry icons; the grouping itself is still open.
-- [ ] **Plugin settings tab** — which defaults still earn their place now that
-      several moved onto the canvas.
-- Card-sorting tool for the two above: [`docs/tools/settings-card-sort.html`](tools/settings-card-sort.html)
-  — all 28 existing options as draggable cards across renameable sections, exporting the grouping.
+- [x] **Settings sheet** and **plugin settings tab** — regrouped from a card sort rather than from
+      how the code was organised. The sheet is Sketch / Canvas / Export; the tab is General /
+      Toolbar / Gestures / Drawing. Two dialogs were flattened away in the process (canvas resize
+      and the PNG destination prompt), and palm rejection moved to the sheet, where you reach for it
+      mid-drawing. Tool: [`docs/tools/settings-card-sort.html`](tools/settings-card-sort.html).
 
 ## Later — Bigger Features
 - [ ] [#13 — Selection tool (lasso/rectangle + move/scale/delete/duplicate)](https://github.com/JeremiahBeatham/TabulaRasa/issues/13)

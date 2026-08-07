@@ -672,42 +672,46 @@ export class SketchView extends TextFileView {
 		);
 	}
 
-	private openResizeModal(): void {
-		const doc = this.canvas?.getDoc();
-		if (!doc) return;
-		new ResizeCanvasModal(this.app, {
-			width: doc.width,
-			height: doc.height,
-			hasContent: doc.strokes.length > 0,
-			onApply: (w, h, anchor, scaleToFit) =>
-				this.canvas?.resizeCanvas(w, h, anchor, scaleToFit),
-			onFitToContent: () => this.canvas?.fitCanvasToContent(),
-		}).open();
-	}
-
 	/**
 	 * Everything that isn't drawing. Undo and redo appear here as well as on the
 	 * three-finger gestures — a gesture with no visible affordance is invisible
 	 * to anyone who hasn't been told about it.
 	 */
+	/**
+	 * Everything that isn't drawing. Section order and contents come from the card
+	 * sort in docs/tools/settings-card-sort.html, not from how the code is laid out.
+	 */
 	private openMoreSheet(): void {
 		const doc = this.canvas?.getDoc();
 		new MoreSheet(this.app, {
+			name: this.file?.basename ?? "",
 			background: doc?.background ?? "transparent",
+			width: doc?.width ?? this.plugin.settings.canvasWidth,
+			height: doc?.height ?? this.plugin.settings.canvasHeight,
+			hasContent: (doc?.strokes.length ?? 0) > 0,
+			palmRejection: this.plugin.settings.palmRejection,
 			canUndo: this.canvas?.canUndo() ?? false,
 			canRedo: this.canvas?.canRedo() ?? false,
-			name: this.file?.basename ?? "",
 			onRename: (name) => void this.renameSketch(name),
-			onCanvasSize: () => this.openResizeModal(),
+			onUndo: () => this.canvas?.undo(),
+			onRedo: () => this.canvas?.redo(),
+			onClear: () => this.canvas?.clear(),
+			onPalmRejection: (enabled) => {
+				this.plugin.settings.palmRejection = enabled;
+				void this.plugin.saveSettings();
+				// Applied live, so the current zoom/pan/rotation survives the change.
+				this.canvas?.setPalmRejection(enabled);
+			},
+			onFit: () => this.canvas?.fitView(),
 			onBackground: (value) => {
 				this.canvas?.setBackground(value);
 				this.requestSave();
 			},
-			onFit: () => this.canvas?.fitView(),
-			onUndo: () => this.canvas?.undo(),
-			onRedo: () => this.canvas?.redo(),
-			onClear: () => this.canvas?.clear(),
-			onExportPng: () => void this.exportPng(),
+			onResize: (w, h, anchor, scaleToFit) =>
+				this.canvas?.resizeCanvas(w, h, anchor, scaleToFit),
+			onFitToContent: () => this.canvas?.fitCanvasToContent(),
+			onSavePng: () => void this.exportToFile(),
+			onEmbedPng: () => void this.exportAndEmbed(),
 			onExportSvg: () => void this.plugin.exportActiveSvg(this),
 		}).open();
 	}
@@ -732,21 +736,6 @@ export class SketchView extends TextFileView {
 			console.error(e);
 			new Notice("Save failed. See console for details.");
 		}
-	}
-
-	/**
-	 * Generate a PNG (the only time one is created) and ask whether to embed it
-	 * in a note or just keep the image file in the vault.
-	 */
-	private async exportPng(): Promise<void> {
-		if (!this.file) {
-			new Notice("Nothing to export yet.");
-			return;
-		}
-		new ExportChoiceModal(this.app, {
-			onAddToNote: () => void this.exportAndEmbed(),
-			onDownload: () => void this.exportToFile(),
-		}).open();
 	}
 
 	private async exportToFile(): Promise<void> {
@@ -824,38 +813,81 @@ export class SketchView extends TextFileView {
 }
 
 interface MoreSheetActions {
+	name: string;
 	background: string;
+	width: number;
+	height: number;
+	hasContent: boolean;
+	palmRejection: boolean;
 	canUndo: boolean;
 	canRedo: boolean;
-	name: string;
 	onRename: (name: string) => void;
-	onCanvasSize: () => void;
-	onBackground: (value: string) => void;
-	onFit: () => void;
 	onUndo: () => void;
 	onRedo: () => void;
 	onClear: () => void;
-	onExportPng: () => void;
+	onPalmRejection: (enabled: boolean) => void;
+	onFit: () => void;
+	onBackground: (value: string) => void;
+	onResize: (
+		width: number,
+		height: number,
+		anchor: CanvasAnchor,
+		scaleToFit: boolean,
+	) => void;
+	onFitToContent: () => void;
+	onSavePng: () => void;
+	onEmbedPng: () => void;
 	onExportSvg: () => void;
 }
 
+const RESIZE_PRESETS: { label: string; width: number; height: number }[] = [
+	{ label: "Square", width: 1280, height: 1280 },
+	{ label: "4:3", width: 1280, height: 960 },
+	{ label: "16:9", width: 1280, height: 720 },
+	{ label: "A4 portrait", width: 1240, height: 1754 },
+	{ label: "A4 landscape", width: 1754, height: 1240 },
+];
+
+const ANCHOR_OPTIONS: { value: CanvasAnchor; label: string }[] = [
+	{ value: "top-left", label: "Top left" },
+	{ value: "top", label: "Top" },
+	{ value: "top-right", label: "Top right" },
+	{ value: "left", label: "Left" },
+	{ value: "center", label: "Center" },
+	{ value: "right", label: "Right" },
+	{ value: "bottom-left", label: "Bottom left" },
+	{ value: "bottom", label: "Bottom" },
+	{ value: "bottom-right", label: "Bottom right" },
+];
+
 /**
- * The "more" bottom sheet: canvas and page settings at the top, then the
- * commands that used to crowd the toolbar. Styled to rise from the bottom
- * of the screen so it's reachable one-handed.
+ * The per-sketch settings sheet. Sections and their order come from a card sort
+ * rather than from how the code happened to be organised, which is why the canvas
+ * resize controls and the two PNG destinations appear inline here: they used to be
+ * buried in their own modals, and the sort promoted them out.
  */
 class MoreSheet extends Modal {
+	private width: number;
+	private height: number;
+	private anchor: CanvasAnchor = "center";
+	private scaleToFit = false;
+	private widthInput: HTMLInputElement | null = null;
+	private heightInput: HTMLInputElement | null = null;
+	private sizeReadout: HTMLElement | null = null;
+
 	constructor(
 		app: App,
 		private actions: MoreSheetActions,
 	) {
 		super(app);
+		this.width = actions.width;
+		this.height = actions.height;
 	}
 
 	/**
 	 * Section headings carry an icon and are set larger than the option titles
 	 * beneath them. Obsidian's own setHeading() renders at roughly the same weight
-	 * as a setting name, which left the sections losing to their own contents.
+	 * as a setting name, which left sections losing to their own contents.
 	 */
 	private heading(icon: string, text: string): void {
 		const h = this.contentEl.createDiv({ cls: "tabula-rasa-sheet-heading" });
@@ -866,12 +898,19 @@ class MoreSheet extends Modal {
 
 	onOpen(): void {
 		this.modalEl.addClass("tabula-rasa-sheet");
-		this.titleEl.setText("Sketch options");
 		this.contentEl.addClass("tabula-rasa-sheet-body");
+		this.titleEl.setText("Sketch");
+
+		this.buildSketch();
+		this.buildCanvas();
+		this.buildExport();
+	}
+
+	// --- Sketch ---------------------------------------------------------
+
+	private buildSketch(): void {
 		this.heading("file-pen", "Sketch");
 
-		// The filename is hidden from the header to make room for the tools, so
-		// this is now the only place to read or change it.
 		// No confirm button: the field commits itself shortly after you stop typing,
 		// and on blur or Enter. Debounced so a rename isn't attempted per keystroke.
 		new Setting(this.contentEl)
@@ -900,51 +939,9 @@ class MoreSheet extends Modal {
 				});
 			});
 
-		this.heading("frame", "Canvas");
-
-		new Setting(this.contentEl)
-			.setName("Canvas size")
-			.setDesc("Dimensions, aspect presets, or fit tightly to the drawing.")
-			.addButton((b) =>
-				b.setButtonText("Change").onClick(() => {
-					this.close();
-					this.actions.onCanvasSize();
-				}),
-			);
-
-		new Setting(this.contentEl)
-			.setName("Canvas colour")
-			.setDesc(
-				"Transparent takes the colour of whatever the sketch sits on. A solid page is easier to read light ink against.",
-			)
-			.addDropdown((dd) => {
-				dd.addOption("transparent", "Transparent");
-				dd.addOption("#ffffff", "White");
-				dd.addOption("#1e1e1e", "Dark");
-				const current = this.actions.background;
-				dd.setValue(
-					["transparent", "#ffffff", "#1e1e1e"].includes(current)
-						? current
-						: "transparent",
-				);
-				dd.onChange((value) => this.actions.onBackground(value));
-			});
-
-		new Setting(this.contentEl)
-			.setName("Fit to screen")
-			.setDesc("Reset zoom, pan and rotation.")
-			.addButton((b) =>
-				b.setButtonText("Fit").onClick(() => {
-					this.close();
-					this.actions.onFit();
-				}),
-			);
-
-		this.heading("history", "Edit");
-
 		new Setting(this.contentEl)
 			.setName("Undo and redo")
-			.setDesc("Or swipe with three fingers on the canvas.")
+			.setDesc("Or double-tap the canvas: two fingers to undo, three to redo.")
 			.addButton((b) =>
 				b
 					.setButtonText("Undo")
@@ -977,15 +974,184 @@ class MoreSheet extends Modal {
 					}),
 			);
 
-		this.heading("download", "Export");
+		// Lives here rather than in the plugin settings because it's something you
+		// reach for mid-sketch when you swap between a finger and the Pencil.
+		new Setting(this.contentEl)
+			.setName("Palm rejection")
+			.setDesc("Ignore finger input while an Apple Pencil or stylus is drawing.")
+			.addToggle((t) =>
+				t
+					.setValue(this.actions.palmRejection)
+					.onChange((v) => this.actions.onPalmRejection(v)),
+			);
+	}
+
+	// --- Canvas ---------------------------------------------------------
+
+	private buildCanvas(): void {
+		this.heading("frame", "Canvas");
 
 		new Setting(this.contentEl)
-			.setName("Export as PNG")
-			.setDesc("Add the image to a note, or just save it to the vault.")
+			.setName("Fit to screen")
+			.setDesc("Reset zoom, pan and rotation.")
 			.addButton((b) =>
-				b.setButtonText("PNG").onClick(() => {
+				b.setButtonText("Fit").onClick(() => {
 					this.close();
-					this.actions.onExportPng();
+					this.actions.onFit();
+				}),
+			);
+
+		const sizeSetting = new Setting(this.contentEl)
+			.setName("Canvas size")
+			.setDesc("Current page dimensions.");
+		this.sizeReadout = sizeSetting.controlEl.createSpan({
+			cls: "tabula-rasa-size-readout",
+		});
+		this.syncReadout();
+
+		new Setting(this.contentEl)
+			.setName("Canvas colour")
+			.setDesc(
+				"Transparent takes the colour of whatever the sketch sits on. A solid page is easier to read light ink against.",
+			)
+			.addDropdown((dd) => {
+				dd.addOption("transparent", "Transparent");
+				dd.addOption("#ffffff", "White");
+				dd.addOption("#1e1e1e", "Dark");
+				const current = this.actions.background;
+				dd.setValue(
+					["transparent", "#ffffff", "#1e1e1e"].includes(current)
+						? current
+						: "transparent",
+				);
+				dd.onChange((value) => this.actions.onBackground(value));
+			});
+
+		const presets = new Setting(this.contentEl)
+			.setName("Aspect presets")
+			.setDesc("Apply a common size or ratio, then Apply size below.");
+		for (const p of RESIZE_PRESETS) {
+			presets.addButton((b) =>
+				b.setButtonText(p.label).onClick(() => {
+					this.width = p.width;
+					this.height = p.height;
+					this.syncInputs();
+				}),
+			);
+		}
+
+		new Setting(this.contentEl)
+			.setName("Width and height")
+			.setDesc("In pixels.")
+			.addText((t) => {
+				t.inputEl.type = "number";
+				t.inputEl.setAttribute("aria-label", "Width");
+				t.setValue(String(this.width));
+				this.widthInput = t.inputEl;
+				t.onChange((v) => {
+					this.width = Number(v);
+				});
+			})
+			.addText((t) => {
+				t.inputEl.type = "number";
+				t.inputEl.setAttribute("aria-label", "Height");
+				t.setValue(String(this.height));
+				this.heightInput = t.inputEl;
+				t.onChange((v) => {
+					this.height = Number(v);
+				});
+			});
+
+		new Setting(this.contentEl)
+			.setName("Anchor")
+			.setDesc("Where your drawing stays when the page size changes.")
+			.addDropdown((dd) => {
+				for (const a of ANCHOR_OPTIONS) dd.addOption(a.value, a.label);
+				dd.setValue(this.anchor);
+				dd.onChange((v) => {
+					this.anchor = v as CanvasAnchor;
+				});
+			});
+
+		new Setting(this.contentEl)
+			.setName("Scale drawing to fit")
+			.setDesc(
+				"Resize existing strokes to fill the new page instead of just repositioning them.",
+			)
+			.addToggle((t) =>
+				t.setValue(this.scaleToFit).onChange((v) => {
+					this.scaleToFit = v;
+				}),
+			)
+			.addButton((b) =>
+				b
+					.setButtonText("Apply size")
+					.setCta()
+					.onClick(() => this.applySize()),
+			);
+
+		new Setting(this.contentEl)
+			.setName("Fit to drawing")
+			.setDesc(
+				this.actions.hasContent
+					? "Shrink the page to tightly wrap your strokes."
+					: "Draw something first to use this.",
+			)
+			.addButton((b) => {
+				b.setButtonText("Fit to drawing");
+				b.setDisabled(!this.actions.hasContent);
+				b.onClick(() => {
+					this.close();
+					this.actions.onFitToContent();
+				});
+			});
+	}
+
+	private syncReadout(): void {
+		this.sizeReadout?.setText(`${Math.round(this.width)} × ${Math.round(this.height)}`);
+	}
+
+	private syncInputs(): void {
+		if (this.widthInput) this.widthInput.value = String(this.width);
+		if (this.heightInput) this.heightInput.value = String(this.height);
+		this.syncReadout();
+	}
+
+	private applySize(): void {
+		const w = Math.round(this.width);
+		const h = Math.round(this.height);
+		if (
+			!Number.isFinite(w) ||
+			!Number.isFinite(h) ||
+			w < MIN_CANVAS_SIZE ||
+			h < MIN_CANVAS_SIZE ||
+			w > MAX_CANVAS_SIZE ||
+			h > MAX_CANVAS_SIZE
+		) {
+			new Notice(
+				`Enter a width and height between ${MIN_CANVAS_SIZE} and ${MAX_CANVAS_SIZE} px.`,
+			);
+			return;
+		}
+		this.close();
+		this.actions.onResize(w, h, this.anchor, this.scaleToFit);
+	}
+
+	// --- Export ---------------------------------------------------------
+
+	private buildExport(): void {
+		this.heading("download", "Export");
+
+		// The old flow was one "Export PNG" button that then asked where the image
+		// should go. Both destinations are direct actions now, so the intermediate
+		// dialog is gone.
+		new Setting(this.contentEl)
+			.setName("Just save the image")
+			.setDesc("Write a PNG into your vault beside the sketch.")
+			.addButton((b) =>
+				b.setButtonText("Save PNG").onClick(() => {
+					this.close();
+					this.actions.onSavePng();
 				}),
 			);
 
@@ -993,51 +1159,19 @@ class MoreSheet extends Modal {
 			.setName("Export as SVG")
 			.setDesc("Save a vector copy alongside the sketch.")
 			.addButton((b) =>
-				b.setButtonText("SVG").onClick(() => {
+				b.setButtonText("Save SVG").onClick(() => {
 					this.close();
 					this.actions.onExportSvg();
 				}),
 			);
-	}
 
-	onClose(): void {
-		this.contentEl.empty();
-	}
-}
-
-/** Two-choice dialog shown when exporting: embed in a note, or just keep the file. */
-class ExportChoiceModal extends Modal {
-	constructor(
-		app: App,
-		private actions: { onAddToNote: () => void; onDownload: () => void },
-	) {
-		super(app);
-	}
-
-	onOpen(): void {
-		this.titleEl.setText("Export sketch as image");
-		this.contentEl.createEl("p", {
-			text: "A PNG will be created from your sketch. Where should it go?",
-		});
 		new Setting(this.contentEl)
-			.setName("Add to a note")
-			.setDesc("Create the image and embed it in a note.")
+			.setName("Add image to a note")
+			.setDesc("Create a PNG and embed it — in the note this sketch came from, or one you pick.")
 			.addButton((b) =>
-				b
-					.setButtonText("Add to note")
-					.setCta()
-					.onClick(() => {
-						this.close();
-						this.actions.onAddToNote();
-					}),
-			);
-		new Setting(this.contentEl)
-			.setName("Just save the image")
-			.setDesc("Keep the PNG file in your vault without embedding it.")
-			.addButton((b) =>
-				b.setButtonText("Save image").onClick(() => {
+				b.setButtonText("Add to note").onClick(() => {
 					this.close();
-					this.actions.onDownload();
+					this.actions.onEmbedPng();
 				}),
 			);
 	}
@@ -1046,6 +1180,7 @@ class ExportChoiceModal extends Modal {
 		this.contentEl.empty();
 	}
 }
+
 
 /** Fuzzy picker over markdown notes for choosing an embed destination. */
 class NotePickerModal extends FuzzySuggestModal<TFile> {
@@ -1075,175 +1210,5 @@ class NotePickerModal extends FuzzySuggestModal<TFile> {
 	onClose(): void {
 		super.onClose();
 		if (!this.picked) this.onResolve(null);
-	}
-}
-
-interface ResizeActions {
-	width: number;
-	height: number;
-	hasContent: boolean;
-	onApply: (
-		width: number,
-		height: number,
-		anchor: CanvasAnchor,
-		scaleToFit: boolean,
-	) => void;
-	onFitToContent: () => void;
-}
-
-const RESIZE_PRESETS: { label: string; width: number; height: number }[] = [
-	{ label: "Square", width: 1280, height: 1280 },
-	{ label: "4:3", width: 1280, height: 960 },
-	{ label: "16:9", width: 1280, height: 720 },
-	{ label: "A4 portrait", width: 1240, height: 1754 },
-	{ label: "A4 landscape", width: 1754, height: 1240 },
-];
-
-const ANCHOR_OPTIONS: { value: CanvasAnchor; label: string }[] = [
-	{ value: "top-left", label: "Top left" },
-	{ value: "top", label: "Top" },
-	{ value: "top-right", label: "Top right" },
-	{ value: "left", label: "Left" },
-	{ value: "center", label: "Center" },
-	{ value: "right", label: "Right" },
-	{ value: "bottom-left", label: "Bottom left" },
-	{ value: "bottom", label: "Bottom" },
-	{ value: "bottom-right", label: "Bottom right" },
-];
-
-/** Dialog for changing the canvas dimensions / aspect ratio from the page. */
-class ResizeCanvasModal extends Modal {
-	private width: number;
-	private height: number;
-	private anchor: CanvasAnchor = "center";
-	private scaleToFit = false;
-	private widthInput: HTMLInputElement | null = null;
-	private heightInput: HTMLInputElement | null = null;
-
-	constructor(
-		app: App,
-		private actions: ResizeActions,
-	) {
-		super(app);
-		this.width = actions.width;
-		this.height = actions.height;
-	}
-
-	onOpen(): void {
-		this.titleEl.setText("Canvas size");
-
-		const presets = new Setting(this.contentEl)
-			.setName("Presets")
-			.setDesc("Apply a common size or aspect ratio.");
-		for (const p of RESIZE_PRESETS) {
-			presets.addButton((b) =>
-				b.setButtonText(p.label).onClick(() => {
-					this.width = p.width;
-					this.height = p.height;
-					this.syncInputs();
-				}),
-			);
-		}
-
-		new Setting(this.contentEl).setName("Width").setDesc("Pixels.").addText(
-			(t) => {
-				t.inputEl.type = "number";
-				t.setValue(String(this.width));
-				this.widthInput = t.inputEl;
-				t.onChange((v) => {
-					this.width = Number(v);
-				});
-			},
-		);
-
-		new Setting(this.contentEl)
-			.setName("Height")
-			.setDesc("Pixels.")
-			.addText((t) => {
-				t.inputEl.type = "number";
-				t.setValue(String(this.height));
-				this.heightInput = t.inputEl;
-				t.onChange((v) => {
-					this.height = Number(v);
-				});
-			});
-
-		new Setting(this.contentEl)
-			.setName("Anchor")
-			.setDesc("Where your drawing stays when the canvas size changes.")
-			.addDropdown((dd) => {
-				for (const a of ANCHOR_OPTIONS) dd.addOption(a.value, a.label);
-				dd.setValue(this.anchor);
-				dd.onChange((v) => {
-					this.anchor = v as CanvasAnchor;
-				});
-			});
-
-		new Setting(this.contentEl)
-			.setName("Scale drawing to fit")
-			.setDesc(
-				"Resize your existing strokes to fill the new canvas instead of just repositioning them.",
-			)
-			.addToggle((t) =>
-				t.setValue(this.scaleToFit).onChange((v) => {
-					this.scaleToFit = v;
-				}),
-			);
-
-		new Setting(this.contentEl)
-			.setName("Fit to drawing")
-			.setDesc(
-				this.actions.hasContent
-					? "Shrink the canvas to tightly wrap your drawing."
-					: "Draw something first to use this.",
-			)
-			.addButton((b) => {
-				b.setButtonText("Fit to drawing");
-				b.setDisabled(!this.actions.hasContent);
-				b.onClick(() => {
-					this.close();
-					this.actions.onFitToContent();
-				});
-			});
-
-		new Setting(this.contentEl)
-			.addButton((b) =>
-				b
-					.setButtonText("Apply")
-					.setCta()
-					.onClick(() => this.apply()),
-			)
-			.addButton((b) =>
-				b.setButtonText("Cancel").onClick(() => this.close()),
-			);
-	}
-
-	private syncInputs(): void {
-		if (this.widthInput) this.widthInput.value = String(this.width);
-		if (this.heightInput) this.heightInput.value = String(this.height);
-	}
-
-	private apply(): void {
-		const w = Math.round(this.width);
-		const h = Math.round(this.height);
-		if (
-			!Number.isFinite(w) ||
-			!Number.isFinite(h) ||
-			w < MIN_CANVAS_SIZE ||
-			h < MIN_CANVAS_SIZE ||
-			w > MAX_CANVAS_SIZE ||
-			h > MAX_CANVAS_SIZE
-		) {
-			new Notice(
-				`Enter a width and height between ${MIN_CANVAS_SIZE} and ${MAX_CANVAS_SIZE} px.`,
-			);
-			return;
-		}
-		this.close();
-		this.actions.onApply(w, h, this.anchor, this.scaleToFit);
-	}
-
-	onClose(): void {
-		this.contentEl.empty();
 	}
 }
