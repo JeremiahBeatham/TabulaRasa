@@ -79,6 +79,11 @@ Conventions worth knowing before touching this area:
 - **Sliders in popovers must be vertical**, and hand-built. A horizontal drag inside Obsidian mobile
   is taken as the app's back-swipe and throws you out to file navigation; `<input type="range">` with
   `appearance: slider-vertical` renders in the webview as a grey block with no visible track.
+- **`.tabula-rasa-canvas` and `-canvas-host` in `styles.css` are load-bearing.** Their sizing keeps
+  the canvas from collapsing to a `<canvas>`'s intrinsic 300×150, and `touch-action: none` is what
+  makes a drag draw rather than scroll Obsidian. A bulk CSS deletion removed them once and broke
+  drawing entirely; verify the canvas still renders after any CSS surgery, not just the piece you
+  were editing.
 - **Obsidian's global `button`/`input` styles beat single-class selectors.** Anything that needs a
   transparent background or its own padding must double its class (`.x.x`) or it comes back filled
   and boxed. Test harnesses must emulate those defaults, or they will report alignment and styling

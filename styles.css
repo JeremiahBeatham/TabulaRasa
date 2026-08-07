@@ -8,6 +8,34 @@
 }
 
 /*
+ * The canvas fills its host and owns all touch input. Both rules are load-bearing:
+ * without the sizing it collapses to the intrinsic 300x150 of a <canvas>, and
+ * without touch-action a drag scrolls Obsidian instead of drawing. They were lost
+ * to an over-broad CSS deletion in v0.10.4 — don't remove them again.
+ */
+.tabula-rasa-canvas-host {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	background: var(--background-primary);
+	min-height: 0;
+}
+
+.tabula-rasa-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	touch-action: none;
+	overscroll-behavior: none;
+	/* The work-area colour is set from the theme in JS; the page is drawn inside
+	   the canvas so it stays correct while panning and zooming. */
+	background: var(--background-primary);
+	cursor: crosshair;
+}
+
+/*
  * The tools live in Obsidian's own view header, next to its "..." menu, so the
  * sketch gains no chrome of its own. The filename is hidden to make room —
  * it's readable and editable in the "more" sheet instead.
@@ -421,3 +449,19 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 	padding: 10px 0;
 	border-top: none;
 }
+
+/* Canvas colour swatch in the settings sheet — a real picker, not a dropdown. */
+input.tabula-rasa-page-colour {
+	width: 44px;
+	height: 32px;
+	padding: 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 7px;
+	background: transparent;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+input.tabula-rasa-page-colour::-webkit-color-swatch-wrapper { padding: 2px; }
+input.tabula-rasa-page-colour::-webkit-color-swatch { border: none; border-radius: 5px; }
