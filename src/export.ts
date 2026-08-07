@@ -36,7 +36,7 @@ const CRAYON_OPTIONS: ToolStrokeOptions = {
 	grain: 0.16,
 };
 
-const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
+export const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
 	pen: { thinning: 0.6, smoothing: 0.5, streamline: 0.5, taper: 0, weight: 1, grain: 0 },
 	crayon: CRAYON_OPTIONS,
 	// Legacy alias: strokes saved as "brush" before the crayon rename.
@@ -53,13 +53,18 @@ const TOOL_STROKE_OPTIONS: Record<ToolName, ToolStrokeOptions> = {
 };
 
 /**
- * Deterministic pseudo-random in [-1, 1] from an integer. Must be stable: the
- * live canvas and both export paths render the same stroke, so a real RNG would
- * make a drawing shimmer as it redrew and differ from its own export.
+ * Deterministic pseudo-random in [-1, 1] seeded by a *position*, not by a vertex
+ * index. Seeding by index shimmered while drawing: perfect-freehand returns the
+ * outline as one side forward then the other back, so appending a point shifts
+ * the index of every vertex on the return side and re-rolled their grain on each
+ * frame. Position is stable as the stroke grows, and identical in both export
+ * paths. Quantised so float drift between those paths can't change the roll.
  */
-function jitter(seed: number): number {
-	const x = Math.sin(seed * 12.9898) * 43758.5453;
-	return (x - Math.floor(x)) * 2 - 1;
+function jitter(x: number, y: number): number {
+	const qx = Math.round(x * 4) / 4;
+	const qy = Math.round(y * 4) / 4;
+	const s = Math.sin(qx * 12.9898 + qy * 78.233) * 43758.5453;
+	return (s - Math.floor(s)) * 2 - 1;
 }
 
 /**
@@ -78,7 +83,7 @@ function roughen(outline: number[][], amount: number): number[][] {
 		const len = Math.hypot(tx, ty) || 1;
 		tx /= len;
 		ty /= len;
-		const d = jitter(i + 1) * amount;
+		const d = jitter(x, y) * amount;
 		return [x + tx * d, y + ty * d];
 	});
 }

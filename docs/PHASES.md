@@ -5,17 +5,17 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.11.1) | Done — see below |
-| Next (UX polish) | #7 done; 3 of 5 surface refinements done |
-| Later (bigger features) | 2 planned |
+| Shipped (v0.1.x → v0.11.2) | Done — see below |
+| Next (UX polish) | Done — #7 and all 5 surface refinements |
+| Later (bigger features) | #13 selection, #14 snapping — next up |
 | Distribution | Rebrand done; community-store submission pending |
 
 **Active branch:** `main`
-**Last updated:** 2026-08-05
+**Last updated:** 2026-08-07
 
 ---
 
-## Shipped (v0.1.x → v0.11.1)
+## Shipped (v0.1.x → v0.11.2)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -56,6 +56,10 @@
       deletion in v0.10.4 — without them the canvas collapsed to 300×150 and dragging scrolled the
       page instead of drawing. Canvas section trimmed to six controls; Export reduced to Add to note
       and Share (system share sheet, PNG or SVG) (v0.11.1)
+- [x] Size presets flipped to largest-first so the column runs the same direction as the slider
+      beside it; the name field waits for typing to stop and no longer toasts on every rename; the
+      crayon's grain is seeded by position rather than vertex index, which stops the stroke edge
+      shimmering as you draw (v0.11.2)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -87,13 +91,14 @@ Now the bar is settled, each menu gets dissected on its own rather than designed
 one pass. Deliberately separate items so each can be looked at, argued about and
 reworked in isolation.
 
-- [ ] **Tool dropdown** — what belongs in the list, ordering, whether the erasers
-      stay as two entries, icons, and whether size/colour should be reachable from
-      inside it.
-- [ ] **Size dropdown** — preset scale values, slider feel, the typed-value entry,
-      and whether a live stroke preview is worth the space.
-- [ ] **Colour flow** — the system sheet handles picking; open question is what (if
-      anything) belongs around it, e.g. a small set of pinned colours.
+- [x] **Tool dropdown** — settled at four entries (pen, crayon, marker, eraser) as a left-aligned
+      icon stack under the trigger, no description text. The pixel eraser was cut rather than kept
+      as a second entry; size and colour stay their own buttons.
+- [x] **Size dropdown** — presets stack under the button running largest to smallest, a vertical
+      slider beside them (horizontal is Obsidian's back-swipe), and the px readout below taps into
+      a text field. No live stroke preview: the presets' dots already show scale.
+- [x] **Colour flow** — nothing belongs around the system sheet. No pinned colours, no recents:
+      iOS Colors already has both, and duplicating them was what made the old bar wrap.
 - [x] **Settings sheet** and **plugin settings tab** — regrouped from a card sort rather than from
       how the code was organised. The sheet is Sketch / Canvas / Export; the tab is General /
       Toolbar / Gestures / Drawing. Two dialogs were flattened away in the process (canvas resize

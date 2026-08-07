@@ -76,6 +76,16 @@ Conventions worth knowing before touching this area:
 - **Per-tool stroke feel lives in one table** (`TOOL_STROKE_OPTIONS` in `src/export.ts`) so the
   live canvas and both export paths stay in agreement. Any randomness there (crayon's grain) must be
   seeded and deterministic — a real RNG makes a drawing shimmer on redraw and differ from its export.
+  **Seed it by position, never by vertex index.** perfect-freehand returns the outline as one side
+  forward then the other back, so appending a point renumbers every vertex on the return side; an
+  index seed re-rolled their grain each frame and the edge visibly crawled while drawing (~2px at
+  size 8). Quantise the position before hashing so float drift can't change the roll.
+- **The size presets run largest at the top**, matching the vertical slider beside them, whose fill
+  rises from the bottom. Top of the slider is `MAX_BRUSH_SIZE`, which is also the first preset, so
+  the two columns agree at both ends. Flipping one without the other is a bug he'll spot.
+- **The name field renames on idle, not on change.** It waits `RENAME_IDLE_MS` (1400) and shows no
+  success toast: a shorter wait renamed the file on any pause mid-word, so one name produced several
+  renames and several notices. Failures still notify.
 - **Sliders in popovers must be vertical**, and hand-built. A horizontal drag inside Obsidian mobile
   is taken as the app's back-swipe and throws you out to file navigation; `<input type="range">` with
   `appearance: slider-vertical` renders in the webview as a grey block with no visible track.
