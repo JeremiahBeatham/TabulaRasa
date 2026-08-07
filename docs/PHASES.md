@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.11.0) | Done — see below |
+| Shipped (v0.1.x → v0.11.1) | Done — see below |
 | Next (UX polish) | #7 done; 3 of 5 surface refinements done |
 | Later (bigger features) | 2 planned |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.11.0)
+## Shipped (v0.1.x → v0.11.1)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -52,6 +52,10 @@
 - [x] Settings regrouped from a card sort: sheet becomes Sketch / Canvas / Export, tab becomes
       General / Toolbar / Gestures / Drawing. Canvas resize and PNG-destination dialogs flattened
       into the sheet; palm rejection moved there too (v0.11.0)
+- [x] **Fix:** restored the canvas sizing and `touch-action` rules dropped by an over-broad CSS
+      deletion in v0.10.4 — without them the canvas collapsed to 300×150 and dragging scrolled the
+      page instead of drawing. Canvas section trimmed to six controls; Export reduced to Add to note
+      and Share (system share sheet, PNG or SVG) (v0.11.1)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)

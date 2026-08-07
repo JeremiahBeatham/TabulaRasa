@@ -25,8 +25,9 @@ import {
 	parseDoc,
 	serializeDoc,
 } from "./model";
+import { renderDocToPngBlob, renderDocToSvg } from "./export";
 import type TabulaRasaPlugin from "./main";
-import { TABULA_RASA_ICON_ID, TABULA_RASA_RESIZE_ICON_ID } from "./icon";
+import { TABULA_RASA_ICON_ID } from "./icon";
 
 export const VIEW_TYPE_SKETCH = "tabula-rasa-sketch-view";
 
@@ -710,9 +711,8 @@ export class SketchView extends TextFileView {
 			onResize: (w, h, anchor, scaleToFit) =>
 				this.canvas?.resizeCanvas(w, h, anchor, scaleToFit),
 			onFitToContent: () => this.canvas?.fitCanvasToContent(),
-			onSavePng: () => void this.exportToFile(),
 			onEmbedPng: () => void this.exportAndEmbed(),
-			onExportSvg: () => void this.plugin.exportActiveSvg(this),
+			onShare: (format) => void this.shareSketch(format),
 		}).open();
 	}
 
@@ -735,6 +735,67 @@ export class SketchView extends TextFileView {
 		} catch (e) {
 			console.error(e);
 			new Notice("Save failed. See console for details.");
+		}
+	}
+
+	/**
+	 * Hand the rendered sketch to the system share sheet, which is what lets it
+	 * reach Files or Photos without us writing anything into the vault. iOS filters
+	 * the sheet's actions by file type, so a PNG offers "Save Image" as well as
+	 * "Save to Files" while an SVG only offers the latter.
+	 *
+	 * Web Share with files isn't guaranteed inside Obsidian's webview, so when it
+	 * isn't available we save into the vault instead and say so rather than
+	 * silently doing nothing.
+	 */
+	private async shareSketch(format: "png" | "svg"): Promise<void> {
+		if (!this.file) {
+			new Notice("Nothing to share yet.");
+			return;
+		}
+		try {
+			await this.app.vault.modify(this.file, this.getViewData());
+			const doc = parseDoc(this.getViewData());
+			const base = this.file.basename;
+			const file =
+				format === "svg"
+					? new File([renderDocToSvg(doc)], `${base}.svg`, {
+							type: "image/svg+xml",
+						})
+					: new File(
+							[
+								await renderDocToPngBlob(
+									doc,
+									this.plugin.settings.pngExportScale,
+								),
+							],
+							`${base}.png`,
+							{ type: "image/png" },
+						);
+
+			const nav = navigator as Navigator & {
+				canShare?: (data: { files: File[] }) => boolean;
+				share?: (data: { files: File[]; title?: string }) => Promise<void>;
+			};
+			if (nav.share && nav.canShare?.({ files: [file] })) {
+				await nav.share({ files: [file], title: base });
+				return;
+			}
+
+			// No share sheet here — fall back to the vault so the export isn't lost.
+			if (format === "svg") {
+				await this.plugin.exportActiveSvg(this);
+			} else {
+				await this.exportToFile();
+			}
+			new Notice(
+				"Sharing isn't available here, so the file was saved to your vault instead.",
+			);
+		} catch (e) {
+			// An aborted share sheet rejects; that's a normal cancel, not a failure.
+			if (e instanceof Error && e.name === "AbortError") return;
+			console.error(e);
+			new Notice("Share failed. See console for details.");
 		}
 	}
 
@@ -835,9 +896,8 @@ interface MoreSheetActions {
 		scaleToFit: boolean,
 	) => void;
 	onFitToContent: () => void;
-	onSavePng: () => void;
 	onEmbedPng: () => void;
-	onExportSvg: () => void;
+	onShare: (format: "png" | "svg") => void;
 }
 
 const RESIZE_PRESETS: { label: string; width: number; height: number }[] = [
@@ -870,10 +930,9 @@ class MoreSheet extends Modal {
 	private width: number;
 	private height: number;
 	private anchor: CanvasAnchor = "center";
-	private scaleToFit = false;
+	private format: "png" | "svg" = "png";
 	private widthInput: HTMLInputElement | null = null;
 	private heightInput: HTMLInputElement | null = null;
-	private sizeReadout: HTMLElement | null = null;
 
 	constructor(
 		app: App,
@@ -1001,48 +1060,25 @@ class MoreSheet extends Modal {
 				}),
 			);
 
-		const sizeSetting = new Setting(this.contentEl)
-			.setName("Canvas size")
-			.setDesc("Current page dimensions.");
-		this.sizeReadout = sizeSetting.controlEl.createSpan({
-			cls: "tabula-rasa-size-readout",
-		});
-		this.syncReadout();
-
 		new Setting(this.contentEl)
-			.setName("Canvas colour")
+			.setName("Fit to drawing")
 			.setDesc(
-				"Transparent takes the colour of whatever the sketch sits on. A solid page is easier to read light ink against.",
+				this.actions.hasContent
+					? "Shrink the page to tightly wrap your strokes."
+					: "Draw something first to use this.",
 			)
-			.addDropdown((dd) => {
-				dd.addOption("transparent", "Transparent");
-				dd.addOption("#ffffff", "White");
-				dd.addOption("#1e1e1e", "Dark");
-				const current = this.actions.background;
-				dd.setValue(
-					["transparent", "#ffffff", "#1e1e1e"].includes(current)
-						? current
-						: "transparent",
-				);
-				dd.onChange((value) => this.actions.onBackground(value));
+			.addButton((b) => {
+				b.setButtonText("Fit");
+				b.setDisabled(!this.actions.hasContent);
+				b.onClick(() => {
+					this.close();
+					this.actions.onFitToContent();
+				});
 			});
 
-		const presets = new Setting(this.contentEl)
-			.setName("Aspect presets")
-			.setDesc("Apply a common size or ratio, then Apply size below.");
-		for (const p of RESIZE_PRESETS) {
-			presets.addButton((b) =>
-				b.setButtonText(p.label).onClick(() => {
-					this.width = p.width;
-					this.height = p.height;
-					this.syncInputs();
-				}),
-			);
-		}
-
 		new Setting(this.contentEl)
-			.setName("Width and height")
-			.setDesc("In pixels.")
+			.setName("Custom size")
+			.setDesc(`Width and height in pixels, ${MIN_CANVAS_SIZE}–${MAX_CANVAS_SIZE}.`)
 			.addText((t) => {
 				t.inputEl.type = "number";
 				t.inputEl.setAttribute("aria-label", "Width");
@@ -1060,7 +1096,51 @@ class MoreSheet extends Modal {
 				t.onChange((v) => {
 					this.height = Number(v);
 				});
-			});
+			})
+			.addButton((b) =>
+				b
+					.setButtonText("Apply")
+					.setCta()
+					.onClick(() => this.applySize()),
+			);
+
+		const presets = new Setting(this.contentEl)
+			.setName("Aspect ratio")
+			.setDesc("Applies immediately, using the anchor below.");
+		for (const p of RESIZE_PRESETS) {
+			presets.addButton((b) =>
+				b.setButtonText(p.label).onClick(() => {
+					this.width = p.width;
+					this.height = p.height;
+					this.syncInputs();
+					this.applySize();
+				}),
+			);
+		}
+
+		// A real colour picker: on iOS this input raises the system Colors sheet,
+		// the same one the toolbar's colour button uses.
+		const colourSetting = new Setting(this.contentEl)
+			.setName("Canvas colour")
+			.setDesc("Transparent takes the colour of whatever the sketch sits on.");
+		colourSetting.addButton((b) =>
+			b.setButtonText("Transparent").onClick(() => {
+				this.actions.onBackground("transparent");
+				new Notice("Canvas set to transparent.");
+			}),
+		);
+		const swatch = colourSetting.controlEl.createEl("input", {
+			cls: "tabula-rasa-page-colour",
+			attr: { type: "color", "aria-label": "Canvas colour" },
+		});
+		swatch.value = normalizeHex(
+			this.actions.background === "transparent"
+				? "#1e1e1e"
+				: this.actions.background,
+		);
+		swatch.addEventListener("input", () =>
+			this.actions.onBackground(swatch.value),
+		);
 
 		new Setting(this.contentEl)
 			.setName("Anchor")
@@ -1072,49 +1152,11 @@ class MoreSheet extends Modal {
 					this.anchor = v as CanvasAnchor;
 				});
 			});
-
-		new Setting(this.contentEl)
-			.setName("Scale drawing to fit")
-			.setDesc(
-				"Resize existing strokes to fill the new page instead of just repositioning them.",
-			)
-			.addToggle((t) =>
-				t.setValue(this.scaleToFit).onChange((v) => {
-					this.scaleToFit = v;
-				}),
-			)
-			.addButton((b) =>
-				b
-					.setButtonText("Apply size")
-					.setCta()
-					.onClick(() => this.applySize()),
-			);
-
-		new Setting(this.contentEl)
-			.setName("Fit to drawing")
-			.setDesc(
-				this.actions.hasContent
-					? "Shrink the page to tightly wrap your strokes."
-					: "Draw something first to use this.",
-			)
-			.addButton((b) => {
-				b.setButtonText("Fit to drawing");
-				b.setDisabled(!this.actions.hasContent);
-				b.onClick(() => {
-					this.close();
-					this.actions.onFitToContent();
-				});
-			});
-	}
-
-	private syncReadout(): void {
-		this.sizeReadout?.setText(`${Math.round(this.width)} × ${Math.round(this.height)}`);
 	}
 
 	private syncInputs(): void {
 		if (this.widthInput) this.widthInput.value = String(this.width);
 		if (this.heightInput) this.heightInput.value = String(this.height);
-		this.syncReadout();
 	}
 
 	private applySize(): void {
@@ -1134,7 +1176,7 @@ class MoreSheet extends Modal {
 			return;
 		}
 		this.close();
-		this.actions.onResize(w, h, this.anchor, this.scaleToFit);
+		this.actions.onResize(w, h, this.anchor, false);
 	}
 
 	// --- Export ---------------------------------------------------------
@@ -1142,37 +1184,38 @@ class MoreSheet extends Modal {
 	private buildExport(): void {
 		this.heading("download", "Export");
 
-		// The old flow was one "Export PNG" button that then asked where the image
-		// should go. Both destinations are direct actions now, so the intermediate
-		// dialog is gone.
 		new Setting(this.contentEl)
-			.setName("Just save the image")
-			.setDesc("Write a PNG into your vault beside the sketch.")
-			.addButton((b) =>
-				b.setButtonText("Save PNG").onClick(() => {
-					this.close();
-					this.actions.onSavePng();
-				}),
-			);
-
-		new Setting(this.contentEl)
-			.setName("Export as SVG")
-			.setDesc("Save a vector copy alongside the sketch.")
-			.addButton((b) =>
-				b.setButtonText("Save SVG").onClick(() => {
-					this.close();
-					this.actions.onExportSvg();
-				}),
-			);
-
-		new Setting(this.contentEl)
-			.setName("Add image to a note")
+			.setName("Add to note")
 			.setDesc("Create a PNG and embed it — in the note this sketch came from, or one you pick.")
 			.addButton((b) =>
 				b.setButtonText("Add to note").onClick(() => {
 					this.close();
 					this.actions.onEmbedPng();
 				}),
+			);
+
+		// One Share action with a format beside it. iOS's share sheet adapts its
+		// options to the file type it's handed, so PNG offers Save Image as well as
+		// Save to Files, while SVG only offers Save to Files.
+		new Setting(this.contentEl)
+			.setName("Share")
+			.setDesc("Opens the system share sheet, so you can save to Files or Photos.")
+			.addDropdown((dd) => {
+				dd.addOption("png", "PNG");
+				dd.addOption("svg", "SVG");
+				dd.setValue(this.format);
+				dd.onChange((v) => {
+					this.format = v === "svg" ? "svg" : "png";
+				});
+			})
+			.addButton((b) =>
+				b
+					.setButtonText("Share")
+					.setCta()
+					.onClick(() => {
+						this.close();
+						this.actions.onShare(this.format);
+					}),
 			);
 	}
 
