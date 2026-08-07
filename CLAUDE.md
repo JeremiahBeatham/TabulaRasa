@@ -73,8 +73,13 @@ Conventions worth knowing before touching this area:
 - **Per-tool stroke feel lives in one table** (`TOOL_STROKE_OPTIONS` in `src/export.ts`) so the
   live canvas and both export paths stay in agreement. Any randomness there (crayon's grain) must be
   seeded and deterministic — a real RNG makes a drawing shimmer on redraw and differ from its export.
-- **Sliders in popovers must be vertical.** A horizontal drag inside Obsidian mobile is taken as the
-  app's back-swipe and throws you out to file navigation.
+- **Sliders in popovers must be vertical**, and hand-built. A horizontal drag inside Obsidian mobile
+  is taken as the app's back-swipe and throws you out to file navigation; `<input type="range">` with
+  `appearance: slider-vertical` renders in the webview as a grey block with no visible track.
+- **Obsidian's global `button`/`input` styles beat single-class selectors.** Anything that needs a
+  transparent background or its own padding must double its class (`.x.x`) or it comes back filled
+  and boxed. Test harnesses must emulate those defaults, or they will report alignment and styling
+  the device contradicts — this has already happened twice.
 - **`ToolName` keeps `"brush"`** purely so sketches saved by v0.9.0–v0.10.2 still render; it aliases
   to `crayon` and is not offered in the UI.
 

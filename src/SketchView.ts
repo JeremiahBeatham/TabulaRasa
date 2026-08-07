@@ -107,8 +107,9 @@ export class SketchView extends TextFileView {
 
 	// Brush-size popover state.
 	private sizeTriggerDot: HTMLElement | null = null;
-	private sizeSlider: HTMLInputElement | null = null;
-	private sizePreviewDot: HTMLElement | null = null;
+	private sizeSlider: HTMLElement | null = null;
+	private sizeSliderFill: HTMLElement | null = null;
+	private sizeSliderThumb: HTMLElement | null = null;
 	private sizeValueLabel: HTMLElement | null = null;
 	private sizePresetButtons = new Map<number, HTMLElement>();
 
@@ -496,7 +497,8 @@ export class SketchView extends TextFileView {
 		this.popover = null;
 		this.popoverTrigger = null;
 		this.sizeSlider = null;
-		this.sizePreviewDot = null;
+		this.sizeSliderFill = null;
+		this.sizeSliderThumb = null;
 		this.sizeValueLabel = null;
 		this.sizePresetButtons.clear();
 		// colorInput deliberately survives: it lives on the toolbar, not in here.
@@ -527,21 +529,7 @@ export class SketchView extends TextFileView {
 			this.sizePresetButtons.set(size, b);
 		}
 
-		const slider = row.createEl("input", {
-			cls: "tabula-rasa-size-slider",
-			attr: {
-				type: "range",
-				min: String(MIN_BRUSH_SIZE),
-				max: String(MAX_BRUSH_SIZE),
-				step: "1",
-				"aria-label": "Brush size",
-				orient: "vertical",
-			},
-		});
-		this.sizeSlider = slider;
-		slider.addEventListener("input", () =>
-			this.selectSize(Number(slider.value)),
-		);
+		this.buildVerticalSlider(row);
 
 		// The readout doubles as the way in to typing an exact value.
 		this.sizeValueLabel = pop.createEl("button", {
@@ -551,6 +539,68 @@ export class SketchView extends TextFileView {
 		this.sizeValueLabel.addEventListener("click", () => this.editSizeValue());
 
 		this.updateSizeUI();
+	}
+
+	/**
+	 * A hand-built vertical slider rather than <input type="range">. The native
+	 * one renders wildly differently per engine — in Obsidian's webview
+	 * `appearance: slider-vertical` came out as a ~96px grey block with no visible
+	 * track — and its value axis inverts depending on writing-mode. Owning the
+	 * geometry is less code than fighting that, and drag stays on pointer events
+	 * so `touch-action: none` reliably keeps it away from Obsidian's back-swipe.
+	 */
+	private buildVerticalSlider(parent: HTMLElement): void {
+		const track = parent.createDiv({ cls: "tabula-rasa-vslider" });
+		track.setAttribute("role", "slider");
+		track.setAttribute("aria-orientation", "vertical");
+		track.setAttribute("aria-valuemin", String(MIN_BRUSH_SIZE));
+		track.setAttribute("aria-valuemax", String(MAX_BRUSH_SIZE));
+		track.setAttribute("aria-label", "Brush size");
+		track.tabIndex = 0;
+		const fill = track.createDiv({ cls: "tabula-rasa-vslider-fill" });
+		const thumb = track.createDiv({ cls: "tabula-rasa-vslider-thumb" });
+		this.sizeSlider = track;
+		this.sizeSliderFill = fill;
+		this.sizeSliderThumb = thumb;
+
+		// Bottom of the track is the smallest size, so up means bigger.
+		const valueFromY = (clientY: number): number => {
+			const r = track.getBoundingClientRect();
+			if (r.height <= 0) return this.brush.size;
+			const t = 1 - (clientY - r.top) / r.height;
+			const raw =
+				MIN_BRUSH_SIZE + t * (MAX_BRUSH_SIZE - MIN_BRUSH_SIZE);
+			return Math.round(raw);
+		};
+
+		let dragging = false;
+		track.addEventListener("pointerdown", (evt) => {
+			dragging = true;
+			track.setPointerCapture(evt.pointerId);
+			this.selectSize(valueFromY(evt.clientY));
+			evt.preventDefault();
+		});
+		track.addEventListener("pointermove", (evt) => {
+			if (!dragging) return;
+			this.selectSize(valueFromY(evt.clientY));
+			evt.preventDefault();
+		});
+		const end = (): void => {
+			dragging = false;
+		};
+		track.addEventListener("pointerup", end);
+		track.addEventListener("pointercancel", end);
+
+		track.addEventListener("keydown", (evt) => {
+			if (evt.key === "ArrowUp" || evt.key === "ArrowRight") {
+				this.selectSize(this.brush.size + 1);
+			} else if (evt.key === "ArrowDown" || evt.key === "ArrowLeft") {
+				this.selectSize(this.brush.size - 1);
+			} else {
+				return;
+			}
+			evt.preventDefault();
+		});
 	}
 
 	/** Swap the pixel readout for a number field so an exact size can be typed. */
@@ -607,15 +657,16 @@ export class SketchView extends TextFileView {
 			this.sizeTriggerDot.style.width = `${px}px`;
 			this.sizeTriggerDot.style.height = `${px}px`;
 		}
-		if (this.sizeSlider && this.sizeSlider.value !== String(size)) {
-			this.sizeSlider.value = String(size);
+		// Fraction of the way up the track, so 0% sits at the bottom.
+		const t =
+			(size - MIN_BRUSH_SIZE) / (MAX_BRUSH_SIZE - MIN_BRUSH_SIZE);
+		const pct = `${Math.round(t * 100)}%`;
+		if (this.sizeSlider) {
+			this.sizeSlider.setAttribute("aria-valuenow", String(size));
 		}
+		if (this.sizeSliderFill) this.sizeSliderFill.style.height = pct;
+		if (this.sizeSliderThumb) this.sizeSliderThumb.style.bottom = pct;
 		this.sizeValueLabel?.setText(`${size} px`);
-		if (this.sizePreviewDot) {
-			const d = Math.max(2, Math.min(48, size));
-			this.sizePreviewDot.style.width = `${d}px`;
-			this.sizePreviewDot.style.height = `${d}px`;
-		}
 		this.sizePresetButtons.forEach((btn, key) =>
 			btn.toggleClass("is-active", key === size),
 		);
