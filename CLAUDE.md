@@ -70,6 +70,9 @@ Conventions worth knowing before touching this area:
   `div` (never a `<button>` — nesting an input in one is invalid HTML). iOS only opens the native
   Colors sheet for a genuine tap on a genuine input; invisible inputs and scripted `.click()` are
   both ignored. Two attempts failed that way before this stuck.
+- **Settings grouping came from a card sort**, not from code layout — sheet is Sketch / Canvas /
+  Export, tab is General / Toolbar / Gestures / Drawing. Don't re-sort it casually; re-run
+  `docs/tools/settings-card-sort.html` instead.
 - **Per-tool stroke feel lives in one table** (`TOOL_STROKE_OPTIONS` in `src/export.ts`) so the
   live canvas and both export paths stay in agreement. Any randomness there (crayon's grain) must be
   seeded and deterministic — a real RNG makes a drawing shimmer on redraw and differ from its export.

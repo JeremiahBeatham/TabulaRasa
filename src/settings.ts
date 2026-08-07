@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
 import type TabulaRasaPlugin from "./main";
 
 export interface TabulaRasaSettings {
@@ -70,9 +70,28 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	/**
+	 * Section headings match the per-sketch sheet: an icon and a size step up, so
+	 * sections don't lose to their own contents.
+	 */
+	private heading(icon: string, text: string): void {
+		const h = this.containerEl.createDiv({ cls: "tabula-rasa-sheet-heading" });
+		const ic = h.createSpan({ cls: "tabula-rasa-sheet-heading-icon" });
+		setIcon(ic, icon);
+		h.createSpan({ cls: "tabula-rasa-sheet-heading-text", text });
+	}
+
+	/**
+	 * Section order and membership come from a card sort, not from the order these
+	 * settings happened to be added. Palm rejection deliberately isn't here — it
+	 * moved to the per-sketch sheet, where you actually reach for it.
+	 */
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+		containerEl.addClass("tabula-rasa-sheet-body");
+
+		this.heading("settings", "General");
 
 		new Setting(containerEl)
 			.setName("Sketch folder")
@@ -107,9 +126,9 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Match pen color to theme")
+			.setName("Match pen colour to theme")
 			.setDesc(
-				"Start drawing in white on a dark theme and black on a light theme, so the pen is always visible. Turn off to always use the default color below.",
+				"Start drawing in white on a dark theme and black on a light theme, so the pen is always visible. Turn off to always use the default colour below.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -121,8 +140,8 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Default brush color")
-			.setDesc("Used for new sketches when “Match pen color to theme” is off.")
+			.setName("Default brush colour")
+			.setDesc("Used for new sketches when “Match pen colour to theme” is off.")
 			.addColorPicker((picker) =>
 				picker
 					.setValue(this.plugin.settings.defaultColor)
@@ -146,10 +165,10 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl).setName("Toolbar").setHeading();
+		this.heading("circle", "Toolbar");
 
 		new Setting(containerEl)
-			.setName("Button size")
+			.setName("Toolbar button size")
 			.setDesc(
 				"Diameter of the toolbar buttons. Smaller buttons leave more room for the canvas; the tap area stays comfortable either way.",
 			)
@@ -168,7 +187,7 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 				});
 			});
 
-		new Setting(containerEl).setName("Gestures").setHeading();
+		this.heading("hand", "Gestures");
 
 		new Setting(containerEl)
 			.setName("Double-tap to undo and redo")
@@ -185,18 +204,18 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl).setName("Drawing").setHeading();
+		this.heading("pencil", "Drawing");
 
 		new Setting(containerEl)
-			.setName("Palm rejection")
+			.setName("Fit new sketches to the screen")
 			.setDesc(
-				"When drawing with an Apple Pencil or stylus, ignore finger/touch input.",
+				"New sketches get a portrait canvas the size of the screen, so a fresh sketch fills the page. Turn off to always use the fixed size below.",
 			)
 			.addToggle((toggle) =>
 				toggle
-					.setValue(this.plugin.settings.palmRejection)
+					.setValue(this.plugin.settings.fitNewSketchesToScreen)
 					.onChange(async (value) => {
-						this.plugin.settings.palmRejection = value;
+						this.plugin.settings.fitNewSketchesToScreen = value;
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -218,36 +237,7 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Fit new sketches to the screen")
-			.setDesc(
-				"New sketches get a portrait canvas the size of the screen, so a fresh sketch fills the page. Turn off to always use the fixed size below.",
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.fitNewSketchesToScreen)
-					.onChange(async (value) => {
-						this.plugin.settings.fitNewSketchesToScreen = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Canvas width")
-			.setDesc("Width of new sketches in pixels, when not fitting to the screen.")
-			.addText((text) =>
-				text
-					.setValue(String(this.plugin.settings.canvasWidth))
-					.onChange(async (value) => {
-						const n = Number(value);
-						if (Number.isFinite(n) && n > 0) {
-							this.plugin.settings.canvasWidth = Math.round(n);
-							await this.plugin.saveSettings();
-						}
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Canvas height")
+			.setName("Default canvas height")
 			.setDesc("Height of new sketches in pixels, when not fitting to the screen.")
 			.addText((text) =>
 				text
@@ -262,9 +252,24 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Default canvas width")
+			.setDesc("Width of new sketches in pixels, when not fitting to the screen.")
+			.addText((text) =>
+				text
+					.setValue(String(this.plugin.settings.canvasWidth))
+					.onChange(async (value) => {
+						const n = Number(value);
+						if (Number.isFinite(n) && n > 0) {
+							this.plugin.settings.canvasWidth = Math.round(n);
+							await this.plugin.saveSettings();
+						}
+					}),
+			);
+
+		new Setting(containerEl)
 			.setName("PNG export scale")
 			.setDesc(
-				"Resolution multiplier for embedded PNG images. Higher = crisper but larger files.",
+				"Resolution multiplier for exported PNG images. Higher = crisper but larger files.",
 			)
 			.addSlider((slider) =>
 				slider

@@ -113,6 +113,13 @@ export class SketchCanvas {
 		anchorDocY: number;
 	} | null = null;
 
+	/**
+	 * Live copy of the palm-rejection preference. Held here rather than read from
+	 * options so the settings sheet can toggle it mid-sketch without rebuilding the
+	 * canvas and losing the current zoom, pan and rotation.
+	 */
+	private palmRejection: boolean;
+
 	/** Tracks the current touch (all fingers down → all fingers up). */
 	private tracker: TouchSequenceTracker | null = null;
 	/** Remembers the previous tap so a second one can complete a double tap. */
@@ -135,6 +142,7 @@ export class SketchCanvas {
 		this.doc = doc;
 		this.brush = brush;
 		this.options = options;
+		this.palmRejection = options.palmRejection;
 
 		this.el = parent.createEl("canvas", { cls: "tabula-rasa-canvas" });
 		const ctx = this.el.getContext("2d");
@@ -146,6 +154,10 @@ export class SketchCanvas {
 
 	setBrush(brush: BrushSettings): void {
 		this.brush = brush;
+	}
+
+	setPalmRejection(enabled: boolean): void {
+		this.palmRejection = enabled;
 	}
 
 	getDoc(): SketchDoc {
@@ -331,7 +343,7 @@ export class SketchCanvas {
 	private shouldIgnore(evt: PointerEvent): boolean {
 		// Palm rejection: once a stylus is in use, ignore finger/touch input.
 		if (
-			this.options.palmRejection &&
+			this.palmRejection &&
 			this.penActive &&
 			evt.pointerType === "touch"
 		) {
