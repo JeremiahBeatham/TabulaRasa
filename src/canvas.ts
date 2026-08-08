@@ -128,6 +128,8 @@ export class SketchCanvas {
 	private ctx: CanvasRenderingContext2D;
 	private doc: SketchDoc;
 	private brush: BrushSettings;
+	/** The tool as of the last setBrush, so a tool change is detectable. */
+	private lastTool: ToolName;
 	private readonly options: SketchCanvasOptions;
 
 	private dpr = 1;
@@ -209,6 +211,7 @@ export class SketchCanvas {
 	) {
 		this.doc = doc;
 		this.brush = brush;
+		this.lastTool = brush.tool;
 		this.options = options;
 		this.palmRejection = options.palmRejection;
 
@@ -226,7 +229,11 @@ export class SketchCanvas {
 	 * matches what the bottom bar implies, since the bar is the selection's UI.
 	 */
 	setBrush(brush: BrushSettings): void {
-		const leavingSelect = this.brush.tool === "select" && brush.tool !== "select";
+		// Compared against our own copy of the last tool, not against this.brush:
+		// the view hands us the same object it mutates, so by the time we're called
+		// this.brush.tool is already the new tool and the check never fired.
+		const leavingSelect = this.lastTool === "select" && brush.tool !== "select";
+		this.lastTool = brush.tool;
 		this.brush = brush;
 		if (leavingSelect) this.clearSelection();
 	}
