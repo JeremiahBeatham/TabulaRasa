@@ -583,6 +583,16 @@ export class SketchView extends TextFileView {
 			if (strokes) this.canvas?.pasteStrokes(strokes);
 		});
 
+		// Delete and clear are deliberately both here and adjacent: one takes the ink,
+		// the other only puts the box away, and the bar is the only way to do either.
+		const deleteBtn = this.makeBarButton(
+			bar,
+			"trash-2",
+			"trash",
+			"Delete selection",
+		);
+		deleteBtn.addEventListener("click", () => this.canvas?.deleteSelection());
+
 		const clearBtn = this.makeBarButton(bar, "x", "cross", "Clear selection");
 		clearBtn.addEventListener("click", () => this.canvas?.clearSelection());
 	}

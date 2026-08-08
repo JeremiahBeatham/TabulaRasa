@@ -930,6 +930,22 @@ export class SketchCanvas {
 		this.options.onSelectionChange?.();
 	}
 
+	/**
+	 * Remove the selected strokes. Distinct from clearSelection, which only drops
+	 * the box: this one takes the ink with it. Undoable, and the selection goes
+	 * afterwards because the indices it held no longer point at anything.
+	 */
+	deleteSelection(): void {
+		if (this.selected.size === 0) return;
+		this.pushUndo();
+		this.redoStack = [];
+		const doomed = this.selected;
+		this.doc.strokes = this.doc.strokes.filter((_, i) => !doomed.has(i));
+		this.clearSelection();
+		this.redraw();
+		this.options.onChange();
+	}
+
 	flipSelection(axis: "horizontal" | "vertical"): void {
 		const bounds = this.selectionBounds();
 		if (!bounds) return;

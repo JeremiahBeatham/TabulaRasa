@@ -121,8 +121,8 @@ Conventions worth knowing before touching this area:
   side so a movable core always exists.
 - **Add/Remove modes don't drag-to-move.** Their boundaries almost always start inside the existing
   box, and treating that as a move made both modes unreachable.
-- **"Clear selection" deselects; it doesn't delete.** The bar has no other way to dismiss a
-  selection, and the eraser already deletes.
+- **Clear and Delete are two separate buttons, side by side.** Clear only puts the box away; Delete
+  takes the ink. The bar is the only way to do either, so neither can stand in for the other.
 - **Icon names are checked at runtime** (`setIconSafe`), because which Lucide icons a given Obsidian
   version bundles isn't knowable at build time and `setIcon` silently leaves the element empty.
 
