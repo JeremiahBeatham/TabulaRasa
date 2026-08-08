@@ -255,7 +255,12 @@ export class SketchView extends TextFileView {
 		});
 		this.rebuildCanvas();
 
-		this.resizeObserver = new ResizeObserver(() => this.canvas?.resize());
+		this.resizeObserver = new ResizeObserver(() => {
+			this.canvas?.resize();
+			// The bar is placed from measured pixels, so it has to be re-placed when
+			// the view changes size (rotation, split, keyboard).
+			this.positionSelectBar();
+		});
 		if (this.canvasHost) this.resizeObserver.observe(this.canvasHost);
 	}
 
@@ -501,6 +506,11 @@ export class SketchView extends TextFileView {
 		for (const el of [this.sizeBtn, this.colorBtn]) {
 			if (!el) continue;
 			el.toggleClass("is-disabled", !inks);
+			// Set inline too. The dimming being absent on device is what pointed at
+			// this code path not running at all, so it shouldn't need a stylesheet
+			// rule to be observable.
+			el.style.opacity = inks ? "" : "0.35";
+			el.style.pointerEvents = inks ? "" : "none";
 			if (el instanceof HTMLButtonElement) el.disabled = !inks;
 		}
 		if (this.colorInput) this.colorInput.disabled = !inks;
@@ -536,8 +546,11 @@ export class SketchView extends TextFileView {
 	 * Its dropdowns open *upward*, since it sits at the bottom of the screen.
 	 */
 	private syncSelectBar(): void {
-		const wanted =
-			this.brush.tool === "select" && (this.canvas?.hasSelection() ?? false);
+		// Gated only on whether a selection exists. The canvas is the authority: it
+		// drops the selection when the tool changes, so asking the view's own copy of
+		// the tool as well was redundant — and on device it was the difference
+		// between a bar and no bar, so the redundant condition is gone.
+		const wanted = this.canvas?.hasSelection() ?? false;
 		if (!wanted) {
 			if (this.selectBar) {
 				if (this.popoverTrigger && this.selectBar.contains(this.popoverTrigger)) {
@@ -556,6 +569,22 @@ export class SketchView extends TextFileView {
 	private buildSelectBar(): void {
 		const bar = this.contentEl.createDiv({ cls: "tabula-rasa-select-bar" });
 		this.selectBar = bar;
+		// The layout that decides whether this is visible at all is set inline, not
+		// left to styles.css. Three device attempts produced "no bar" and there's no
+		// console on mobile to tell CSS delivery apart from a layout fault, so the
+		// pill is now guaranteed by the element itself; the stylesheet only refines it.
+		Object.assign(bar.style, {
+			position: "absolute",
+			zIndex: "40",
+			display: "flex",
+			alignItems: "center",
+			gap: "2px",
+			padding: "2px 6px",
+			borderRadius: "999px",
+			background: "var(--background-secondary)",
+			border: "1px solid var(--background-modifier-border)",
+			boxShadow: "0 6px 20px rgba(0, 0, 0, 0.3)",
+		});
 
 		// How the next boundary combines with this one.
 		const modeBtn = this.makeBarButton(
@@ -614,6 +643,23 @@ export class SketchView extends TextFileView {
 
 		const clearBtn = this.makeBarButton(bar, "x", "cross", "Clear selection");
 		clearBtn.addEventListener("click", () => this.canvas?.clearSelection());
+
+		this.positionSelectBar();
+	}
+
+	/**
+	 * Place the bar from measured pixels rather than a `bottom` offset. `bottom`
+	 * put it a fixed distance from the bottom of the content box, which is not
+	 * necessarily a place you can see — and it depended on `env(safe-area-inset-*)`
+	 * resolving. A computed `top` inside the content box can't land off-screen.
+	 */
+	private positionSelectBar(): void {
+		const bar = this.selectBar;
+		if (!bar) return;
+		const host = this.contentEl;
+		bar.style.bottom = "";
+		bar.style.left = `${Math.max(8, Math.round((host.clientWidth - bar.offsetWidth) / 2))}px`;
+		bar.style.top = `${Math.max(8, host.clientHeight - bar.offsetHeight - 24)}px`;
 	}
 
 	private makeBarButton(
@@ -626,6 +672,22 @@ export class SketchView extends TextFileView {
 		const btn = bar.createEl("button", {
 			cls: "clickable-icon tabula-rasa-btn tabula-rasa-bar-btn",
 			attr: { "aria-label": label, type: "button" },
+		});
+		// Same reasoning as the bar itself: the tap target and the transparent
+		// background are guaranteed here rather than by a stylesheet that may or may
+		// not have reached the device.
+		Object.assign(btn.style, {
+			width: "44px",
+			height: "44px",
+			minWidth: "44px",
+			display: "inline-flex",
+			alignItems: "center",
+			justifyContent: "center",
+			padding: "0",
+			border: "0",
+			background: "transparent",
+			boxShadow: "none",
+			color: "var(--text-normal)",
 		});
 		setIconSafe(btn, icon, fallback, text ?? label.slice(0, 1));
 		return btn;

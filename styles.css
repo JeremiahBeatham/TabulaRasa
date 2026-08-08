@@ -215,20 +215,14 @@ input.tabula-rasa-color-input::-moz-color-swatch {
  *
  * Centred and pinned to the bottom, clear of the home indicator.
  */
+/*
+ * Deliberately no position, left, bottom or transform here: SketchView places the
+ * bar from measured pixels, and a `transform: translateX(-50%)` left over from
+ * this rule would survive that inline `left` and shove the bar 144px off centre.
+ * Everything load-bearing (the pill, its size, its stacking) is set inline for
+ * the same reason — a device that never received this file must still get a bar.
+ */
 .tabula-rasa-select-bar {
-	position: absolute;
-	z-index: 25;
-	left: 50%;
-	transform: translateX(-50%);
-	bottom: max(12px, env(safe-area-inset-bottom));
-	display: flex;
-	align-items: center;
-	gap: 2px;
-	padding: 2px 6px;
-	border-radius: 999px;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 	/* The bar is chrome: a drag on it must never reach the canvas underneath. */
 	touch-action: manipulation;
 }
