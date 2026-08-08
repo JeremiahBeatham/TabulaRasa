@@ -123,6 +123,13 @@ Conventions worth knowing before touching this area:
   box, and treating that as a move made both modes unreachable.
 - **Clear and Delete are two separate buttons, side by side.** Clear only puts the box away; Delete
   takes the ink. The bar is the only way to do either, so neither can stand in for the other.
+- **The selection bar places itself from measured pixels and styles itself inline.** Three device
+  reports of "no bar" could not be told apart without a console, so its position, size and pill are
+  set on the element; `styles.css` must not set `position`/`left`/`bottom`/`transform` on it, or a
+  leftover `translateX(-50%)` survives the inline `left` and shoves it 144px off centre.
+- **The bar is gated on `canvas.hasSelection()` alone.** It used to also require the *view's* copy of
+  `brush.tool === "select"`, which was redundant (the canvas drops the selection when the tool
+  changes) and was the difference between a bar and no bar on device.
 - **Icon names are checked at runtime** (`setIconSafe`), because which Lucide icons a given Obsidian
   version bundles isn't knowable at build time. An unknown name can also *throw*, and that took out
   the whole selection bar once: the box was already drawn, then the bar build died on its first icon,
