@@ -86,7 +86,7 @@ const TOOL_OPTIONS: ToolOption[] = [
  * resolves the button falls back to text: a wrong-looking button is a nuisance,
  * an invisible one is indistinguishable from a missing feature.
  */
-function setIconSafe(
+export function setIconSafe(
 	el: HTMLElement,
 	name: string,
 	fallback: string,
@@ -102,7 +102,10 @@ function setIconSafe(
 		return !!el.querySelector("svg");
 	};
 	if (attempt(name) || attempt(fallback)) return;
-	el.setText(text);
+	// Plain textContent, not Obsidian's setText: the whole point of this branch is
+	// that something in the icon path is unavailable, so the last resort mustn't
+	// depend on another API extension to work.
+	el.textContent = text;
 }
 
 /** The three ways a new boundary combines with the existing selection. */

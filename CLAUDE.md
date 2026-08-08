@@ -124,7 +124,11 @@ Conventions worth knowing before touching this area:
 - **Clear and Delete are two separate buttons, side by side.** Clear only puts the box away; Delete
   takes the ink. The bar is the only way to do either, so neither can stand in for the other.
 - **Icon names are checked at runtime** (`setIconSafe`), because which Lucide icons a given Obsidian
-  version bundles isn't knowable at build time and `setIcon` silently leaves the element empty.
+  version bundles isn't knowable at build time. An unknown name can also *throw*, and that took out
+  the whole selection bar once: the box was already drawn, then the bar build died on its first icon,
+  giving a dashed box with no controls. Each attempt is guarded, the last resort is plain
+  `textContent` (not Obsidian's `setText`, which is the same class of dependency), and the canvas
+  wraps its selection callback so a UI failure can never break drawing.
 
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he

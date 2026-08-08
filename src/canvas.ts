@@ -858,6 +858,20 @@ export class SketchCanvas {
 		return false;
 	}
 
+	/**
+	 * Tell the view the selection changed. Guarded: the canvas must keep working
+	 * even if the code drawing the bar fails. That exact failure is what put a
+	 * dashed box on screen with no controls beside it — the box had already been
+	 * drawn when the callback threw.
+	 */
+	private notifySelection(): void {
+		try {
+			this.options.onSelectionChange?.();
+		} catch (e) {
+			console.error("Tabula Rasa: selection UI update failed", e);
+		}
+	}
+
 	private pushUndo(): void {
 		this.undoStack.push(this.snapshot());
 		// Cap history to keep memory in check on mobile.
@@ -888,7 +902,7 @@ export class SketchCanvas {
 		this.selected = new Set();
 		this.lasso = null;
 		this.redraw();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	selectionBounds(): Bounds | null {
@@ -934,7 +948,7 @@ export class SketchCanvas {
 		this.selected = new Set(pasted.map((_, i) => start + i));
 		this.redraw();
 		this.options.onChange();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	/**
@@ -975,7 +989,7 @@ export class SketchCanvas {
 		this.redraw();
 		this.options.onChange();
 		// The box moved, so anything reading its bounds needs to hear about it.
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	/**
@@ -1140,7 +1154,7 @@ export class SketchCanvas {
 		this.redoStack = [];
 		this.redraw();
 		this.options.onChange();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	/**
@@ -1159,7 +1173,7 @@ export class SketchCanvas {
 		const hit = strokesInPolygon(this.doc.strokes, poly);
 		this.selected = mergeSelection(this.selected, hit, this.selectionMode);
 		this.redraw();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	private abortSelectionInput(): void {
