@@ -80,13 +80,32 @@ const TOOL_OPTIONS: ToolOption[] = [
 
 /**
  * Icon names come from Lucide via Obsidian, and which ones a given Obsidian
- * version bundles isn't something we can check at build time. setIcon leaves the
- * element empty for a name it doesn't know, which would ship a blank button, so
- * fall back to one we're sure of rather than trusting the name.
+ * version bundles isn't something we can check at build time. An unknown name
+ * leaves the element empty — and in some versions throws, which would abandon the
+ * rest of the bar half-built. So each attempt is guarded, and if neither name
+ * resolves the button falls back to text: a wrong-looking button is a nuisance,
+ * an invisible one is indistinguishable from a missing feature.
  */
-function setIconSafe(el: HTMLElement, name: string, fallback: string): void {
-	setIcon(el, name);
-	if (!el.querySelector("svg")) setIcon(el, fallback);
+export function setIconSafe(
+	el: HTMLElement,
+	name: string,
+	fallback: string,
+	text = "•",
+): void {
+	const attempt = (candidate: string): boolean => {
+		try {
+			setIcon(el, candidate);
+		} catch (e) {
+			console.error(`Tabula Rasa: icon "${candidate}" failed`, e);
+			return false;
+		}
+		return !!el.querySelector("svg");
+	};
+	if (attempt(name) || attempt(fallback)) return;
+	// Plain textContent, not Obsidian's setText: the whole point of this branch is
+	// that something in the icon path is unavailable, so the last resort mustn't
+	// depend on another API extension to work.
+	el.textContent = text;
 }
 
 /** The three ways a new boundary combines with the existing selection. */
@@ -583,6 +602,16 @@ export class SketchView extends TextFileView {
 			if (strokes) this.canvas?.pasteStrokes(strokes);
 		});
 
+		// Delete and clear are deliberately both here and adjacent: one takes the ink,
+		// the other only puts the box away, and the bar is the only way to do either.
+		const deleteBtn = this.makeBarButton(
+			bar,
+			"trash-2",
+			"trash",
+			"Delete selection",
+		);
+		deleteBtn.addEventListener("click", () => this.canvas?.deleteSelection());
+
 		const clearBtn = this.makeBarButton(bar, "x", "cross", "Clear selection");
 		clearBtn.addEventListener("click", () => this.canvas?.clearSelection());
 	}
@@ -592,12 +621,13 @@ export class SketchView extends TextFileView {
 		icon: string,
 		fallback: string,
 		label: string,
+		text?: string,
 	): HTMLButtonElement {
 		const btn = bar.createEl("button", {
 			cls: "clickable-icon tabula-rasa-btn tabula-rasa-bar-btn",
 			attr: { "aria-label": label, type: "button" },
 		});
-		setIconSafe(btn, icon, fallback);
+		setIconSafe(btn, icon, fallback, text ?? label.slice(0, 1));
 		return btn;
 	}
 

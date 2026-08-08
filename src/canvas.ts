@@ -128,6 +128,8 @@ export class SketchCanvas {
 	private ctx: CanvasRenderingContext2D;
 	private doc: SketchDoc;
 	private brush: BrushSettings;
+	/** The tool as of the last setBrush, so a tool change is detectable. */
+	private lastTool: ToolName;
 	private readonly options: SketchCanvasOptions;
 
 	private dpr = 1;
@@ -209,6 +211,7 @@ export class SketchCanvas {
 	) {
 		this.doc = doc;
 		this.brush = brush;
+		this.lastTool = brush.tool;
 		this.options = options;
 		this.palmRejection = options.palmRejection;
 
@@ -226,7 +229,11 @@ export class SketchCanvas {
 	 * matches what the bottom bar implies, since the bar is the selection's UI.
 	 */
 	setBrush(brush: BrushSettings): void {
-		const leavingSelect = this.brush.tool === "select" && brush.tool !== "select";
+		// Compared against our own copy of the last tool, not against this.brush:
+		// the view hands us the same object it mutates, so by the time we're called
+		// this.brush.tool is already the new tool and the check never fired.
+		const leavingSelect = this.lastTool === "select" && brush.tool !== "select";
+		this.lastTool = brush.tool;
 		this.brush = brush;
 		if (leavingSelect) this.clearSelection();
 	}
@@ -851,6 +858,20 @@ export class SketchCanvas {
 		return false;
 	}
 
+	/**
+	 * Tell the view the selection changed. Guarded: the canvas must keep working
+	 * even if the code drawing the bar fails. That exact failure is what put a
+	 * dashed box on screen with no controls beside it — the box had already been
+	 * drawn when the callback threw.
+	 */
+	private notifySelection(): void {
+		try {
+			this.options.onSelectionChange?.();
+		} catch (e) {
+			console.error("Tabula Rasa: selection UI update failed", e);
+		}
+	}
+
 	private pushUndo(): void {
 		this.undoStack.push(this.snapshot());
 		// Cap history to keep memory in check on mobile.
@@ -881,7 +902,7 @@ export class SketchCanvas {
 		this.selected = new Set();
 		this.lasso = null;
 		this.redraw();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	selectionBounds(): Bounds | null {
@@ -927,7 +948,23 @@ export class SketchCanvas {
 		this.selected = new Set(pasted.map((_, i) => start + i));
 		this.redraw();
 		this.options.onChange();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
+	}
+
+	/**
+	 * Remove the selected strokes. Distinct from clearSelection, which only drops
+	 * the box: this one takes the ink with it. Undoable, and the selection goes
+	 * afterwards because the indices it held no longer point at anything.
+	 */
+	deleteSelection(): void {
+		if (this.selected.size === 0) return;
+		this.pushUndo();
+		this.redoStack = [];
+		const doomed = this.selected;
+		this.doc.strokes = this.doc.strokes.filter((_, i) => !doomed.has(i));
+		this.clearSelection();
+		this.redraw();
+		this.options.onChange();
 	}
 
 	flipSelection(axis: "horizontal" | "vertical"): void {
@@ -952,7 +989,7 @@ export class SketchCanvas {
 		this.redraw();
 		this.options.onChange();
 		// The box moved, so anything reading its bounds needs to hear about it.
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	/**
@@ -1117,7 +1154,7 @@ export class SketchCanvas {
 		this.redoStack = [];
 		this.redraw();
 		this.options.onChange();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	/**
@@ -1136,7 +1173,7 @@ export class SketchCanvas {
 		const hit = strokesInPolygon(this.doc.strokes, poly);
 		this.selected = mergeSelection(this.selected, hit, this.selectionMode);
 		this.redraw();
-		this.options.onSelectionChange?.();
+		this.notifySelection();
 	}
 
 	private abortSelectionInput(): void {
