@@ -157,6 +157,10 @@ circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-fre
   throws up five to seven *false* corners, so a corner count would reject exactly the shaky circles
   the feature exists for. Measured: pentagon 0.111, square 0.204, 8%-wobble circle 0.050, 12% 0.085 —
   hence the 0.10 bound. A hexagon (0.068) does read as a circle; that's accepted.
+- **Corner *count* is never trusted; the fit is.** The recogniser proposes the sharpest well-separated
+  turns, then tries four corners and then three, accepting whichever fitted shape passes close to the
+  whole stroke. Thresholding the turn angle instead was brittle on real strokes: corners rounded over
+  30px lost one and ±8px of wobble invented one, and either way the shape snapped to nothing.
 - **Rectangles are fitted as an oriented box, not the bbox.** The orientation is the circular mean of
   the four edge angles taken modulo 90°, so a diamond becomes a square turned 45° instead of a
   mangled upright one; under 4° it snaps level. The fit is then rejected unless it passes close to
