@@ -123,13 +123,16 @@ Conventions worth knowing before touching this area:
   box, and treating that as a move made both modes unreachable.
 - **Clear and Delete are two separate buttons, side by side.** Clear only puts the box away; Delete
   takes the ink. The bar is the only way to do either, so neither can stand in for the other.
-- **The selection bar places itself from measured pixels and styles itself inline.** Three device
-  reports of "no bar" could not be told apart without a console, so its position, size and pill are
-  set on the element; `styles.css` must not set `position`/`left`/`bottom`/`transform` on it, or a
-  leftover `translateX(-50%)` survives the inline `left` and shoves it 144px off centre.
-- **The bar is gated on `canvas.hasSelection()` alone.** It used to also require the *view's* copy of
-  `brush.tool === "select"`, which was redundant (the canvas drops the selection when the tool
-  changes) and was the difference between a bar and no bar on device.
+- **There is no bar of its own — the selection reuses the size and colour slots.** Three separate
+  attempts at a floating bar in `contentEl` never appeared on device and could not be diagnosed
+  without a console. The header buttons demonstrably render, so with a selection live the size slot
+  becomes selection mode and the colour slot becomes transform. Don't reintroduce a bar; if a control
+  needs a home, it goes in a slot or on the long press.
+- **Copy / cut / paste / delete are on a long press** (`LONG_PRESS_MS`, cancelled by
+  `LONG_PRESS_MAX_TRAVEL` of drift so it can never eat a lasso). Paste is offered on a press outside
+  the selection too, or a copy would have nowhere to land once its selection is gone.
+- **A tap away deselects in every mode**, not just Replace: the mode shapes the next boundary, it
+  shouldn't make tapping away conditional.
 - **Icon names are checked at runtime** (`setIconSafe`), because which Lucide icons a given Obsidian
   version bundles isn't knowable at build time. An unknown name can also *throw*, and that took out
   the whole selection bar once: the box was already drawn, then the bar build died on its first icon,

@@ -5,17 +5,17 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.12.0) | Done — see below |
+| Shipped (v0.1.x → v0.12.4) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
 | Later (bigger features) | #13 done; #14 snapping next |
 | Distribution | Rebrand done; community-store submission pending |
 
 **Active branch:** `main`
-**Last updated:** 2026-08-07
+**Last updated:** 2026-08-08
 
 ---
 
-## Shipped (v0.1.x → v0.12.0)
+## Shipped (v0.1.x → v0.12.4)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -61,8 +61,9 @@
       crayon's grain is seeded by position rather than vertex index, which stops the stroke edge
       shimmering as you draw (v0.11.2)
 - [x] Selection tool: freehand boundary that closes itself, a bounding box with scale and rotate
-      handles, and its own bottom bar for selection mode, flip/rotate, copy, paste, delete and clear
-      ([#13](https://github.com/JeremiahBeatham/TabulaRasa/issues/13), v0.12.0 / v0.12.1)
+      handles, and — after three attempts at a bottom bar never rendered on device — its controls in
+      the toolbar's own size and colour slots, with copy/cut/paste/delete on a long press
+      ([#13](https://github.com/JeremiahBeatham/TabulaRasa/issues/13), v0.12.0 → v0.12.4)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -120,11 +121,14 @@ reworked in isolation.
   - The boundary is then replaced by an axis-aligned box with eight scale dots and a rotate handle
     above it. Handles are drawn and hit-tested in screen space, so they're a constant size at any
     zoom, and the box follows the page's rotation.
-  - **Its own bar** appears along the bottom while a selection exists — five controls whose lists
-    open *upward*: selection mode (Replace / Add / Remove), transform (flip horizontal, flip
-    vertical, rotate by a typed angle), then copy, paste, delete and clear. Delete removes the
-    selected strokes; clear only dismisses the box. Paste stays dim until something is on the
-    clipboard, which lives on the plugin so a copy can cross sketches.
+  - **No bar of its own.** While a selection is live the toolbar's size slot becomes selection mode
+    (Replace / Add / Remove, with the button showing which is armed) and the colour slot becomes
+    transform (flip horizontal, flip vertical, rotate 90°) — neither size nor colour applies to this
+    tool anyway. Copy, cut, paste and delete are on a long press; a long press away from the
+    selection offers paste alone, so a copy always has somewhere to land. Tapping away deselects.
+    The clipboard lives on the plugin, so a copy can cross sketches.
+    Three attempts at a floating bar along the bottom never rendered on device and couldn't be
+    diagnosed without a console; the header buttons visibly work, so the controls moved there.
   - Dragging inside the box moves the selection; one drag is one undo step, and a drag that ends
     where it began leaves no undo entry at all.
 - [ ] [#14 — Smart snapping / shape recognition (straight line, circle)](https://github.com/JeremiahBeatham/TabulaRasa/issues/14)
