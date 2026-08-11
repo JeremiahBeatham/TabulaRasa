@@ -30,7 +30,18 @@ export interface EllipseShape {
 	ry: number;
 }
 
-export type Shape = LineShape | EllipseShape;
+/**
+ * A straight-edged closed shape: three corners for a triangle, four for a
+ * rectangle. Held as its corners rather than as a width/height/rotation so a
+ * triangle keeps the corners you actually drew — regularising it to equilateral
+ * would be inventing a shape you didn't ask for.
+ */
+export interface PolygonShape {
+	kind: "polygon";
+	corners: Vec[];
+}
+
+export type Shape = LineShape | EllipseShape | PolygonShape;
 
 /** Below this many samples there isn't enough evidence to call a shape. */
 export const SNAP_MIN_POINTS = 8;
@@ -55,8 +66,19 @@ const LINE_MAX_OVERSHOOT = 0.15;
 /** How far the ends of a loop may sit apart and still count as closed. */
 const CLOSE_REL_TOLERANCE = 0.25;
 const CLOSE_ABS_TOLERANCE = 12;
-/** Radial error from a perfect ellipse, as a fraction of its radius. */
-const ELLIPSE_RMS_TOLERANCE = 0.16;
+/**
+ * Radial error from a perfect ellipse, as a fraction of its radius. Measured
+ * against real strokes: a regular pentagon scores 0.111 and a square 0.204, while
+ * a circle drawn with 8% radial wobble scores 0.050 and a very shaky one at 12%
+ * scores 0.085. 0.10 therefore separates "meant a circle" from "meant a polygon"
+ * with room on both sides.
+ *
+ * Note this can't be done by looking for corners instead: a wobbly circle throws
+ * up five to seven false ones, so a corner count would reject exactly the shaky
+ * circles the feature is for. A hexagon (0.068) does still read as a circle —
+ * accepted, as freehand hexagons are vanishingly rare next to shaky circles.
+ */
+const ELLIPSE_RMS_TOLERANCE = 0.1;
 const ELLIPSE_MAX_TOLERANCE = 0.38;
 /** Smaller than this in either axis and the "ellipse" is really a squiggle. */
 const ELLIPSE_MIN_RADIUS = 6;
@@ -64,6 +86,26 @@ const ELLIPSE_MIN_RADIUS = 6;
 /** How many samples a snapped shape is rebuilt from. */
 const LINE_SAMPLES = 16;
 const ELLIPSE_SAMPLES = 64;
+/** Samples per edge of a snapped polygon — enough that the edge reads as straight. */
+const POLYGON_EDGE_SAMPLES = 10;
+
+/** Corner detection resamples the path to this many evenly spaced points. */
+const CORNER_SAMPLES = 64;
+/**
+ * Turn is measured across this many samples either side. Kept small on purpose:
+ * over a ±2 window a 64-sample circle only turns ~22°, while a real corner turns
+ * ~90°, so the two can't be confused.
+ */
+const CORNER_WINDOW = 2;
+/** How sharp a turn has to be to count as a corner. */
+const CORNER_MIN_TURN = (45 * Math.PI) / 180;
+/** Two corners closer than this many samples are the same corner. */
+const CORNER_MIN_SEPARATION = 6;
+/** A fitted polygon has to pass this close to every point that was drawn. */
+const POLYGON_REL_TOLERANCE = 0.09;
+const POLYGON_ABS_TOLERANCE = 5;
+/** Under this, a rectangle is treated as square to the page rather than tilted. */
+const RECT_UPRIGHT_SNAP = (4 * Math.PI) / 180;
 
 function dist(a: Vec, b: Vec): number {
 	return Math.hypot(a.x - b.x, a.y - b.y);
@@ -171,15 +213,193 @@ function looksLikeEllipse(points: Vec[], length: number): EllipseShape | null {
 	return { kind: "ellipse", cx, cy, rx, ry };
 }
 
+/** Resample a closed path to `m` evenly spaced points, by arc length. */
+export function resampleClosed(points: Vec[], m: number): Vec[] {
+	// Close the ring explicitly so the run from last point back to first is walked.
+	const ring = points.concat([points[0]]);
+	const total = pathLength(ring);
+	if (total === 0) return points.slice(0, 1);
+	const step = total / m;
+	const out: Vec[] = [ring[0]];
+	let seg = 1;
+	let walked = 0;
+	for (let i = 1; i < m; i++) {
+		const target = i * step;
+		while (seg < ring.length - 1 && walked + dist(ring[seg - 1], ring[seg]) < target) {
+			walked += dist(ring[seg - 1], ring[seg]);
+			seg++;
+		}
+		const segLen = dist(ring[seg - 1], ring[seg]) || 1;
+		const t = Math.min(1, Math.max(0, (target - walked) / segLen));
+		out.push({
+			x: ring[seg - 1].x + (ring[seg].x - ring[seg - 1].x) * t,
+			y: ring[seg - 1].y + (ring[seg].y - ring[seg - 1].y) * t,
+		});
+	}
+	return out;
+}
+
 /**
- * The shape a stroke is trying to be, or null to leave it alone. Line is tested
- * first: a line's ends are far apart, so the two tests can't both fire.
+ * Indices of the sharp turns in a resampled closed path. Treated as a ring, so a
+ * corner is found whether or not the stroke happened to start on one — people
+ * usually do start a rectangle at a corner, and that must not count twice.
+ */
+export function detectCorners(ring: Vec[]): number[] {
+	const n = ring.length;
+	const at = (i: number) => ring[((i % n) + n) % n];
+	const turns: number[] = [];
+	for (let i = 0; i < n; i++) {
+		const a = at(i - CORNER_WINDOW);
+		const b = at(i);
+		const c = at(i + CORNER_WINDOW);
+		const before = Math.atan2(b.y - a.y, b.x - a.x);
+		const after = Math.atan2(c.y - b.y, c.x - b.x);
+		let turn = after - before;
+		while (turn > Math.PI) turn -= Math.PI * 2;
+		while (turn < -Math.PI) turn += Math.PI * 2;
+		turns.push(Math.abs(turn));
+	}
+
+	// Keep only the sharpest sample in each run above the threshold, then drop any
+	// that sit within a corner's width of a sharper one.
+	const candidates: number[] = [];
+	for (let i = 0; i < n; i++) {
+		if (turns[i] < CORNER_MIN_TURN) continue;
+		let best = true;
+		for (let d = -CORNER_WINDOW; d <= CORNER_WINDOW; d++) {
+			if (d === 0) continue;
+			const j = ((i + d) % n + n) % n;
+			if (turns[j] > turns[i]) best = false;
+		}
+		if (best) candidates.push(i);
+	}
+
+	const kept: number[] = [];
+	for (const i of candidates.slice().sort((x, y) => turns[y] - turns[x])) {
+		const clash = kept.some((j) => {
+			const gap = Math.abs(i - j);
+			return Math.min(gap, n - gap) < CORNER_MIN_SEPARATION;
+		});
+		if (!clash) kept.push(i);
+	}
+	return kept.sort((x, y) => x - y);
+}
+
+/** Distance from a point to a line segment. */
+function distToSegment(p: Vec, a: Vec, b: Vec): number {
+	const dx = b.x - a.x;
+	const dy = b.y - a.y;
+	const lenSq = dx * dx + dy * dy;
+	if (lenSq === 0) return dist(p, a);
+	let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
+	t = Math.min(1, Math.max(0, t));
+	return dist(p, { x: a.x + dx * t, y: a.y + dy * t });
+}
+
+/** Worst distance from any drawn point to the outline of a candidate polygon. */
+export function maxDistanceToPolygon(points: Vec[], corners: Vec[]): number {
+	let worst = 0;
+	for (const p of points) {
+		let best = Infinity;
+		for (let i = 0; i < corners.length; i++) {
+			best = Math.min(
+				best,
+				distToSegment(p, corners[i], corners[(i + 1) % corners.length]),
+			);
+		}
+		worst = Math.max(worst, best);
+	}
+	return worst;
+}
+
+/**
+ * The rectangle that best wraps the drawn points, allowed to be tilted. The
+ * orientation is the circular mean of the four edge directions taken modulo 90°,
+ * which is why a diamond comes out as a square turned 45° rather than as a
+ * mangled upright one. Near-upright fits are snapped level.
+ */
+function fitRectangle(points: Vec[], corners: Vec[]): Vec[] {
+	let sx = 0;
+	let sy = 0;
+	for (let i = 0; i < corners.length; i++) {
+		const a = corners[i];
+		const b = corners[(i + 1) % corners.length];
+		const angle = Math.atan2(b.y - a.y, b.x - a.x);
+		// Angles are equivalent modulo 90° for a rectangle, so average 4× them.
+		sx += Math.cos(4 * angle);
+		sy += Math.sin(4 * angle);
+	}
+	let theta = Math.atan2(sy, sx) / 4;
+	if (Math.abs(theta) < RECT_UPRIGHT_SNAP) theta = 0;
+
+	const cos = Math.cos(-theta);
+	const sin = Math.sin(-theta);
+	const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
+	const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
+	// Measure the extent in the rectangle's own frame, from every drawn point, so
+	// the result wraps the shape rather than just its four sharpest samples.
+	const local = points.map((p) => ({
+		x: (p.x - cx) * cos - (p.y - cy) * sin,
+		y: (p.x - cx) * sin + (p.y - cy) * cos,
+	}));
+	const bb = bounds(local);
+	const back = (x: number, y: number): Vec => ({
+		x: cx + x * Math.cos(theta) - y * Math.sin(theta),
+		y: cy + x * Math.sin(theta) + y * Math.cos(theta),
+	});
+	return [
+		back(bb.minX, bb.minY),
+		back(bb.maxX, bb.minY),
+		back(bb.maxX, bb.maxY),
+		back(bb.minX, bb.maxY),
+	];
+}
+
+/**
+ * A closed stroke with three or four sharp corners and straight edges between
+ * them. Anything else — five corners, a bowed edge, a sheared parallelogram —
+ * is left as drawn rather than forced into a shape it isn't.
+ */
+function looksLikePolygon(points: Vec[], length: number): PolygonShape | null {
+	const gap = dist(points[0], points[points.length - 1]);
+	if (gap > Math.max(CLOSE_ABS_TOLERANCE, length * CLOSE_REL_TOLERANCE)) {
+		return null;
+	}
+	const ring = resampleClosed(points, CORNER_SAMPLES);
+	const corners = detectCorners(ring).map((i) => ring[i]);
+	if (corners.length !== 3 && corners.length !== 4) return null;
+
+	const bb = bounds(points);
+	const span = Math.max(bb.maxX - bb.minX, bb.maxY - bb.minY);
+	if (span < SNAP_MIN_LENGTH) return null;
+	const tolerance = Math.max(
+		POLYGON_ABS_TOLERANCE,
+		span * POLYGON_REL_TOLERANCE,
+	);
+
+	const fitted = corners.length === 4 ? fitRectangle(points, corners) : corners;
+	// The fit has to explain the whole stroke. This is what rejects a trapezoid or
+	// a parallelogram, which would otherwise be squared up into something else.
+	if (maxDistanceToPolygon(points, fitted) > tolerance) return null;
+	return { kind: "polygon", corners: fitted };
+}
+
+/**
+ * The shape a stroke is trying to be, or null to leave it alone.
+ *
+ * Order matters. Line first: its ends are far apart, so it can't also be closed.
+ * Then ellipse, because a circle has no corners for the polygon test to find and
+ * checking it first keeps a round shape from ever being read as a many-sided one.
  */
 export function recogniseShape(points: Point[]): Shape | null {
 	if (points.length < SNAP_MIN_POINTS) return null;
 	const length = pathLength(points);
 	if (length < SNAP_MIN_LENGTH) return null;
-	return looksLikeLine(points) ?? looksLikeEllipse(points, length);
+	return (
+		looksLikeLine(points) ??
+		looksLikeEllipse(points, length) ??
+		looksLikePolygon(points, length)
+	);
 }
 
 /**
@@ -199,6 +419,23 @@ export function shapePoints(shape: Shape, pressure: number): Point[] {
 				p,
 			});
 		}
+		return out;
+	}
+	if (shape.kind === "polygon") {
+		const out: Point[] = [];
+		const n = shape.corners.length;
+		for (let c = 0; c < n; c++) {
+			const a = shape.corners[c];
+			const b = shape.corners[(c + 1) % n];
+			// Each edge stops one sample short: the next edge supplies that corner,
+			// so no vertex is emitted twice.
+			for (let i = 0; i < POLYGON_EDGE_SAMPLES; i++) {
+				const t = i / POLYGON_EDGE_SAMPLES;
+				out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, p });
+			}
+		}
+		// Close on the first corner.
+		out.push({ x: shape.corners[0].x, y: shape.corners[0].y, p });
 		return out;
 	}
 	const out: Point[] = [];

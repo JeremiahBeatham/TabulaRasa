@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.13.0) | Done — see below |
+| Shipped (v0.1.x → v0.13.1) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
 | Later (bigger features) | Done — #13 selection, #14 snapping |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.13.0)
+## Shipped (v0.1.x → v0.13.1)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -67,6 +67,8 @@
 - [x] Hold-to-snap shape recognition: hold still at the end of a stroke and a rough line or circle
       becomes a clean one; anything else is left alone
       ([#14](https://github.com/JeremiahBeatham/TabulaRasa/issues/14), v0.13.0)
+- [x] Snapping extended to rectangles and triangles, fitted as an oriented box so a tilted one keeps
+      its tilt. Roundness tightened at the same time — a pentagon used to pass as a circle (v0.13.1)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -138,8 +140,12 @@ reworked in isolation.
   - **Hold to snap**, not automatic: pause at the end of a stroke without lifting and a rough line or
     circle becomes a clean one. Chosen over recognising every stroke because a drawing that reshapes
     itself as you lift is startling, and it makes every stroke a gamble.
-  - Line and ellipse only. A square deliberately comes out unchanged — guessing wrong costs the user
-    their drawing, while a missed snap costs them one more try.
+  - Line, ellipse, rectangle and triangle. Five or more corners, a trapezoid, a bowed edge or a
+    scribble come out unchanged — guessing wrong costs the user their drawing, while a missed snap
+    costs one more try.
+  - Rectangles are fitted as an oriented box, so a diamond becomes a square turned 45°; anything
+    within 4° of level is snapped level. Triangles keep the corners you drew rather than being
+    regularised.
   - Snapped shapes keep even width (`simulatePressure` off): velocity taper is what makes a freehand
     line lively and a snapped one lumpy.
   - Recognition is DOM-free in `src/shapes.ts`, so the judgement calls are testable.
