@@ -47,6 +47,16 @@ export interface SketchCanvasOptions {
 	gestures?: GestureSettings;
 	/** Fires when the selection appears, changes or goes away. */
 	onSelectionChange?: () => void;
+	/**
+	 * A press held still with the selection tool active. `inSelection` says whether
+	 * it landed on the current selection, which is what decides whether there's
+	 * anything to copy or delete.
+	 */
+	onLongPress?: (info: {
+		clientX: number;
+		clientY: number;
+		inSelection: boolean;
+	}) => void;
 }
 
 const MIN_SCALE = 0.1;
@@ -69,6 +79,10 @@ const ROTATE_HANDLE_OFFSET = 34;
 const MIN_SELECTION_SIZE = 8;
 /** Where a pasted copy lands relative to the original, in document units. */
 const PASTE_OFFSET = 16;
+/** How long a press must be held to count as a long press. */
+const LONG_PRESS_MS = 480;
+/** How far it may drift first, in CSS px — a held thumb is never perfectly still. */
+const LONG_PRESS_MAX_TRAVEL = 12;
 
 interface ViewState {
 	scale: number;
@@ -181,6 +195,13 @@ export class SketchCanvas {
 	private selectionMode: SelectionMode = "replace";
 	/** What the current pointer is doing, when the selection tool has it. */
 	private selectionInput: "lasso" | "transform" | null = null;
+	/** Pending long press: the timer, and where the finger went down. */
+	private longPress: {
+		timer: number;
+		clientX: number;
+		clientY: number;
+		inSelection: boolean;
+	} | null = null;
 	/**
 	 * A transform in progress. The originals are kept so each move recomputes from
 	 * them rather than compounding — otherwise rounding accumulates and a drag
@@ -413,6 +434,7 @@ export class SketchCanvas {
 	}
 
 	destroy(): void {
+		this.cancelLongPress();
 		this.el.remove();
 	}
 
@@ -467,6 +489,7 @@ export class SketchCanvas {
 		if (this.brush.tool === "select") {
 			this.activePointerId = evt.pointerId;
 			this.el.setPointerCapture(evt.pointerId);
+			this.armLongPress(evt);
 			this.beginSelectionInput(evt);
 			evt.preventDefault();
 			return;
@@ -507,6 +530,7 @@ export class SketchCanvas {
 		}
 
 		if (this.selectionInput && this.activePointerId === evt.pointerId) {
+			this.trackLongPress(evt);
 			this.updateSelectionInput(evt);
 			evt.preventDefault();
 			return;
@@ -557,6 +581,7 @@ export class SketchCanvas {
 		if (this.activePointerId !== evt.pointerId) return;
 
 		if (this.selectionInput) {
+			this.cancelLongPress();
 			this.activePointerId = null;
 			this.finishSelectionInput();
 			return;
@@ -1013,6 +1038,50 @@ export class SketchCanvas {
 
 	// --- selection input ------------------------------------------------
 
+	/**
+	 * Start the clock on a long press. It fires only if the finger stays put, so it
+	 * can't collide with drawing a boundary or dragging the box — and whatever that
+	 * press had begun is abandoned when it does, since the menu replaces it.
+	 */
+	private armLongPress(evt: PointerEvent): void {
+		if (!this.options.onLongPress) return;
+		this.cancelLongPress();
+		const doc = this.eventDoc(evt);
+		const bounds = this.selectionBounds();
+		const inSelection = !!bounds && boundsContain(bounds, doc.x, doc.y);
+		const clientX = evt.clientX;
+		const clientY = evt.clientY;
+		this.longPress = {
+			clientX,
+			clientY,
+			inSelection,
+			timer: window.setTimeout(() => {
+				this.longPress = null;
+				this.abortSelectionInput();
+				this.redraw();
+				try {
+					this.options.onLongPress?.({ clientX, clientY, inSelection });
+				} catch (e) {
+					console.error("Tabula Rasa: long-press menu failed", e);
+				}
+			}, LONG_PRESS_MS),
+		};
+	}
+
+	private cancelLongPress(): void {
+		if (!this.longPress) return;
+		window.clearTimeout(this.longPress.timer);
+		this.longPress = null;
+	}
+
+	/** Drift past the tolerance means it's a drag, not a press. */
+	private trackLongPress(evt: PointerEvent): void {
+		const lp = this.longPress;
+		if (!lp) return;
+		const moved = Math.hypot(evt.clientX - lp.clientX, evt.clientY - lp.clientY);
+		if (moved > LONG_PRESS_MAX_TRAVEL) this.cancelLongPress();
+	}
+
 	/** Decide what this drag is: grabbing a handle, moving the box, or lassoing. */
 	private beginSelectionInput(evt: PointerEvent): void {
 		const doc = this.eventDoc(evt);
@@ -1166,8 +1235,9 @@ export class SketchCanvas {
 	private resolveLasso(poly: Vec[]): void {
 		const pb = polygonBounds(poly);
 		if (!pb || poly.length < 3 || boundsSpan(pb) < MIN_LASSO_SPAN) {
-			if (this.selectionMode === "replace") this.clearSelection();
-			else this.redraw();
+			// A tap rather than a boundary. Always deselect, in every mode: the mode
+			// shapes the next boundary, it shouldn't make tapping away conditional.
+			this.clearSelection();
 			return;
 		}
 		const hit = strokesInPolygon(this.doc.strokes, poly);
@@ -1177,6 +1247,7 @@ export class SketchCanvas {
 	}
 
 	private abortSelectionInput(): void {
+		this.cancelLongPress();
 		if (!this.selectionInput) return;
 		const drag = this.transformDrag;
 		if (drag) {

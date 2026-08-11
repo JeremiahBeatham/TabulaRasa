@@ -125,13 +125,7 @@ const SELECTION_MODE_OPTIONS: {
 	},
 ];
 
-/** Default for the rotate-by field, in degrees. */
-const DEFAULT_ROTATE_DEGREES = 90;
-
-/**
- * Which side of its trigger a popover opens on. The header buttons drop down;
- * the selection bar sits at the bottom of the screen, so its lists go up.
- */
+/** Which side of its trigger a popover opens on. */
 type PopoverPlacement = "below" | "above";
 
 /** Coerce a color to the `#rrggbb` form an <input type="color"> requires. */
@@ -182,9 +176,12 @@ export class SketchView extends TextFileView {
 	/** The visible colour swatch; tapping it summons the system colour sheet. */
 	private colorInput: HTMLInputElement | null = null;
 
-	/** The selection tool's controls. Present only while something is selected. */
-	private selectBar: HTMLElement | null = null;
-	private pasteBtn: HTMLElement | null = null;
+	/**
+	 * The selection's controls take over the size and colour slots while something
+	 * is selected. Only one of each pair is in the row at a time.
+	 */
+	private modeBtn: HTMLElement | null = null;
+	private transformBtn: HTMLElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: TabulaRasaPlugin) {
 		super(leaf);
@@ -255,12 +252,7 @@ export class SketchView extends TextFileView {
 		});
 		this.rebuildCanvas();
 
-		this.resizeObserver = new ResizeObserver(() => {
-			this.canvas?.resize();
-			// The bar is placed from measured pixels, so it has to be re-placed when
-			// the view changes size (rotation, split, keyboard).
-			this.positionSelectBar();
-		});
+		this.resizeObserver = new ResizeObserver(() => this.canvas?.resize());
 		if (this.canvasHost) this.resizeObserver.observe(this.canvasHost);
 	}
 
@@ -292,9 +284,10 @@ export class SketchView extends TextFileView {
 			palmRejection: this.plugin.settings.palmRejection,
 			gestures: { enabled: this.plugin.settings.gesturesEnabled },
 			onChange: () => this.requestSave(),
-			onSelectionChange: () => this.syncSelectBar(),
+			onSelectionChange: () => this.syncSelectionChrome(),
+			onLongPress: (info) => this.openSelectionMenu(info),
 		});
-		this.syncSelectBar();
+		this.syncSelectionChrome();
 		// Defer sizing until layout settles (important on mobile open).
 		window.setTimeout(() => this.canvas?.resize(), 0);
 	}
@@ -390,6 +383,19 @@ export class SketchView extends TextFileView {
 			this.selectColor(this.colorInput?.value ?? this.brush.color),
 		);
 
+		// The selection's two controls occupy the same slots as size and colour, and
+		// are built alongside them so the row order is fixed at build time rather
+		// than being re-seated whenever a selection comes and goes.
+		this.modeBtn = this.makeAction(row, "replace", "Selection mode", (btn) =>
+			this.togglePopover(btn, (pop) => this.buildModePopover(pop)),
+		);
+		this.transformBtn = this.makeAction(
+			row,
+			"flip-horizontal",
+			"Transform selection",
+			(btn) => this.togglePopover(btn, (pop) => this.buildTransformPopover(pop)),
+		);
+
 		this.makeAction(row, "settings", "Sketch settings", () =>
 			this.openMoreSheet(),
 		);
@@ -406,6 +412,8 @@ export class SketchView extends TextFileView {
 		this.applyTool(this.currentToolOption());
 		this.selectColor(this.brush.color);
 		this.selectSize(this.brush.size);
+		// applyTool already calls this, but the tool may not have changed on a rebuild.
+		this.syncSelectionChrome();
 	}
 
 	/**
@@ -440,7 +448,7 @@ export class SketchView extends TextFileView {
 			cls: "clickable-icon view-action tabula-rasa-btn",
 			attr: { "aria-label": label, type: "button" },
 		});
-		if (icon) setIcon(btn, icon);
+		if (icon) setIconSafe(btn, icon, "circle", label.slice(0, 1));
 		btn.addEventListener("click", () => onClick(btn));
 		this.actionEls.push(btn);
 		return btn;
@@ -493,7 +501,7 @@ export class SketchView extends TextFileView {
 			this.toolBtn.setAttribute("aria-label", option.label);
 		}
 		this.updateInkControls();
-		this.syncSelectBar();
+		this.syncSelectionChrome();
 	}
 
 	/**
@@ -538,169 +546,142 @@ export class SketchView extends TextFileView {
 	// --- selection controls ---------------------------------------------
 
 	/**
-	 * The selection's own bar, along the bottom of the canvas. It exists only while
-	 * something is selected — there is nothing for it to act on otherwise — and it
-	 * floats over the canvas rather than taking a row of its own, so appearing and
-	 * disappearing never resizes the drawing surface mid-edit.
+	 * With a selection live, the size and colour slots become the controls that
+	 * matter: neither applies to the selection tool anyway. There is deliberately no
+	 * bar of its own — three attempts at one never appeared on device and could not
+	 * be diagnosed without a console, while these header buttons demonstrably render.
+	 * Reusing them also keeps the promise that the sketch adds no chrome.
 	 *
-	 * Its dropdowns open *upward*, since it sits at the bottom of the screen.
+	 * Copy, cut, paste and delete live on a long press instead, which is where a
+	 * phone user reaches for them.
 	 */
-	private syncSelectBar(): void {
-		// Gated only on whether a selection exists. The canvas is the authority: it
-		// drops the selection when the tool changes, so asking the view's own copy of
-		// the tool as well was redundant — and on device it was the difference
-		// between a bar and no bar, so the redundant condition is gone.
-		const wanted = this.canvas?.hasSelection() ?? false;
-		if (!wanted) {
-			if (this.selectBar) {
-				if (this.popoverTrigger && this.selectBar.contains(this.popoverTrigger)) {
-					this.closePopover();
-				}
-				this.selectBar.remove();
-			}
-			this.selectBar = null;
-			this.pasteBtn = null;
-			return;
+	private syncSelectionChrome(): void {
+		const selecting = this.canvas?.hasSelection() ?? false;
+		// Only one of each pair is ever in the row.
+		const show = (el: HTMLElement | null, visible: boolean): void => {
+			if (el) el.style.display = visible ? "" : "none";
+		};
+		show(this.sizeBtn, !selecting);
+		show(this.colorBtn, !selecting);
+		show(this.modeBtn, selecting);
+		show(this.transformBtn, selecting);
+		if (selecting) this.updateModeIcon();
+		// A popover belonging to a slot that just went away has to go with it.
+		if (this.popoverTrigger) {
+			const gone =
+				(this.popoverTrigger === this.sizeBtn && selecting) ||
+				(this.popoverTrigger === this.modeBtn && !selecting) ||
+				(this.popoverTrigger === this.transformBtn && !selecting);
+			if (gone) this.closePopover();
 		}
-		if (!this.selectBar) this.buildSelectBar();
-		this.updatePasteState();
 	}
 
-	private buildSelectBar(): void {
-		const bar = this.contentEl.createDiv({ cls: "tabula-rasa-select-bar" });
-		this.selectBar = bar;
-		// The layout that decides whether this is visible at all is set inline, not
-		// left to styles.css. Three device attempts produced "no bar" and there's no
-		// console on mobile to tell CSS delivery apart from a layout fault, so the
-		// pill is now guaranteed by the element itself; the stylesheet only refines it.
-		Object.assign(bar.style, {
-			position: "absolute",
-			zIndex: "40",
-			display: "flex",
-			alignItems: "center",
-			gap: "2px",
-			padding: "2px 6px",
-			borderRadius: "999px",
-			background: "var(--background-secondary)",
-			border: "1px solid var(--background-modifier-border)",
-			boxShadow: "0 6px 20px rgba(0, 0, 0, 0.3)",
-		});
-
-		// How the next boundary combines with this one.
-		const modeBtn = this.makeBarButton(
-			bar,
-			"arrow-left-right",
-			"repeat",
-			"Selection mode",
-		);
-		modeBtn.addEventListener("click", () =>
-			this.togglePopover(modeBtn, (pop) => this.buildModePopover(pop), "above"),
-		);
-
-		const transformBtn = this.makeBarButton(
-			bar,
-			"scaling",
-			"move",
-			"Transform selection",
-		);
-		transformBtn.addEventListener("click", () =>
-			this.togglePopover(
-				transformBtn,
-				(pop) => this.buildTransformPopover(pop),
-				"above",
-			),
-		);
-
-		const copyBtn = this.makeBarButton(bar, "copy", "files", "Copy selection");
-		copyBtn.addEventListener("click", () => {
-			const strokes = this.canvas?.copySelection();
-			if (!strokes) return;
-			this.plugin.selectionClipboard = strokes;
-			// Paste lighting up is the feedback; a notice on every copy would nag.
-			this.updatePasteState();
-		});
-
-		this.pasteBtn = this.makeBarButton(
-			bar,
-			"clipboard-paste",
-			"clipboard",
-			"Paste selection",
-		);
-		this.pasteBtn.addEventListener("click", () => {
-			const strokes = this.plugin.selectionClipboard;
-			if (strokes) this.canvas?.pasteStrokes(strokes);
-		});
-
-		// Delete and clear are deliberately both here and adjacent: one takes the ink,
-		// the other only puts the box away, and the bar is the only way to do either.
-		const deleteBtn = this.makeBarButton(
-			bar,
-			"trash-2",
-			"trash",
-			"Delete selection",
-		);
-		deleteBtn.addEventListener("click", () => this.canvas?.deleteSelection());
-
-		const clearBtn = this.makeBarButton(bar, "x", "cross", "Clear selection");
-		clearBtn.addEventListener("click", () => this.canvas?.clearSelection());
-
-		this.positionSelectBar();
+	/** The mode button shows which mode is armed, so the state is visible. */
+	private updateModeIcon(): void {
+		if (!this.modeBtn) return;
+		const mode = this.canvas?.getSelectionMode() ?? "replace";
+		const option =
+			SELECTION_MODE_OPTIONS.find((o) => o.mode === mode) ??
+			SELECTION_MODE_OPTIONS[0];
+		setIconSafe(this.modeBtn, option.icon, option.fallback, "M");
+		this.modeBtn.setAttribute("aria-label", `Selection mode: ${option.label}`);
 	}
 
 	/**
-	 * Place the bar from measured pixels rather than a `bottom` offset. `bottom`
-	 * put it a fixed distance from the bottom of the content box, which is not
-	 * necessarily a place you can see — and it depended on `env(safe-area-inset-*)`
-	 * resolving. A computed `top` inside the content box can't land off-screen.
+	 * Copy / cut / paste / delete, on a long press. Paste is offered even with
+	 * nothing selected — otherwise a copy would have nowhere to land once the
+	 * selection it came from is gone.
 	 */
-	private positionSelectBar(): void {
-		const bar = this.selectBar;
-		if (!bar) return;
-		const host = this.contentEl;
-		bar.style.bottom = "";
-		bar.style.left = `${Math.max(8, Math.round((host.clientWidth - bar.offsetWidth) / 2))}px`;
-		bar.style.top = `${Math.max(8, host.clientHeight - bar.offsetHeight - 24)}px`;
+	private openSelectionMenu(info: {
+		clientX: number;
+		clientY: number;
+		inSelection: boolean;
+	}): void {
+		const hasClipboard = this.plugin.selectionClipboard !== null;
+		if (!info.inSelection && !hasClipboard) return;
+		this.openPopoverAtPoint(info.clientX, info.clientY, (pop) => {
+			pop.addClass("tabula-rasa-popover-stack");
+			const row = (
+				icon: string,
+				fallback: string,
+				label: string,
+				enabled: boolean,
+				run: () => void,
+			): void => {
+				const el = pop.createEl("button", {
+					cls: "tabula-rasa-tool-row",
+					attr: { type: "button" },
+				});
+				const ic = el.createSpan({ cls: "tabula-rasa-tool-icon" });
+				setIconSafe(ic, icon, fallback, label.slice(0, 1));
+				el.createSpan({ cls: "tabula-rasa-tool-name", text: label });
+				if (!enabled) {
+					el.style.opacity = "0.35";
+					el.style.pointerEvents = "none";
+					return;
+				}
+				el.addEventListener("click", () => {
+					run();
+					this.closePopover();
+				});
+			};
+
+			if (info.inSelection) {
+				row("copy", "files", "Copy", true, () => this.copySelection());
+				row("scissors", "cut", "Cut", true, () => {
+					if (this.copySelection()) this.canvas?.deleteSelection();
+				});
+			}
+			row("clipboard-paste", "clipboard", "Paste", hasClipboard, () => {
+				const strokes = this.plugin.selectionClipboard;
+				if (strokes) this.canvas?.pasteStrokes(strokes);
+			});
+			if (info.inSelection) {
+				row("trash-2", "trash", "Delete", true, () =>
+					this.canvas?.deleteSelection(),
+				);
+			}
+		});
 	}
 
-	private makeBarButton(
-		bar: HTMLElement,
-		icon: string,
-		fallback: string,
-		label: string,
-		text?: string,
-	): HTMLButtonElement {
-		const btn = bar.createEl("button", {
-			cls: "clickable-icon tabula-rasa-btn tabula-rasa-bar-btn",
-			attr: { "aria-label": label, type: "button" },
-		});
-		// Same reasoning as the bar itself: the tap target and the transparent
-		// background are guaranteed here rather than by a stylesheet that may or may
-		// not have reached the device.
-		Object.assign(btn.style, {
-			width: "44px",
-			height: "44px",
-			minWidth: "44px",
-			display: "inline-flex",
-			alignItems: "center",
-			justifyContent: "center",
-			padding: "0",
-			border: "0",
-			background: "transparent",
-			boxShadow: "none",
-			color: "var(--text-normal)",
-		});
-		setIconSafe(btn, icon, fallback, text ?? label.slice(0, 1));
-		return btn;
+	private copySelection(): boolean {
+		const strokes = this.canvas?.copySelection();
+		if (!strokes) return false;
+		this.plugin.selectionClipboard = strokes;
+		return true;
 	}
 
-	private updatePasteState(): void {
-		const has = this.plugin.selectionClipboard !== null;
-		if (!this.pasteBtn) return;
-		this.pasteBtn.toggleClass("is-disabled", !has);
-		if (this.pasteBtn instanceof HTMLButtonElement) {
-			this.pasteBtn.disabled = !has;
-		}
+	private buildTransformPopover(pop: HTMLElement): void {
+		pop.addClass("tabula-rasa-popover-stack");
+		const action = (
+			icon: string,
+			fallback: string,
+			label: string,
+			run: () => void,
+		): void => {
+			const row = pop.createEl("button", {
+				cls: "tabula-rasa-tool-row",
+				attr: { type: "button" },
+			});
+			const ic = row.createSpan({ cls: "tabula-rasa-tool-icon" });
+			setIconSafe(ic, icon, fallback, label.slice(0, 1));
+			row.createSpan({ cls: "tabula-rasa-tool-name", text: label });
+			row.addEventListener("click", () => {
+				run();
+				this.closePopover();
+			});
+		};
+		action("flip-horizontal", "move-horizontal", "Flip horizontal", () =>
+			this.canvas?.flipSelection("horizontal"),
+		);
+		action("flip-vertical", "move-vertical", "Flip vertical", () =>
+			this.canvas?.flipSelection("vertical"),
+		);
+		action("rotate-cw", "refresh-cw", "Rotate 90°", () =>
+			this.canvas?.rotateSelection(90),
+		);
 	}
+
 
 	private buildModePopover(pop: HTMLElement): void {
 		pop.addClass("tabula-rasa-popover-stack");
@@ -716,71 +697,12 @@ export class SketchView extends TextFileView {
 			row.createSpan({ cls: "tabula-rasa-tool-name", text: option.label });
 			row.addEventListener("click", () => {
 				this.canvas?.setSelectionMode(option.mode);
+				this.updateModeIcon();
 				this.closePopover();
 			});
 		}
 	}
 
-	private buildTransformPopover(pop: HTMLElement): void {
-		pop.addClass("tabula-rasa-popover-stack");
-
-		const action = (
-			icon: string,
-			fallback: string,
-			label: string,
-			run: () => void,
-		): void => {
-			const row = pop.createEl("button", {
-				cls: "tabula-rasa-tool-row",
-				attr: { type: "button" },
-			});
-			const ic = row.createSpan({ cls: "tabula-rasa-tool-icon" });
-			setIconSafe(ic, icon, fallback);
-			row.createSpan({ cls: "tabula-rasa-tool-name", text: label });
-			row.addEventListener("click", () => {
-				run();
-				this.closePopover();
-			});
-		};
-
-		action("flip-horizontal", "move-horizontal", "Flip horizontal", () =>
-			this.canvas?.flipSelection("horizontal"),
-		);
-		action("flip-vertical", "move-vertical", "Flip vertical", () =>
-			this.canvas?.flipSelection("vertical"),
-		);
-
-		// A div, not a button: an <input> inside a <button> is invalid HTML, and iOS
-		// won't reliably focus one that is.
-		const row = pop.createDiv({ cls: "tabula-rasa-tool-row tabula-rasa-rotate-row" });
-		const ic = row.createSpan({ cls: "tabula-rasa-tool-icon" });
-		setIconSafe(ic, "rotate-cw", "refresh-cw");
-		row.createSpan({ cls: "tabula-rasa-tool-name", text: "Rotate" });
-		const input = row.createEl("input", {
-			cls: "tabula-rasa-rotate-input",
-			attr: {
-				type: "number",
-				step: "1",
-				"aria-label": "Rotate selection by degrees",
-			},
-		});
-		input.value = String(DEFAULT_ROTATE_DEGREES);
-		row.createSpan({ cls: "tabula-rasa-rotate-unit", text: "°" });
-		const apply = (): void => {
-			const n = Number(input.value);
-			if (Number.isFinite(n)) this.canvas?.rotateSelection(n);
-			this.closePopover();
-		};
-		input.addEventListener("keydown", (e) => {
-			if (e.key === "Enter") {
-				e.preventDefault();
-				apply();
-			}
-		});
-		// Tapping the label rotates by whatever is in the field, so the row works
-		// without a keyboard round-trip for the common 90°.
-		ic.addEventListener("click", apply);
-	}
 
 	// --- shared popover -------------------------------------------------
 
@@ -816,6 +738,41 @@ export class SketchView extends TextFileView {
 			}
 			const target = e.target as Node;
 			if (pop.contains(target) || trigger.contains(target)) return;
+			this.closePopover();
+		};
+		document.addEventListener("pointerdown", this.closePopoverHandler, true);
+		document.addEventListener("keydown", this.closePopoverHandler, true);
+	}
+
+	/**
+	 * A popover anchored to a point on the canvas rather than to a button — what a
+	 * long press needs, since the thing it belongs to is under your finger. Hosted
+	 * and dismissed exactly like the others, which is the path proven on device.
+	 */
+	private openPopoverAtPoint(
+		clientX: number,
+		clientY: number,
+		build: (pop: HTMLElement) => void,
+	): void {
+		this.closePopover();
+		const pop = this.containerEl.createDiv({ cls: "tabula-rasa-popover" });
+		this.popover = pop;
+		this.popoverTrigger = null;
+		build(pop);
+
+		const host = this.containerEl.getBoundingClientRect();
+		// Prefer above the finger, so the menu isn't under the hand that opened it.
+		const above = clientY - host.top - pop.offsetHeight - 12;
+		pop.style.top = `${above >= 8 ? above : Math.min(clientY - host.top + 12, Math.max(8, host.height - pop.offsetHeight - 8))}px`;
+		const maxLeft = Math.max(8, host.width - pop.offsetWidth - 8);
+		pop.style.left = `${Math.min(Math.max(8, clientX - host.left - pop.offsetWidth / 2), maxLeft)}px`;
+
+		this.closePopoverHandler = (e: Event) => {
+			if (e instanceof KeyboardEvent) {
+				if (e.key === "Escape") this.closePopover();
+				return;
+			}
+			if (pop.contains(e.target as Node)) return;
 			this.closePopover();
 		};
 		document.addEventListener("pointerdown", this.closePopoverHandler, true);

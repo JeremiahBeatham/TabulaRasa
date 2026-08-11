@@ -209,66 +209,13 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 }
 
 /*
- * The selection tool's controls. Only on screen while something is selected, and
- * floating over the canvas rather than occupying a row — a bar that appeared and
- * disappeared in the layout would resize the drawing surface mid-edit.
- *
- * Centred and pinned to the bottom, clear of the home indicator.
- */
-/*
- * Deliberately no position, left, bottom or transform here: SketchView places the
- * bar from measured pixels, and a `transform: translateX(-50%)` left over from
- * this rule would survive that inline `left` and shove the bar 144px off centre.
- * Everything load-bearing (the pill, its size, its stacking) is set inline for
- * the same reason — a device that never received this file must still get a bar.
- */
-.tabula-rasa-select-bar {
-	/* The bar is chrome: a drag on it must never reach the canvas underneath. */
-	touch-action: manipulation;
-}
-
-/*
- * Bar buttons share the toolbar's circle sizing but drop its filled disc — five
- * filled circles in a row read as a strip of slabs.
- */
-.tabula-rasa-bar-btn.tabula-rasa-bar-btn::before {
-	background: transparent;
-}
-
-.tabula-rasa-bar-btn.tabula-rasa-bar-btn:active::before {
-	background: var(--background-modifier-hover);
-}
-
-/*
  * Dimmed rather than hidden: size and colour don't apply to the selection tool,
- * and paste has nothing to paste until something is copied. A control that
- * silently ignores a tap reads as broken, so say so visually.
+ * so a tap that would do nothing should look deliberate. With something actually
+ * selected they're swapped out for the selection's controls instead.
  */
 .tabula-rasa-btn.is-disabled {
 	opacity: 0.35;
 	pointer-events: none;
-}
-
-/* Rotate row: a div, not a button, because it contains an input. */
-.tabula-rasa-rotate-row.tabula-rasa-rotate-row {
-	gap: 6px;
-}
-
-input.tabula-rasa-rotate-input {
-	width: 4.5em;
-	min-height: 34px;
-	padding: 2px 6px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	background: var(--background-primary);
-	color: var(--text-normal);
-	font-size: 15px;
-	text-align: right;
-}
-
-.tabula-rasa-rotate-unit {
-	font-size: 15px;
-	color: var(--text-muted);
 }
 
 /* Shared popover, anchored under (or over) whichever button opened it. */
