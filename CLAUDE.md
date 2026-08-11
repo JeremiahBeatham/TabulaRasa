@@ -151,11 +151,20 @@ circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-fre
   (measured: a realistic wobbly line came out at ratio 1.39). Overshoot is measured by *projecting*
   each point onto the chord instead — which is also a truer test of doubling back.
 - **A false positive costs more than a miss.** A scribble that becomes an ellipse loses work; a circle
-  that fails to snap costs a second try. Hence the four-quadrant check, the RMS *and* worst-case
-  radial bounds, and no rectangle support — a square must come out unchanged rather than round.
+  that fails to snap costs a second try. Hence the four-quadrant check and the RMS *and* worst-case
+  radial bounds. A pentagon, trapezoid, bowed-edge shape or scribble must come out unchanged.
+- **Roundness is judged by radial RMS, never by counting corners.** A circle drawn with 8% wobble
+  throws up five to seven *false* corners, so a corner count would reject exactly the shaky circles
+  the feature exists for. Measured: pentagon 0.111, square 0.204, 8%-wobble circle 0.050, 12% 0.085 —
+  hence the 0.10 bound. A hexagon (0.068) does read as a circle; that's accepted.
+- **Rectangles are fitted as an oriented box, not the bbox.** The orientation is the circular mean of
+  the four edge angles taken modulo 90°, so a diamond becomes a square turned 45° instead of a
+  mangled upright one; under 4° it snaps level. The fit is then rejected unless it passes close to
+  every drawn point, which is what leaves a trapezoid or parallelogram alone.
+- **Triangles keep the corners drawn.** Regularising to equilateral would invent a shape.
 - **A snapped stroke stops accepting points** and sets `simulatePressure: false`. Velocity taper is
   what makes a freehand line lively and a snapped one lumpy.
-- Only line and ellipse are recognised. Rectangle/triangle are deliberately absent.
+- Recognised: line, ellipse, rectangle (3 or 4 corners). Five or more corners is left alone.
 
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he

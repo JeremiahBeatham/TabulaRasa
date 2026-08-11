@@ -14,7 +14,7 @@ src/
   export.ts      — stroke geometry (perfect-freehand) + PNG/SVG rendering
   gestures.ts    — three-finger undo/redo recognition (pure, unit-testable)
   selection.ts   — lasso hit-testing and transform matrices (pure, unit-testable)
-  shapes.ts      — hold-to-snap line/ellipse recognition (pure, unit-testable)
+  shapes.ts      — hold-to-snap shape recognition: line, ellipse, polygon (pure, unit-testable)
   model.ts       — .sketch document schema and (de)serialisation
   settings.ts    — settings schema, defaults, settings tab
 manifest.json   — Obsidian plugin manifest
@@ -73,6 +73,6 @@ styles.css      — UI styling
   scaled from anywhere and moved from nowhere.
 - **Shape snapping is a hold, never automatic.** A stroke that reshapes itself the moment you lift
   makes every stroke a gamble; holding still is an explicit request. Recognition is also conservative
-  by design — only lines and ellipses, and a shape it isn't sure about is left exactly as drawn,
-  because a wrong snap destroys work while a missed one costs one more attempt.
+  by design — lines, ellipses, rectangles and triangles only, and a shape it isn't sure about is left
+  exactly as drawn, because a wrong snap destroys work while a missed one costs one more attempt.
 - **BRAT-first distribution** ahead of community-store approval.
