@@ -5,17 +5,17 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.12.4) | Done — see below |
+| Shipped (v0.1.x → v0.13.0) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
-| Later (bigger features) | #13 done; #14 snapping next |
+| Later (bigger features) | Done — #13 selection, #14 snapping |
 | Distribution | Rebrand done; community-store submission pending |
 
 **Active branch:** `main`
-**Last updated:** 2026-08-08
+**Last updated:** 2026-08-11
 
 ---
 
-## Shipped (v0.1.x → v0.12.4)
+## Shipped (v0.1.x → v0.13.0)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -64,6 +64,9 @@
       handles, and — after three attempts at a bottom bar never rendered on device — its controls in
       the toolbar's own size and colour slots, with copy/cut/paste/delete on a long press
       ([#13](https://github.com/JeremiahBeatham/TabulaRasa/issues/13), v0.12.0 → v0.12.4)
+- [x] Hold-to-snap shape recognition: hold still at the end of a stroke and a rough line or circle
+      becomes a clean one; anything else is left alone
+      ([#14](https://github.com/JeremiahBeatham/TabulaRasa/issues/14), v0.13.0)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -131,7 +134,16 @@ reworked in isolation.
     diagnosed without a console; the header buttons visibly work, so the controls moved there.
   - Dragging inside the box moves the selection; one drag is one undo step, and a drag that ends
     where it began leaves no undo entry at all.
-- [ ] [#14 — Smart snapping / shape recognition (straight line, circle)](https://github.com/JeremiahBeatham/TabulaRasa/issues/14)
+- [x] [#14 — Smart snapping / shape recognition](https://github.com/JeremiahBeatham/TabulaRasa/issues/14) (v0.13.0)
+  - **Hold to snap**, not automatic: pause at the end of a stroke without lifting and a rough line or
+    circle becomes a clean one. Chosen over recognising every stroke because a drawing that reshapes
+    itself as you lift is startling, and it makes every stroke a gamble.
+  - Line and ellipse only. A square deliberately comes out unchanged — guessing wrong costs the user
+    their drawing, while a missed snap costs them one more try.
+  - Snapped shapes keep even width (`simulatePressure` off): velocity taper is what makes a freehand
+    line lively and a snapped one lumpy.
+  - Recognition is DOM-free in `src/shapes.ts`, so the judgement calls are testable.
+  - Setting: **Hold to snap shapes** under Drawing, on by default.
 
 ## Distribution
 - [x] Rebrand to store-compliant id/name (`tabula-rasa` / "Tabula Rasa")

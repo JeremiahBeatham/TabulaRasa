@@ -283,6 +283,7 @@ export class SketchView extends TextFileView {
 		this.canvas = new SketchCanvas(this.canvasHost, this.doc, this.brush, {
 			palmRejection: this.plugin.settings.palmRejection,
 			gestures: { enabled: this.plugin.settings.gesturesEnabled },
+			shapeSnap: this.plugin.settings.shapeSnap,
 			onChange: () => this.requestSave(),
 			onSelectionChange: () => this.syncSelectionChrome(),
 			onLongPress: (info) => this.openSelectionMenu(info),

@@ -140,6 +140,23 @@ Conventions worth knowing before touching this area:
   `textContent` (not Obsidian's `setText`, which is the same class of dependency), and the canvas
   wraps its selection callback so a UI failure can never break drawing.
 
+**Issue #14 — hold to snap.** Pause at the end of a stroke, without lifting, and a rough line or
+circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-free.
+
+- **A still finger sends no pointer events**, so stillness can only be detected by a timer that each
+  move re-arms. Drift under `SNAP_HOLD_DRIFT` deliberately leaves the running timer alone, or a hand
+  that can't hold perfectly still never snaps.
+- **Never judge straightness by path length over chord length.** Fine sampling of a shaky line
+  inflates path length by ~40%, so that guard rejected exactly the strokes this feature exists to fix
+  (measured: a realistic wobbly line came out at ratio 1.39). Overshoot is measured by *projecting*
+  each point onto the chord instead — which is also a truer test of doubling back.
+- **A false positive costs more than a miss.** A scribble that becomes an ellipse loses work; a circle
+  that fails to snap costs a second try. Hence the four-quadrant check, the RMS *and* worst-case
+  radial bounds, and no rectangle support — a square must come out unchanged rather than round.
+- **A snapped stroke stops accepting points** and sets `simulatePressure: false`. Velocity taper is
+  what makes a freehand line lively and a snapped one lumpy.
+- Only line and ellipse are recognised. Rectangle/triangle are deliberately absent.
+
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he
 explicitly asks for an artifact.

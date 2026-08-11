@@ -29,6 +29,7 @@ import {
 	translation,
 	unionBounds,
 } from "./selection";
+import { meanPressure, recogniseShape, shapePoints } from "./shapes";
 
 export type EraserMode = "stroke" | "partial";
 
@@ -45,6 +46,8 @@ export interface SketchCanvasOptions {
 	palmRejection: boolean;
 	onChange: () => void;
 	gestures?: GestureSettings;
+	/** Hold-to-snap: recognise a rough line or circle when the stroke pauses. */
+	shapeSnap?: boolean;
 	/** Fires when the selection appears, changes or goes away. */
 	onSelectionChange?: () => void;
 	/**
@@ -79,6 +82,15 @@ const ROTATE_HANDLE_OFFSET = 34;
 const MIN_SELECTION_SIZE = 8;
 /** Where a pasted copy lands relative to the original, in document units. */
 const PASTE_OFFSET = 16;
+/**
+ * How long you hold still at the end of a stroke before a rough line or circle
+ * becomes a clean one. Long enough that a pause for thought mid-stroke doesn't
+ * trigger it, short enough that you don't wonder whether it's working.
+ */
+const SNAP_HOLD_MS = 600;
+/** Movement under this doesn't restart the hold — a resting thumb still drifts. */
+const SNAP_HOLD_DRIFT = 4;
+
 /** How long a press must be held to count as a long press. */
 const LONG_PRESS_MS = 480;
 /** How far it may drift first, in CSS px — a held thumb is never perfectly still. */
@@ -153,6 +165,14 @@ export class SketchCanvas {
 
 	private activeStroke: Stroke | null = null;
 	private activePointerId: number | null = null;
+	/**
+	 * Pending hold-to-snap. Armed on every move and left alone while the finger
+	 * only drifts, because a still finger sends no move events at all — the timer
+	 * is the only thing that knows you've stopped.
+	 */
+	private snapHold: { timer: number; x: number; y: number } | null = null;
+	/** True once this stroke has been snapped, so it stops taking new points. */
+	private snapped = false;
 	/** True while a stylus pointer is down (used for palm rejection). */
 	private penActive = false;
 
@@ -434,6 +454,7 @@ export class SketchCanvas {
 	}
 
 	destroy(): void {
+		this.cancelSnapHold();
 		this.cancelLongPress();
 		this.el.remove();
 	}
@@ -537,6 +558,12 @@ export class SketchCanvas {
 		}
 
 		if (this.activePointerId !== evt.pointerId || !this.activeStroke) return;
+		// A snapped stroke is finished: further movement would just re-roughen the
+		// shape the snap was asked for. Lift and draw again to change it.
+		if (this.snapped) {
+			evt.preventDefault();
+			return;
+		}
 		const events =
 			typeof evt.getCoalescedEvents === "function"
 				? evt.getCoalescedEvents()
@@ -544,6 +571,7 @@ export class SketchCanvas {
 		for (const e of events.length ? events : [evt]) {
 			this.activeStroke.points.push(this.toPoint(e));
 		}
+		this.armSnapHold(evt);
 		this.redraw();
 		evt.preventDefault();
 	};
@@ -590,6 +618,8 @@ export class SketchCanvas {
 		if (evt.pointerType === "pen") this.penActive = false;
 		this.activePointerId = null;
 
+		this.cancelSnapHold();
+		this.snapped = false;
 		const stroke = this.activeStroke;
 		this.activeStroke = null;
 		if (!stroke) return;
@@ -615,6 +645,8 @@ export class SketchCanvas {
 
 	/** Abandon any in-progress stroke and begin a two-finger pan/zoom gesture. */
 	private enterGesture(): void {
+		this.cancelSnapHold();
+		this.snapped = false;
 		if (this.activeStroke) {
 			// Discard the dot started by the first finger and its undo entry.
 			this.undoStack.pop();
@@ -1037,6 +1069,57 @@ export class SketchCanvas {
 	}
 
 	// --- selection input ------------------------------------------------
+
+	// --- hold to snap ---------------------------------------------------
+
+	/**
+	 * Keep a hold timer running while the stroke is in progress. Re-armed only when
+	 * the finger actually moves: small drift leaves the existing timer alone, so a
+	 * hand that can't hold perfectly still still gets a snap.
+	 */
+	private armSnapHold(evt: PointerEvent): void {
+		if (!this.options.shapeSnap || this.snapped) return;
+		// The eraser has no shape to snap, and the selection tool never gets here.
+		if (this.brush.tool === "eraser") return;
+		const existing = this.snapHold;
+		if (existing) {
+			const drift = Math.hypot(evt.clientX - existing.x, evt.clientY - existing.y);
+			if (drift <= SNAP_HOLD_DRIFT) return; // still holding — let it run
+			window.clearTimeout(existing.timer);
+		}
+		this.snapHold = {
+			x: evt.clientX,
+			y: evt.clientY,
+			timer: window.setTimeout(() => {
+				this.snapHold = null;
+				this.snapActiveStroke();
+			}, SNAP_HOLD_MS),
+		};
+	}
+
+	private cancelSnapHold(): void {
+		if (!this.snapHold) return;
+		window.clearTimeout(this.snapHold.timer);
+		this.snapHold = null;
+	}
+
+	/**
+	 * Replace the stroke in progress with the shape it was trying to be. Nothing
+	 * happens if it doesn't look like one — holding still over a scribble should
+	 * leave the scribble alone rather than guess.
+	 */
+	private snapActiveStroke(): void {
+		const stroke = this.activeStroke;
+		if (!stroke) return;
+		const shape = recogniseShape(stroke.points);
+		if (!shape) return;
+		stroke.points = shapePoints(shape, meanPressure(stroke.points));
+		// Velocity taper is what makes a freehand line lively and a snapped one
+		// lumpy, so a snapped shape gets an even width.
+		stroke.simulatePressure = false;
+		this.snapped = true;
+		this.redraw();
+	}
 
 	/**
 	 * Start the clock on a long press. It fires only if the finger stays put, so it

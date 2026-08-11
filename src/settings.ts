@@ -38,6 +38,12 @@ export interface TabulaRasaSettings {
 	 * fingers *not* travelling, which keeps them clear of two-finger pan/zoom.
 	 */
 	gesturesEnabled: boolean;
+	/**
+	 * Hold still at the end of a stroke and a rough line or circle is replaced by a
+	 * clean one. Deliberately a hold rather than automatic: a stroke that reshapes
+	 * itself the instant you lift is startling, and unpredictable mid-sketch.
+	 */
+	shapeSnap: boolean;
 }
 
 export type ToolbarButtonSize = 24 | 32 | 40;
@@ -60,6 +66,7 @@ export const DEFAULT_SETTINGS: TabulaRasaSettings = {
 	eraserMode: "stroke",
 	toolbarButtonSize: 32,
 	gesturesEnabled: true,
+	shapeSnap: true,
 };
 
 export class TabulaRasaSettingTab extends PluginSettingTab {
@@ -205,6 +212,19 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 			);
 
 		this.heading("pencil", "Drawing");
+
+		new Setting(containerEl)
+			.setName("Hold to snap shapes")
+			.setDesc(
+				"Pause at the end of a stroke, without lifting, and a rough line or circle becomes a clean one. Holding over anything else leaves it alone.",
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.shapeSnap).onChange(async (value) => {
+					this.plugin.settings.shapeSnap = value;
+					await this.plugin.saveSettings();
+					this.plugin.refreshOpenSketchViews();
+				}),
+			);
 
 		new Setting(containerEl)
 			.setName("Fit new sketches to the screen")
