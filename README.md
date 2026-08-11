@@ -4,7 +4,7 @@ Finger- and Apple Pencil-friendly sketching for [Obsidian](https://obsidian.md).
 Draw the way you do in the native iOS Notes app — directly in your vault — then
 embed sketches in notes or keep them as standalone, re-editable files.
 
-> **Status:** working MVP (v0.10.1). Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
+> **Status:** working MVP (v0.13.1). Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
 > today; a community-plugins submission is in progress. See where we are and where
 > we're going in **[docs/PHASES.md](docs/PHASES.md)**.
 
