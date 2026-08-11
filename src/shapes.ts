@@ -97,8 +97,13 @@ const CORNER_SAMPLES = 64;
  * ~90°, so the two can't be confused.
  */
 const CORNER_WINDOW = 2;
-/** How sharp a turn has to be to count as a corner. */
-const CORNER_MIN_TURN = (45 * Math.PI) / 180;
+/**
+ * How sharp a turn has to be to be *considered* a corner. Deliberately low: it
+ * only filters noise, and the real judge is whether the fitted shape explains the
+ * whole stroke. A high threshold made recognition brittle — a square with corners
+ * rounded over 30px lost one of them and snapped to nothing.
+ */
+const CORNER_MIN_TURN = (28 * Math.PI) / 180;
 /** Two corners closer than this many samples are the same corner. */
 const CORNER_MIN_SEPARATION = 6;
 /** A fitted polygon has to pass this close to every point that was drawn. */
@@ -274,6 +279,7 @@ export function detectCorners(ring: Vec[]): number[] {
 		if (best) candidates.push(i);
 	}
 
+	// Sharpest first, so a caller taking the top few gets the most corner-like ones.
 	const kept: number[] = [];
 	for (const i of candidates.slice().sort((x, y) => turns[y] - turns[x])) {
 		const clash = kept.some((j) => {
@@ -282,7 +288,7 @@ export function detectCorners(ring: Vec[]): number[] {
 		});
 		if (!clash) kept.push(i);
 	}
-	return kept.sort((x, y) => x - y);
+	return kept;
 }
 
 /** Distance from a point to a line segment. */
@@ -365,10 +371,6 @@ function looksLikePolygon(points: Vec[], length: number): PolygonShape | null {
 	if (gap > Math.max(CLOSE_ABS_TOLERANCE, length * CLOSE_REL_TOLERANCE)) {
 		return null;
 	}
-	const ring = resampleClosed(points, CORNER_SAMPLES);
-	const corners = detectCorners(ring).map((i) => ring[i]);
-	if (corners.length !== 3 && corners.length !== 4) return null;
-
 	const bb = bounds(points);
 	const span = Math.max(bb.maxX - bb.minX, bb.maxY - bb.minY);
 	if (span < SNAP_MIN_LENGTH) return null;
@@ -377,11 +379,28 @@ function looksLikePolygon(points: Vec[], length: number): PolygonShape | null {
 		span * POLYGON_REL_TOLERANCE,
 	);
 
-	const fitted = corners.length === 4 ? fitRectangle(points, corners) : corners;
-	// The fit has to explain the whole stroke. This is what rejects a trapezoid or
-	// a parallelogram, which would otherwise be squared up into something else.
-	if (maxDistanceToPolygon(points, fitted) > tolerance) return null;
-	return { kind: "polygon", corners: fitted };
+	const ring = resampleClosed(points, CORNER_SAMPLES);
+	const ranked = detectCorners(ring);
+	if (ranked.length < 3) return null;
+
+	// Try four corners then three, rather than demanding the detector return
+	// exactly the right count. Counting corners is the fragile part — rounded
+	// corners lose one, a shaky edge invents one — while "does this shape explain
+	// the stroke" is a solid test, so let the fit decide and only use the corner
+	// ranking to propose candidates.
+	for (const count of [4, 3]) {
+		if (ranked.length < count) continue;
+		// Back into path order, so the corners form the outline rather than criss-cross.
+		const chosen = ranked
+			.slice(0, count)
+			.sort((a, b) => a - b)
+			.map((i) => ring[i]);
+		const fitted = count === 4 ? fitRectangle(points, chosen) : chosen;
+		if (maxDistanceToPolygon(points, fitted) <= tolerance) {
+			return { kind: "polygon", corners: fitted };
+		}
+	}
+	return null;
 }
 
 /**
