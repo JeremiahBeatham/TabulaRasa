@@ -75,15 +75,20 @@ styles.css      — UI styling
   makes every stroke a gamble; holding still is an explicit request. Recognition is also conservative
   by design — lines, ellipses, rectangles and triangles only, and a shape it isn't sure about is left
   exactly as drawn, because a wrong snap destroys work while a missed one costs one more attempt.
-- **A snapped polygon's corners are arcs, and its path opens mid-edge.** Both are rendering
-  decisions, not recognition ones — the recogniser still holds plain corners. A hard vertex makes the
-  stroke renderer put the entire turn on one outline vertex, which the canvas fills with straight
-  segments, so it draws as a point whose sharpness varies corner to corner; and a path that opens on
-  a corner stacks both of the stroke's round caps where the band is turning, which shows as a blob.
-  The fillet is a real circular arc sampled by equal angle rather than a Bézier through the corner,
-  because a Bézier's curvature bunches in its middle and leaves a point on acute corners.
-- **A snapped shape is rendered differently from a freehand one.** `Stroke.snapped` is persisted and
-  turns off the stroke smoothing that exists to make hand-drawn input feel good: on points that are
-  already exact, that smoothing only reintroduces the wobble the snap removed. The tool's weight and
-  texture are kept, so a snapped crayon is still a crayon.
+- **A snapped shape is rendered by its own stroker, not by perfect-freehand.** `Stroke.snapped` is
+  persisted and switches `strokeToOutline` onto `snappedOutline`, which sweeps a nib of constant
+  half-width along the centreline. Snapped points are exact and their pressure is constant, so there
+  is no width to vary and nothing the freehand engine was contributing — its smoothing only put back
+  the wobble the snap removed, and its corner handling was the source of every corner defect the
+  feature had. Grain still applies, so a snapped crayon is still a crayon.
+- **The corner is where the nib is round and the geometry is not.** The centreline keeps hard corners;
+  the outside of a corner is an arc of exactly the nib's radius and the inside is the plain crossing
+  of the two band edges, mitred until it would run more than four nib widths in and then bevelled.
+  That's what a round pen physically does, it keeps a rectangle reading as a rectangle, and the
+  softness scales with the brush. Rounding the *centreline* instead was tried and reverted: it makes
+  the outer radius `fillet + nib`, which turned rectangles into rounded rectangles.
+- **A closed snapped shape is an annulus.** One filled path describes it by walking the outside and
+  the inside in opposite directions and bridging between them; the bridge must leave and re-enter at
+  the same point or the winding flips and a hole opens along the way. The bridge sits mid-edge, which
+  is why `polygonRing` reports where to open the ring.
 - **BRAT-first distribution** ahead of community-store approval.
