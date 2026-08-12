@@ -5,17 +5,19 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.13.3) | Done — see below |
+| Shipped (v0.1.x → v0.13.4) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
 | Later (bigger features) | Done — #13 selection, #14 snapping |
-| Distribution | Rebrand done; community-store submission pending |
+| Snapping massage pass | Done — v0.13.3 renders it clean, v0.13.4 settles the corners |
+| **Community-plugin submission** | **Next up** |
+| Post-MVP | Text tool, images in a sketch, layers — parked below |
 
 **Active branch:** `main`
-**Last updated:** 2026-08-11
+**Last updated:** 2026-08-12
 
 ---
 
-## Shipped (v0.1.x → v0.13.3)
+## Shipped (v0.1.x → v0.13.4)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -75,6 +77,11 @@
 - [x] Snapped shapes now *draw* as cleanly as they're recognised. The stroke renderer's smoothing was
       re-curving their exact edges — 2.74px of stray on a 200px square, now 0.00px — while corners
       keep a soft shoulder and a snapped crayon keeps its grain (v0.13.3)
+- [x] Snapped corners softened and made consistent: each is a true circular fillet sampled by angle,
+      and the path now opens mid-edge instead of on a corner. A square's corners went from 100° of
+      turn on a single vertex (and 80° of variation between them) to 30° apiece with none. The blob
+      where the stroke's ends met is gone, as are the diagonal wedge one corner drew and the notch
+      that forked a triangle's apex (v0.13.4)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -156,6 +163,19 @@ reworked in isolation.
     line lively and a snapped one lumpy.
   - Recognition is DOM-free in `src/shapes.ts`, so the judgement calls are testable.
   - Setting: **Hold to snap shapes** under Drawing, on by default.
+  - Corners are **filleted, not mitred**, and the rebuilt path opens in the middle of its longest
+    edge. A hard vertex put the whole turn on one outline vertex, which read as pointy and varied
+    corner to corner, and opening the path on a corner stacked both of the stroke's round caps there
+    as a blob. Rounding also matches how the shapes were asked for: geometric, with soft corners.
+
+## Post-MVP — parked
+
+Wanted, but deliberately after the community-plugin submission. None of these are started.
+
+- [ ] **Text tool** — type into a sketch rather than drawing letters.
+- [ ] **Add an image to a sketch** — bring a vault image or a photo onto the canvas to draw over.
+- [ ] **Layers** — separate a sketch into layers that can be hidden, reordered and drawn on
+      independently.
 
 ## Distribution
 - [x] Rebrand to store-compliant id/name (`tabula-rasa` / "Tabula Rasa")

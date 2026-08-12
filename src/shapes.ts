@@ -86,8 +86,46 @@ const ELLIPSE_MIN_RADIUS = 6;
 /** How many samples a snapped shape is rebuilt from. */
 const LINE_SAMPLES = 16;
 const ELLIPSE_SAMPLES = 64;
-/** Samples per edge of a snapped polygon — enough that the edge reads as straight. */
-const POLYGON_EDGE_SAMPLES = 10;
+/**
+ * Corners are eased with a small fillet rather than left as hard vertices. A hard
+ * vertex makes the stroke renderer mitre the outline to a spike, which reads as
+ * pointy and — because the spike length depends on how sharp the angle is —
+ * inconsistent between the corners of one shape.
+ *
+ * The radius is a fraction of the *shorter* adjacent edge so a long thin triangle
+ * doesn't get a fillet bigger than its own short side, capped in absolute terms so
+ * a large shape doesn't end up looking like a rounded rectangle.
+ */
+const POLYGON_CORNER_RADIUS_FRAC = 0.12;
+const POLYGON_CORNER_MAX_RADIUS = 14;
+/**
+ * Note there is deliberately no cap on how far a fillet moves a corner's tip. It's
+ * tempting: at 90° a 14px fillet shifts the tip 5.8px, but on a 17° sliver the same
+ * fillet shifts it 12px and blunts the point. Capping it and letting the radius fall
+ * is worse, though — a fillet tighter than the nib makes the inner edge of the band
+ * cross itself, and the tip comes out with a notch of bare canvas through it, which
+ * is the same defect a hard vertex had. A bounded blunting beats a hole in the ink.
+ */
+/**
+ * Samples along a corner fillet, chosen so no single vertex of the drawn outline
+ * carries more than about this much of the turn. Fixed counts don't work: the
+ * canvas fills the outline with straight segments, so a vertex holding 100° of turn
+ * *is* a point, and an acute corner has far more total turn to spread than a right
+ * angle. Measured on a triangle with a ~15° apex, a flat six samples left 106° on
+ * one vertex while its other corners sat near 44°, which is the inconsistency
+ * between one shape's corners that was reported.
+ */
+const POLYGON_CORNER_TURN_STEP = (15 * Math.PI) / 180;
+const POLYGON_CORNER_MIN_SAMPLES = 6;
+const POLYGON_CORNER_MAX_SAMPLES = 20;
+/**
+ * Samples along the straight run between two fillets. Even, because the run's
+ * midpoint has to be one of them — that's where the path is cut open, so the
+ * stroke's two round caps land on top of each other in the middle of a straight
+ * edge, where they sit flush inside the edge and disappear. Cutting at a corner
+ * instead left a visible blob: two caps plus a turn in the same place.
+ */
+const POLYGON_EDGE_SAMPLES = 6;
 
 /** Corner detection resamples the path to this many evenly spaced points. */
 const CORNER_SAMPLES = 64;
@@ -421,6 +459,130 @@ export function recogniseShape(points: Point[]): Shape | null {
 	);
 }
 
+/** The point `r` along the way from `from` toward `to`. */
+function towards(from: Vec, to: Vec, r: number): Vec {
+	const len = dist(from, to) || 1;
+	return { x: from.x + ((to.x - from.x) / len) * r, y: from.y + ((to.y - from.y) / len) * r };
+}
+
+function lerp(a: Vec, b: Vec, t: number): Vec {
+	return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+/**
+ * The arc that rounds one corner: a circle tangent to both edges, `trim` back from
+ * the corner along each. Returned as samples spaced by equal *angle*, which is the
+ * point of using an arc rather than a Bézier through the corner — a Bézier's
+ * curvature bunches up in its middle, so on an acute corner uniform sampling
+ * under-samples the very part that turns hardest and leaves a visible point there.
+ *
+ * Returns null when the corner isn't really a corner (collinear edges), leaving the
+ * caller to run straight through it.
+ */
+function cornerArc(prev: Vec, cur: Vec, next: Vec, trim: number): Vec[] | null {
+	const toPrev = towards(cur, prev, 1);
+	const toNext = towards(cur, next, 1);
+	const u1 = { x: toPrev.x - cur.x, y: toPrev.y - cur.y };
+	const u2 = { x: toNext.x - cur.x, y: toNext.y - cur.y };
+	// Interior angle at the corner, and the bisector the arc's centre sits on.
+	const interior = Math.acos(Math.min(1, Math.max(-1, u1.x * u2.x + u1.y * u2.y)));
+	const bisector = { x: u1.x + u2.x, y: u1.y + u2.y };
+	const bisLen = Math.hypot(bisector.x, bisector.y);
+	const sweep = Math.PI - interior;
+	if (trim <= 0 || bisLen < 1e-6 || sweep < 1e-3) return null;
+
+	const half = interior / 2;
+	const centreDist = trim / Math.max(1e-6, Math.cos(half));
+	const centre = {
+		x: cur.x + (bisector.x / bisLen) * centreDist,
+		y: cur.y + (bisector.y / bisLen) * centreDist,
+	};
+	const entry = { x: cur.x + u1.x * trim, y: cur.y + u1.y * trim };
+	const exit = { x: cur.x + u2.x * trim, y: cur.y + u2.y * trim };
+	const from = Math.atan2(entry.y - centre.y, entry.x - centre.x);
+	const to = Math.atan2(exit.y - centre.y, exit.x - centre.x);
+	let delta = to - from;
+	while (delta > Math.PI) delta -= Math.PI * 2;
+	while (delta < -Math.PI) delta += Math.PI * 2;
+	const radius = Math.hypot(entry.x - centre.x, entry.y - centre.y);
+
+	const samples = Math.min(
+		POLYGON_CORNER_MAX_SAMPLES,
+		Math.max(
+			POLYGON_CORNER_MIN_SAMPLES,
+			Math.ceil(Math.abs(delta) / POLYGON_CORNER_TURN_STEP),
+		),
+	);
+	const out: Vec[] = [];
+	for (let i = 0; i <= samples; i++) {
+		const a = from + (delta * i) / samples;
+		out.push({ x: centre.x + Math.cos(a) * radius, y: centre.y + Math.sin(a) * radius });
+	}
+	return out;
+}
+
+/**
+ * A polygon's outline as a closed ring of samples, with each corner eased into a
+ * small fillet, plus the index to start drawing from.
+ *
+ * Two things are going on. The fillets replace hard vertices, which the stroke
+ * renderer would otherwise mitre into a spike whose length depends on how sharp
+ * the angle is — that's what made one shape's corners look inconsistent with each
+ * other. And the seam is placed at the midpoint of the *longest* straight run: a
+ * stroke gets a round cap at each end, and a cap of radius size/2 centred on the
+ * centreline of an edge of half-width size/2 sits entirely inside that edge, so
+ * both caps vanish. On a corner they don't — the band turns away underneath them.
+ */
+export function polygonRing(corners: Vec[]): { ring: Vec[]; seam: number } {
+	const n = corners.length;
+	const at = (i: number) => corners[((i % n) + n) % n];
+
+	const radii: number[] = [];
+	for (let c = 0; c < n; c++) {
+		const prevLen = dist(at(c - 1), at(c));
+		const nextLen = dist(at(c), at(c + 1));
+		radii.push(
+			Math.max(
+				0,
+				Math.min(
+					POLYGON_CORNER_MAX_RADIUS,
+					POLYGON_CORNER_RADIUS_FRAC * Math.min(prevLen, nextLen),
+					// Never more than a third of either adjacent edge, so the two
+					// fillets sharing an edge always leave a straight run between them.
+					prevLen / 3,
+					nextLen / 3,
+				),
+			),
+		);
+	}
+
+	// Every corner's arc up front, so both ends of an edge agree on where the
+	// straight run between them starts and stops even if one corner degenerates.
+	const arcs = corners.map((cur, c) => cornerArc(at(c - 1), cur, at(c + 1), radii[c]) ?? [cur]);
+
+	const ring: Vec[] = [];
+	let seam = 0;
+	let seamLen = -1;
+	for (let c = 0; c < n; c++) {
+		const arc = arcs[c];
+		for (const v of arc) ring.push(v);
+
+		const exit = arc[arc.length - 1];
+		const nextArc = arcs[(c + 1) % n];
+		const nextEntry = nextArc[0];
+		const runStart = ring.length;
+		for (let i = 1; i < POLYGON_EDGE_SAMPLES; i++) {
+			ring.push(lerp(exit, nextEntry, i / POLYGON_EDGE_SAMPLES));
+		}
+		const runLen = dist(exit, nextEntry);
+		if (runLen > seamLen) {
+			seamLen = runLen;
+			seam = runStart + POLYGON_EDGE_SAMPLES / 2 - 1;
+		}
+	}
+	return { ring, seam };
+}
+
 /**
  * Rebuild a shape as stroke samples. Pressure is constant — a snapped shape with
  * the original's pressure wobble would keep the shakiness the snap was meant to
@@ -441,20 +603,14 @@ export function shapePoints(shape: Shape, pressure: number): Point[] {
 		return out;
 	}
 	if (shape.kind === "polygon") {
+		const { ring, seam } = polygonRing(shape.corners);
 		const out: Point[] = [];
-		const n = shape.corners.length;
-		for (let c = 0; c < n; c++) {
-			const a = shape.corners[c];
-			const b = shape.corners[(c + 1) % n];
-			// Each edge stops one sample short: the next edge supplies that corner,
-			// so no vertex is emitted twice.
-			for (let i = 0; i < POLYGON_EDGE_SAMPLES; i++) {
-				const t = i / POLYGON_EDGE_SAMPLES;
-				out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, p });
-			}
+		// Walk the whole ring from the seam and back to it, so the path opens and
+		// closes at the same mid-edge point rather than at a corner.
+		for (let i = 0; i <= ring.length; i++) {
+			const v = ring[(seam + i) % ring.length];
+			out.push({ x: v.x, y: v.y, p });
 		}
-		// Close on the first corner.
-		out.push({ x: shape.corners[0].x, y: shape.corners[0].y, p });
 		return out;
 	}
 	const out: Point[] = [];
