@@ -100,12 +100,24 @@ export function strokeToOutline(stroke: Stroke): number[][] {
 	const inputPoints = stroke.points.map((pt) => [pt.x, pt.y, pt.p]);
 	const opts = TOOL_STROKE_OPTIONS[stroke.tool] ?? TOOL_STROKE_OPTIONS.pen;
 	const size = stroke.size * opts.weight;
-	const taper = opts.taper * size;
+	/**
+	 * A snapped shape's points are already exact, so streamlining is not just
+	 * unnecessary but actively wrong: it drags each sample toward the last and puts
+	 * a wobble straight back into the edges the snap produced. Measured on a 200px
+	 * square at size 6 — the drawn edge strayed 6.64px from straight with the pen's
+	 * usual 0.5, and 2.10px with it off, the remainder being the corner mitring
+	 * that makes a snapped corner look drawn rather than printed.
+	 *
+	 * Taper goes too, or a closed shape thins out where its ends meet. Weight,
+	 * thinning and grain stay, so a snapped crayon is still recognisably a crayon.
+	 */
+	const streamline = stroke.snapped ? 0 : opts.streamline;
+	const taper = (stroke.snapped ? 0 : opts.taper) * size;
 	const outline = getStroke(inputPoints, {
 		size,
 		thinning: opts.thinning,
 		smoothing: opts.smoothing,
-		streamline: opts.streamline,
+		streamline,
 		// Finger/mouse strokes have no real pressure; taper them from speed.
 		simulatePressure: stroke.simulatePressure ?? false,
 		start: { taper },

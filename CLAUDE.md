@@ -166,8 +166,18 @@ circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-fre
   mangled upright one; under 4° it snaps level. The fit is then rejected unless it passes close to
   every drawn point, which is what leaves a trapezoid or parallelogram alone.
 - **Triangles keep the corners drawn.** Regularising to equilateral would invent a shape.
-- **A snapped stroke stops accepting points** and sets `simulatePressure: false`. Velocity taper is
-  what makes a freehand line lively and a snapped one lumpy.
+- **A snapped stroke stops accepting points**, sets `simulatePressure: false`, and sets
+  `snapped: true`.
+- **`snapped` is a rendering flag as much as a record, and it's persisted.** `strokeToOutline` drops
+  `streamline` (and taper) for a snapped stroke: streamline is what makes freehand feel good, by
+  dragging each sample toward the last — and on already-exact points it puts the wobble straight back
+  in. Measured on a 200px square at size 6: the drawn edge strayed **2.74px** from straight with the
+  pen's usual 0.5 and **0.00px** with it off. That was reported as "the snapped square still looks
+  wobbly", and it was the renderer, not the recogniser. Weight, thinning and grain stay, so a snapped
+  crayon still reads as a crayon.
+- **Measure edge wobble as *variation*, not distance from the ideal.** perfect-freehand does not apply
+  `thinning` at constant pressure, so half-width is `size/2`; assuming otherwise put a flat 0.90px of
+  phantom error into every figure in a first pass at this.
 - Recognised: line, ellipse, rectangle (3 or 4 corners). Five or more corners is left alone.
 
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work

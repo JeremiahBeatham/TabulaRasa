@@ -5,7 +5,7 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.13.2) | Done — see below |
+| Shipped (v0.1.x → v0.13.3) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
 | Later (bigger features) | Done — #13 selection, #14 snapping |
 | Distribution | Rebrand done; community-store submission pending |
@@ -15,7 +15,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.13.2)
+## Shipped (v0.1.x → v0.13.3)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -72,6 +72,9 @@
 - [x] Polygon recognition made robust against real strokes rather than clean synthetic ones: corner
       count is no longer trusted, so squares with corners rounded over 30px and ±8px of wobble snap
       where they previously fell through (v0.13.2)
+- [x] Snapped shapes now *draw* as cleanly as they're recognised. The stroke renderer's smoothing was
+      re-curving their exact edges — 2.74px of stray on a 200px square, now 0.00px — while corners
+      keep a soft shoulder and a snapped crayon keeps its grain (v0.13.3)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)

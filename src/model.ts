@@ -39,6 +39,15 @@ export interface Stroke {
 	 * Set for finger/mouse input (no usable pressure) so lines look natural.
 	 */
 	simulatePressure?: boolean;
+	/**
+	 * Set when hold-to-snap replaced this stroke with a recognised shape. Its points
+	 * are already exact, so it is rendered without the smoothing that makes freehand
+	 * look natural — that smoothing pulls samples toward each other and would put a
+	 * wobble back into the straight edges the snap just produced.
+	 *
+	 * Persisted, so reopening a sketch draws the shape as crisply as when it snapped.
+	 */
+	snapped?: boolean;
 	points: Point[];
 }
 

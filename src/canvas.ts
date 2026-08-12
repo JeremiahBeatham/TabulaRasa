@@ -1117,6 +1117,9 @@ export class SketchCanvas {
 		// Velocity taper is what makes a freehand line lively and a snapped one
 		// lumpy, so a snapped shape gets an even width.
 		stroke.simulatePressure = false;
+		// Tells the renderer to skip the smoothing meant for freehand input, which
+		// would otherwise re-curve these now-exact edges. Saved with the stroke.
+		stroke.snapped = true;
 		this.snapped = true;
 		this.redraw();
 	}
