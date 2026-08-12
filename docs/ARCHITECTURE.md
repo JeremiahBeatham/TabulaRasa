@@ -75,6 +75,13 @@ styles.css      — UI styling
   makes every stroke a gamble; holding still is an explicit request. Recognition is also conservative
   by design — lines, ellipses, rectangles and triangles only, and a shape it isn't sure about is left
   exactly as drawn, because a wrong snap destroys work while a missed one costs one more attempt.
+- **A snapped polygon's corners are arcs, and its path opens mid-edge.** Both are rendering
+  decisions, not recognition ones — the recogniser still holds plain corners. A hard vertex makes the
+  stroke renderer put the entire turn on one outline vertex, which the canvas fills with straight
+  segments, so it draws as a point whose sharpness varies corner to corner; and a path that opens on
+  a corner stacks both of the stroke's round caps where the band is turning, which shows as a blob.
+  The fillet is a real circular arc sampled by equal angle rather than a Bézier through the corner,
+  because a Bézier's curvature bunches in its middle and leaves a point on acute corners.
 - **A snapped shape is rendered differently from a freehand one.** `Stroke.snapped` is persisted and
   turns off the stroke smoothing that exists to make hand-drawn input feel good: on points that are
   already exact, that smoothing only reintroduces the wobble the snap removed. The tool's weight and

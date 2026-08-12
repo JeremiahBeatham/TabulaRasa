@@ -175,10 +175,37 @@ circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-fre
   pen's usual 0.5 and **0.00px** with it off. That was reported as "the snapped square still looks
   wobbly", and it was the renderer, not the recogniser. Weight, thinning and grain stay, so a snapped
   crayon still reads as a crayon.
+- **Snapped polygon corners are circular fillets, and the path opens mid-edge.** Both are in
+  `polygonRing`, and both are *rendering* fixes — the recogniser still returns plain corners.
+  A hard vertex makes perfect-freehand put the whole turn on one outline vertex; the canvas fills the
+  outline with `lineTo`, so that vertex draws as a point, and how sharp it looks depends on the angle,
+  which is why one shape's corners disagreed with each other. Measured on a 200px square at size 6:
+  **100° of turn on one vertex with 80° of variation between corners, now 30° apiece with 0°.** The
+  arc must be a real circle sampled by equal *angle* — a quadratic Bézier through the corner bunches
+  its curvature in the middle and still leaves a point on an acute corner (measured 106°).
+  Opening the path on a corner stacked both round caps where the band turns, which is the blob that
+  was reported; on a straight edge a cap of radius `size/2` fits inside a band of half-width `size/2`
+  and vanishes. Seam goes on the **longest** run. Two more traps found by rasterising: a hard vertex
+  also drew one corner as a diagonal wedge and forked a triangle's apex with a hole in it.
+- **Don't cap how far a fillet moves a corner.** Tempting, since a 14px fillet shifts a 17° tip 12px
+  versus 5.8px at 90°. But shrinking the fillet to protect the tip makes it tighter than the nib, the
+  inner edge of the band crosses itself, and the tip comes out with a notch of bare canvas through it
+  — the same defect the hard vertex had. A bounded blunting beats a hole in the ink. Tried, reverted.
+- **Corner softness scales with `radius / half-width`, so small nibs were the broken case.** At size 6
+  a 14px fillet gives 30° per vertex; at size 40 the nib's own roundness dominates and a corner looks
+  smooth either way. That's why `shapePoints` does *not* need the stroke size — checked before adding
+  the coupling, not assumed.
 - **Measure edge wobble as *variation*, not distance from the ideal.** perfect-freehand does not apply
   `thinning` at constant pressure, so half-width is `size/2`; assuming otherwise put a flat 0.90px of
   phantom error into every figure in a first pass at this.
 - Recognised: line, ellipse, rectangle (3 or 4 corners). Five or more corners is left alone.
+- **A round cap is not edge wobble.** A cap sweeps from one side of the band to the other, so its
+  vertices legitimately sit at every distance from 0 to `size/2`. A straightness metric that doesn't
+  exclude the seam reported 2.84px of "wobble" on a geometrically perfect square. Assert cap
+  *placement* separately instead.
+
+**Next phase: community-plugin submission.** The snapping massage pass is done (v0.13.4). Text tool,
+images in a sketch and layers are all post-MVP and parked in `docs/PHASES.md` — not started.
 
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he
