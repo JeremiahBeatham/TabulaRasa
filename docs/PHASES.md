@@ -5,10 +5,10 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.13.4) | Done — see below |
+| Shipped (v0.1.x → v0.13.5) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
 | Later (bigger features) | Done — #13 selection, #14 snapping |
-| Snapping massage pass | Done — v0.13.3 renders it clean, v0.13.4 settles the corners |
+| Snapping massage pass | Done — v0.13.3 renders it clean, v0.13.5 settles the corners |
 | **Community-plugin submission** | **Next up** |
 | Post-MVP | Text tool, images in a sketch, layers — parked below |
 
@@ -17,7 +17,7 @@
 
 ---
 
-## Shipped (v0.1.x → v0.13.4)
+## Shipped (v0.1.x → v0.13.5)
 - [x] Natural, pressure-tapered drawing (perfect-freehand) — finger, Apple Pencil, mouse, stylus; velocity-based taper when there's no real pressure
 - [x] Mobile-first input: Pointer Events, coalesced sampling, no accidental scrolling, optional palm rejection
 - [x] Pen, highlighter, whole-stroke eraser; color palette; brush sizes; undo/redo; clear
@@ -82,6 +82,13 @@
       turn on a single vertex (and 80° of variation between them) to 30° apiece with none. The blob
       where the stroke's ends met is gone, as are the diagonal wedge one corner drew and the notch
       that forked a triangle's apex (v0.13.4)
+- [x] Snapped shapes now get their own stroker instead of going through perfect-freehand, because
+      v0.13.4's corners were reported as too soft — rounding the centreline makes a corner's outer
+      radius `fillet + nib`, so at size 6 it was 17px round and rectangles read as rounded rectangles.
+      A nib of constant width is now swept along a hard-cornered centreline: **the outside of a corner
+      is an arc of exactly the brush radius and the inside is a clean crossing**, which is what a round
+      pen physically does, and it means corner softness scales with the brush. Edges measure 0.000px
+      off straight (v0.13.5)
 
 ## Next — UX Polish
 - [x] [#7 — Which controls belong in settings vs. on the canvas](https://github.com/JeremiahBeatham/TabulaRasa/issues/7)
@@ -163,10 +170,14 @@ reworked in isolation.
     line lively and a snapped one lumpy.
   - Recognition is DOM-free in `src/shapes.ts`, so the judgement calls are testable.
   - Setting: **Hold to snap shapes** under Drawing, on by default.
-  - Corners are **filleted, not mitred**, and the rebuilt path opens in the middle of its longest
-    edge. A hard vertex put the whole turn on one outline vertex, which read as pointy and varied
-    corner to corner, and opening the path on a corner stacked both of the stroke's round caps there
-    as a blob. Rounding also matches how the shapes were asked for: geometric, with soft corners.
+  - **Snapped shapes are stroked by their own code**, not by perfect-freehand: a nib of constant
+    half-width swept along a hard-cornered centreline, so the outside of a corner is an arc of exactly
+    the brush radius and the inside is the plain crossing of the two band edges. That's what a round
+    pen does, it keeps a rectangle reading as a rectangle, and the softness scales with the brush.
+    Two earlier attempts are recorded because they were both wrong in instructive ways: a hard vertex
+    through perfect-freehand drew corners as points, wedges, and once a hole through a triangle's
+    apex; rounding the centreline instead fixed those but made corners `fillet + nib` and every
+    rectangle looked like a rounded rectangle.
 
 ## Post-MVP — parked
 

@@ -168,33 +168,40 @@ circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-fre
 - **Triangles keep the corners drawn.** Regularising to equilateral would invent a shape.
 - **A snapped stroke stops accepting points**, sets `simulatePressure: false`, and sets
   `snapped: true`.
-- **`snapped` is a rendering flag as much as a record, and it's persisted.** `strokeToOutline` drops
-  `streamline` (and taper) for a snapped stroke: streamline is what makes freehand feel good, by
-  dragging each sample toward the last — and on already-exact points it puts the wobble straight back
-  in. Measured on a 200px square at size 6: the drawn edge strayed **2.74px** from straight with the
-  pen's usual 0.5 and **0.00px** with it off. That was reported as "the snapped square still looks
-  wobbly", and it was the renderer, not the recogniser. Weight, thinning and grain stay, so a snapped
-  crayon still reads as a crayon.
-- **Snapped polygon corners are circular fillets, and the path opens mid-edge.** Both are in
-  `polygonRing`, and both are *rendering* fixes — the recogniser still returns plain corners.
-  A hard vertex makes perfect-freehand put the whole turn on one outline vertex; the canvas fills the
-  outline with `lineTo`, so that vertex draws as a point, and how sharp it looks depends on the angle,
-  which is why one shape's corners disagreed with each other. Measured on a 200px square at size 6:
-  **100° of turn on one vertex with 80° of variation between corners, now 30° apiece with 0°.** The
-  arc must be a real circle sampled by equal *angle* — a quadratic Bézier through the corner bunches
-  its curvature in the middle and still leaves a point on an acute corner (measured 106°).
-  Opening the path on a corner stacked both round caps where the band turns, which is the blob that
-  was reported; on a straight edge a cap of radius `size/2` fits inside a band of half-width `size/2`
-  and vanishes. Seam goes on the **longest** run. Two more traps found by rasterising: a hard vertex
-  also drew one corner as a diagonal wedge and forked a triangle's apex with a hole in it.
-- **Don't cap how far a fillet moves a corner.** Tempting, since a 14px fillet shifts a 17° tip 12px
-  versus 5.8px at 90°. But shrinking the fillet to protect the tip makes it tighter than the nib, the
-  inner edge of the band crosses itself, and the tip comes out with a notch of bare canvas through it
-  — the same defect the hard vertex had. A bounded blunting beats a hole in the ink. Tried, reverted.
-- **Corner softness scales with `radius / half-width`, so small nibs were the broken case.** At size 6
-  a 14px fillet gives 30° per vertex; at size 40 the nib's own roundness dominates and a corner looks
-  smooth either way. That's why `shapePoints` does *not* need the stroke size — checked before adding
-  the coupling, not assumed.
+- **`snapped` is a rendering flag as much as a record, and it's persisted.** It switches
+  `strokeToOutline` onto a different renderer entirely (below). It began as "turn streamline off" —
+  streamline makes freehand feel good by dragging each sample toward the last, and on already-exact
+  points it put the wobble straight back in, measured at **2.74px** of stray on a 200px square at
+  size 6. That was reported as "the snapped square still looks wobbly", and it was the renderer, not
+  the recogniser — as every corner complaint since has also turned out to be.
+- **A snapped shape is stroked by our own code, not by perfect-freehand** (`snappedOutline` in
+  `src/export.ts`). It sweeps a nib of constant half-width along the centreline: **outside of every
+  corner is an arc of exactly the nib's radius, inside is the plain crossing of the two band edges.**
+  That is what a round nib physically does, and it's the look — crisp geometry softened by the pen
+  rather than by the geometry. Snapped strokes have constant pressure, so perfect-freehand was
+  contributing nothing but bugs. Grain still applies, so a snapped crayon is still a crayon.
+- **Never round the centreline.** v0.13.4 filleted corners at 12% of the shorter edge (max 14px) and
+  it was reported as too soft: a centreline radius makes the outer radius `fillet + nib`, so at size 6
+  a corner was **17px round instead of 3px** and rectangles read as rounded rectangles. Only a
+  centreline radius of zero leaves the nib's own width as the whole of the roundness. Corner softness
+  then scales with the brush for free, which is the behaviour that was actually wanted.
+- **Why not perfect-freehand for these:** it emits one outline vertex per input sample, so a hard
+  corner puts the entire turn on one vertex, which the canvas joins with `lineTo` and therefore draws
+  as a point — 100° on one vertex with 80° of variation between a square's corners. On sharp corners
+  it also folded the band through itself: rasterising found one corner drawn as a diagonal wedge and a
+  triangle's apex forked with a hole in it.
+- **Inner corners are mitred with a limit** (`SNAP_MITER_LIMIT`, 4 — SVG's own default), then
+  bevelled. The miter runs `1 / cos(turn/2)` nib widths inward: 1.41 at a right angle, 2.0 at 60°,
+  but 6.6 on a 17° sliver, which would spear a spike deep into the ink.
+- **A closed stroke is an annulus, and its bridge must leave and re-enter at the same point.** One
+  filled path describes a ring by walking both boundaries in opposite directions and crossing between
+  them. Returning to the inner boundary at the *last* vertex instead of the first flipped the winding
+  over the 33px in between and cut **134 samples of bare canvas through a 200px square's top edge** —
+  on a shape whose every corner measured perfect. The crossing lands mid-edge because that's where
+  `polygonRing` opens the ring; a corner is the worst place for it.
+- **Test solidity, not just corner shape.** A hole in the ink is the worst failure mode here and it
+  hides behind correct-looking corner measurements. Walk the centreline and assert every sample is
+  inked, at the smallest and largest brush sizes and with grain on.
 - **Measure edge wobble as *variation*, not distance from the ideal.** perfect-freehand does not apply
   `thinning` at constant pressure, so half-width is `size/2`; assuming otherwise put a flat 0.90px of
   phantom error into every figure in a first pass at this.
