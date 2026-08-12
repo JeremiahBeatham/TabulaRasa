@@ -75,4 +75,8 @@ styles.css      — UI styling
   makes every stroke a gamble; holding still is an explicit request. Recognition is also conservative
   by design — lines, ellipses, rectangles and triangles only, and a shape it isn't sure about is left
   exactly as drawn, because a wrong snap destroys work while a missed one costs one more attempt.
+- **A snapped shape is rendered differently from a freehand one.** `Stroke.snapped` is persisted and
+  turns off the stroke smoothing that exists to make hand-drawn input feel good: on points that are
+  already exact, that smoothing only reintroduces the wobble the snap removed. The tool's weight and
+  texture are kept, so a snapped crayon is still a crayon.
 - **BRAT-first distribution** ahead of community-store approval.
