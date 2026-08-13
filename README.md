@@ -4,14 +4,14 @@ Finger- and Apple Pencil-friendly sketching for [Obsidian](https://obsidian.md).
 Draw the way you do in the native iOS Notes app — directly in your vault — then
 embed sketches in notes or keep them as standalone, re-editable files.
 
-> **Status:** working MVP (v0.13.1). Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
-> today; a community-plugins submission is in progress. See where we are and where
+> **Status:** feature-complete MVP, preparing for community-plugin submission. Install via
+> [BRAT](https://github.com/TfTHacker/obsidian42-brat) today. See where we are and where
 > we're going in **[docs/PHASES.md](docs/PHASES.md)**.
 
 ## Screenshots
 
-<!-- TODO: add screenshots / a short GIF of drawing + an inline embed in a note.
-     Drop images in an `assets/` folder and reference them here, e.g.:
+<!-- Awaiting store-listing screenshots. Drop images in an `assets/` folder and
+     reference them here, e.g.:
      ![Drawing on iPhone](assets/draw.png)
      ![Inline preview in a note](assets/embed.png) -->
 
@@ -54,6 +54,14 @@ embed sketches in notes or keep them as standalone, re-editable files.
   whether to **embed it in a note** or **just save the image** to your vault, so
   you don't accumulate image files you didn't ask for. SVG export is also
   available.
+- 🎯 **Selection tool** — lasso a freehand boundary and it snaps closed on lift;
+  anything inside becomes a scalable, rotatable selection you can move, flip,
+  copy, cut, paste, or delete. No extra toolbar — size and colour become
+  selection mode and transform while a selection is active.
+- 🧲 **Hold to snap shapes** — pause at the end of a stroke without lifting and a
+  rough line, circle, rectangle, or triangle becomes a clean one, matching the
+  orientation and proportions you drew. Off by a setting if you'd rather keep
+  every line freehand.
 
 ## Usage
 
@@ -66,9 +74,19 @@ embed sketches in notes or keep them as standalone, re-editable files.
   by the plugin); switch to a plain link in settings (*"Insert sketches into notes
   as"*). Either way the sketch remembers which note it came from. Click an inline
   preview to open the sketch for editing.
-- **Pick a tool:** tap the tool button to choose pen, brush, highlighter, or an
+- **Pick a tool:** tap the tool button to choose pen, brush, highlighter, an
   eraser — **objects** (removes a whole line) or **pixels** (rubs out just the
-  part you touch).
+  part you touch) — or the selection tool.
+- **Select, transform, and copy strokes:** with the selection tool, drag a
+  boundary around what you want — it closes itself when you lift. Drag the box
+  to move it, or its handles to scale or rotate. The size button becomes
+  selection mode (Replace / Add / Remove) and the colour button becomes
+  transform (flip horizontal, flip vertical, rotate 90°); long-press for copy,
+  cut, paste, and delete.
+- **Snap a rough shape:** finish a line, circle, rectangle, or triangle and hold
+  your finger still for a moment without lifting — it straightens into a clean
+  version of what you drew. Toggle *"Hold to snap shapes"* in settings to turn
+  this off.
 - **Undo / redo:** double-tap with two fingers to undo, three to redo. Both are
   also in the settings sheet.
 - **Edit later:** open the `.sketch` file from the file explorer or its link.
@@ -114,8 +132,8 @@ Obsidian Sync or a git client) and enable it there.
 ## Roadmap
 
 Tabula Rasa is an actively evolving MVP. See **[docs/PHASES.md](docs/PHASES.md)** for the
-shipped feature set and what's planned next — a selection tool (lasso/rectangle
-with move, scale, delete and duplicate) and smart shape snapping.
+full shipped feature set. Next up is preparing for community-plugin submission; a text
+tool, adding images to a sketch, and layers are planned after that.
 
 ## Development
 
