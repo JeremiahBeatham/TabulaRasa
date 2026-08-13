@@ -1345,7 +1345,7 @@ class MoreSheet extends Modal {
 			.addButton((b) =>
 				b
 					.setButtonText("Clear")
-					.setWarning()
+					.setDestructive()
 					.onClick(() => {
 						this.close();
 						this.actions.onClear();

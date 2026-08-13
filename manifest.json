@@ -1,10 +1,10 @@
 {
   "id": "tabula-rasa",
   "name": "Tabula Rasa",
-  "version": "0.13.5",
+  "version": "0.13.6",
   "minAppVersion": "1.4.0",
   "description": "Finger- and Apple Pencil-friendly sketching. Draw like the iOS Notes tool, embed sketches in notes, or keep them as standalone re-editable files.",
   "author": "Jeremiah Beatham",
-  "authorUrl": "https://github.com/JeremiahBeatham/TabulaRasa",
+  "authorUrl": "https://github.com/JeremiahBeatham",
   "isDesktopOnly": false
 }

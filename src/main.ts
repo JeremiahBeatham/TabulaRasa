@@ -92,11 +92,10 @@ export default class TabulaRasaPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData(),
-		);
+		// loadData() returns whatever JSON is on disk — untrusted shape, asserted
+		// once here rather than left as `any` for the assignment below.
+		const saved = (await this.loadData()) as Partial<TabulaRasaSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved ?? {});
 	}
 
 	async saveSettings(): Promise<void> {

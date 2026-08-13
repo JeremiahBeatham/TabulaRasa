@@ -165,7 +165,6 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 				slider
 					.setLimits(1, 40, 1)
 					.setValue(this.plugin.settings.defaultBrushSize)
-					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.defaultBrushSize = value;
 						await this.plugin.saveSettings();
@@ -295,7 +294,6 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 				slider
 					.setLimits(1, 4, 1)
 					.setValue(this.plugin.settings.pngExportScale)
-					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.pngExportScale = value;
 						await this.plugin.saveSettings();

@@ -362,6 +362,8 @@ export async function renderDocToPngBlob(
 	doc: SketchDoc,
 	scale = 2,
 ): Promise<Blob> {
+	// Never attached to the DOM — createEl requires a parent to append to, which
+	// a detached offscreen render target doesn't have.
 	const canvas = document.createElement("canvas");
 	canvas.width = Math.max(1, Math.round(doc.width * scale));
 	canvas.height = Math.max(1, Math.round(doc.height * scale));

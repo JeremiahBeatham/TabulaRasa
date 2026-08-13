@@ -191,9 +191,31 @@ Wanted, but deliberately after the community-plugin submission. None of these ar
 ## Distribution
 - [x] Rebrand to store-compliant id/name (`tabula-rasa` / "Tabula Rasa")
 - [x] Add LICENSE, screenshots, final README polish
-- [ ] Submit via [community.obsidian.md](https://community.obsidian.md): sign in with an Obsidian account, connect
-      GitHub, then Plugins → New plugin → `https://github.com/JeremiahBeatham/TabulaRasa`. Obsidian retired the
-      `community-plugins.json` PR model — a PR against `obsidianmd/obsidian-releases` no longer works (confirmed:
-      the API itself 404s on PR creation there now). All prerequisites this new flow checks are already true of
-      this repo: `README.md`, `LICENSE`, `manifest.json`, and a GitHub release with the three plugin assets.
-- Until then: install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
+- [x] Submitted via [community.obsidian.md](https://community.obsidian.md). Obsidian retired the `community-plugins.json`
+      PR model — a PR against `obsidianmd/obsidian-releases` no longer works (confirmed: the API itself 404s on PR
+      creation there). The new flow signs in with an Obsidian account, connects GitHub, then submits by repo URL,
+      and runs its own automated review against the source and the latest release.
+- [ ] **First automated review (v0.13.5) failed.** Fixed for v0.13.6:
+  - `manifest.json`'s `authorUrl` pointed at the plugin's own repo — must be a personal/org profile instead. Now
+    points at the GitHub profile.
+  - Two deprecated Obsidian API calls: `ButtonComponent.setWarning()` → `.setDestructive()` (the "Clear sketch"
+    button), and `SliderComponent.setDynamicTooltip()` removed entirely — the value is unconditionally inline as
+    of 1.13.0, so the call was a no-op.
+  - An `any`-typed unsafe assignment in `loadSettings()` — `loadData()`'s untrusted return is now asserted as
+    `Partial<TabulaRasaSettings> | null` once at that boundary, rather than flowing through as `any`.
+  - Release workflow now attests build provenance for `main.js`/`styles.css` (`actions/attest-build-provenance`),
+    clearing a recommendation about unverifiable release assets.
+  - **Deliberately not done:** the review also flagged that `PluginSettingTab` doesn't implement the new
+    declarative `getSettingDefinitions()` API (1.13.0+), so this plugin's settings won't appear in Obsidian's
+    global settings *search* on newest versions. `display()` is explicitly still supported as the pre-1.13.0
+    fallback, and this plugin supports `minAppVersion: 1.4.0` — converting the whole hand-built settings sheet
+    (card-sorted sections, custom vertical slider, colour swatch, popovers) to a declarative schema is a large,
+    architecturally significant rewrite that may not even have widgets for some of these. Parked rather than
+    rushed; the plugin works fully either way, it just won't show up in that one search box.
+  - A `document.createElement` (vs. Obsidian's `createEl`) flag on the PNG-export canvas is correct as written —
+    that canvas is never attached to the DOM, so `createEl`'s parent-append behaviour doesn't apply. Left as-is
+    with a comment explaining why.
+  - Two "Recommendation"-level vault-access disclosures (enumerating markdown files for the "add to note" picker,
+    reading note content to embed a PNG) are legitimate, minimal, already-necessary usage — no change needed.
+  - Re-review pending on the v0.13.6 release.
+- Until published: install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
