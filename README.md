@@ -10,7 +10,9 @@ embed sketches in notes or keep them as standalone, re-editable files.
 
 ## Screenshots
 
-<img src="assets/draw.jpg" alt="Drawing on iPhone, with the four-button toolbar in Obsidian's view header" width="320"> <img src="assets/settings.jpg" alt="The settings sheet: canvas resizing, aspect ratio, and export" width="320">
+<img src="assets/draw.jpg" alt="Drawing on iPhone, with the four-button toolbar in Obsidian's view header" width="260"> <img src="assets/selection.jpg" alt="The selection tool: a scalable, rotatable bounding box around lassoed strokes" width="260"> <img src="assets/colour-picker.jpg" alt="Tapping the colour button opens the native iOS Colors sheet" width="260">
+
+<img src="assets/size.jpg" alt="The brush-size popover: a vertical slider with presets" width="260"> <img src="assets/settings.jpg" alt="The settings sheet: canvas resizing, aspect ratio, and export" width="260">
 
 ## Features
 
