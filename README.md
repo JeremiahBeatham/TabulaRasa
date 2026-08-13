@@ -10,10 +10,7 @@ embed sketches in notes or keep them as standalone, re-editable files.
 
 ## Screenshots
 
-<!-- Awaiting store-listing screenshots. Drop images in an `assets/` folder and
-     reference them here, e.g.:
-     ![Drawing on iPhone](assets/draw.png)
-     ![Inline preview in a note](assets/embed.png) -->
+<img src="assets/draw.jpg" alt="Drawing on iPhone, with the four-button toolbar in Obsidian's view header" width="320"> <img src="assets/settings.jpg" alt="The settings sheet: canvas resizing, aspect ratio, and export" width="320">
 
 ## Features
 
