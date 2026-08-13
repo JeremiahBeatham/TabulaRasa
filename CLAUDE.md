@@ -214,18 +214,14 @@ circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-fre
 **Next phase: community-plugin submission.** The snapping massage pass is done (v0.13.4). Text tool,
 images in a sketch and layers are all post-MVP and parked in `docs/PHASES.md` — not started.
 
-**The community-plugins.json submission needs write access outside this repo.** The default GitHub
-MCP tools are scoped to this repo only, and so is the git-remote proxy (plain `git push` to another
-repo 403s: "not in this session's authorized repository set"). There is a second, unscoped GitHub
-connector on Jeremiah's account (tool prefix `mcp__acaf53ab-c3e7-43ab-9466-ae078c6f6a41__` at last
-use — the hash may rotate; find it via `ToolSearch("listRepos createOrUpdateFile createPullRequest
-createBranch")`) that reaches any repo the account can see, confirmed via its `userInfoOctokit` call.
-It has no blob/tree primitive though — `createOrUpdateFile` takes whole-file content inline, which
-breaks down on a file this size (`community-plugins.json` is ~1.9MB / ~46k lines): far more text than
-one tool call can carry. **The fix that works: build the corrected file locally, verify the diff is
-just the one entry appended, then `SendUserFile` it to Jeremiah and have him use GitHub's "upload a
-file with the same name" flow to replace it on the branch** — no inline editing, so the mass-deletion
-mistake (an earlier manual edit wiped ~18,500 lines editing in the browser) can't repeat.
+**Submission is no longer a PR.** Obsidian retired the `community-plugins.json` PR model against
+`obsidianmd/obsidian-releases` — confirmed by the API itself 404ing on PR creation there, despite a
+fork comparing cleanly. The live process is **community.obsidian.md**: sign in with an Obsidian
+account, connect GitHub, then Plugins → New plugin → the repo URL. That's a personal-account step
+only Jeremiah can do — see `docs/PHASES.md` Distribution for the exact steps. Don't resurrect the
+fork/PR approach if this comes up again; check the actual docs at
+`obsidianmd/obsidian-developer-docs` first (`docs.obsidian.md` itself is proxy-blocked from this
+session, but its source markdown on GitHub isn't).
 
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he

@@ -190,6 +190,10 @@ Wanted, but deliberately after the community-plugin submission. None of these ar
 
 ## Distribution
 - [x] Rebrand to store-compliant id/name (`tabula-rasa` / "Tabula Rasa")
-- [ ] Add LICENSE, screenshots, final README polish
-- [ ] Submit to the [Obsidian community plugins list](https://github.com/obsidianmd/obsidian-releases) (entry in `community-plugins.json` + PR)
+- [x] Add LICENSE, screenshots, final README polish
+- [ ] Submit via [community.obsidian.md](https://community.obsidian.md): sign in with an Obsidian account, connect
+      GitHub, then Plugins → New plugin → `https://github.com/JeremiahBeatham/TabulaRasa`. Obsidian retired the
+      `community-plugins.json` PR model — a PR against `obsidianmd/obsidian-releases` no longer works (confirmed:
+      the API itself 404s on PR creation there now). All prerequisites this new flow checks are already true of
+      this repo: `README.md`, `LICENSE`, `manifest.json`, and a GitHub release with the three plugin assets.
 - Until then: install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
