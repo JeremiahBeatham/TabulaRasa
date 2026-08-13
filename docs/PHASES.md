@@ -195,7 +195,7 @@ Wanted, but deliberately after the community-plugin submission. None of these ar
       PR model — a PR against `obsidianmd/obsidian-releases` no longer works (confirmed: the API itself 404s on PR
       creation there). The new flow signs in with an Obsidian account, connects GitHub, then submits by repo URL,
       and runs its own automated review against the source and the latest release.
-- [ ] **First automated review (v0.13.5) failed.** Fixed for v0.13.6:
+- [x] **First automated review (v0.13.5) failed.** Fixed for v0.13.6:
   - `manifest.json`'s `authorUrl` pointed at the plugin's own repo — must be a personal/org profile instead. Now
     points at the GitHub profile.
   - Two deprecated Obsidian API calls: `ButtonComponent.setWarning()` → `.setDestructive()` (the "Clear sketch"
@@ -217,5 +217,25 @@ Wanted, but deliberately after the community-plugin submission. None of these ar
     with a comment explaining why.
   - Two "Recommendation"-level vault-access disclosures (enumerating markdown files for the "add to note" picker,
     reading note content to embed a PNG) are legitimate, minimal, already-necessary usage — no change needed.
-  - Re-review pending on the v0.13.6 release.
+- [x] **Second review (v0.13.6) failed** on two real errors, plus warnings. Fixed for v0.13.7:
+  - **Error, `no-static-styles-assignment`:** the disabled tool-row in the tool dropdown set `el.style.opacity`/
+    `pointerEvents` directly. Now a `.is-disabled` class picked at creation, matching the existing
+    `.tabula-rasa-btn.is-disabled` convention already used for the size/colour buttons.
+  - **Error, `no-unsupported-api`:** the `setDestructive()` fix from v0.13.6 was itself a bug — that method is
+    1.13.0+, and `minAppVersion` is 1.4.0, so it would throw on every version between the two. Fixed with the same
+    runtime-guard pattern `setIconSafe` already uses for icon names: call `setDestructive()` if present, otherwise
+    fall back to the deprecated-but-universal `setWarning()`. **Lesson: a deprecation notice doesn't mean the
+    replacement is safe to call unconditionally — check it against `minAppVersion` first.**
+  - Also deleted two more redundant inline `style.opacity`/`pointerEvents` sets on the size/colour buttons — same
+    debugging leftover as the tool-row one, and already fully covered by the `.is-disabled` class one line above
+    each via `toggleClass`. Not separately flagged this round, but the same defect.
+  - `instanceof HTMLButtonElement` → `.instanceOf(HTMLButtonElement)`, Obsidian's cross-window-safe check.
+  - Dropped the `builtin-modules` devDependency — `esbuild.config.mjs` only used it to build the bundler's
+    `external` list; Node's own `node:module` `builtinModules` does the identical job with no added package.
+  - `npm audit fix` while in there: two unrelated dev-tooling transitive vulnerabilities (brace-expansion,
+    js-yaml), both DoS-only and build-time-only. 0 vulnerabilities now.
+  - Same two deliberate non-fixes as before (declarative settings API, `document.createElement` in the PNG
+    export) — still correct, still flagged because the reviewer doesn't read comments.
+  - **Not verified on device:** the tool-row class-based dimming should look identical to the inline-style
+    version it replaced, but hasn't been seen on a phone.
 - Until published: install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)

@@ -1,5 +1,6 @@
 import {
 	App,
+	ButtonComponent,
 	FuzzySuggestModal,
 	Modal,
 	Notice,
@@ -106,6 +107,23 @@ export function setIconSafe(
 	// that something in the icon path is unavailable, so the last resort mustn't
 	// depend on another API extension to work.
 	el.textContent = text;
+}
+
+/**
+ * `ButtonComponent.setDestructive()` was added in Obsidian 1.13.0; this plugin's
+ * `minAppVersion` is 1.4.0, so calling it unconditionally would throw on every
+ * version between the two. `setWarning()` is deprecated but still present on all
+ * of them and renders the same way, so it's the fallback rather than a second
+ * code path — checked at runtime the same way icon names are, since the method's
+ * presence isn't something the type declarations can tell us about the user's
+ * actual running version.
+ */
+function markDestructive(button: ButtonComponent): ButtonComponent {
+	const maybeNewer = button as ButtonComponent & { setDestructive?: () => ButtonComponent };
+	if (typeof maybeNewer.setDestructive === "function") {
+		return maybeNewer.setDestructive();
+	}
+	return button.setWarning();
 }
 
 /** The three ways a new boundary combines with the existing selection. */
@@ -515,12 +533,7 @@ export class SketchView extends TextFileView {
 		for (const el of [this.sizeBtn, this.colorBtn]) {
 			if (!el) continue;
 			el.toggleClass("is-disabled", !inks);
-			// Set inline too. The dimming being absent on device is what pointed at
-			// this code path not running at all, so it shouldn't need a stylesheet
-			// rule to be observable.
-			el.style.opacity = inks ? "" : "0.35";
-			el.style.pointerEvents = inks ? "" : "none";
-			if (el instanceof HTMLButtonElement) el.disabled = !inks;
+			if (el.instanceOf(HTMLButtonElement)) el.disabled = !inks;
 		}
 		if (this.colorInput) this.colorInput.disabled = !inks;
 		if (!inks && this.popoverTrigger === this.sizeBtn) this.closePopover();
@@ -610,15 +623,15 @@ export class SketchView extends TextFileView {
 				run: () => void,
 			): void => {
 				const el = pop.createEl("button", {
-					cls: "tabula-rasa-tool-row",
+					cls: enabled
+						? "tabula-rasa-tool-row"
+						: ["tabula-rasa-tool-row", "is-disabled"],
 					attr: { type: "button" },
 				});
 				const ic = el.createSpan({ cls: "tabula-rasa-tool-icon" });
 				setIconSafe(ic, icon, fallback, label.slice(0, 1));
 				el.createSpan({ cls: "tabula-rasa-tool-name", text: label });
 				if (!enabled) {
-					el.style.opacity = "0.35";
-					el.style.pointerEvents = "none";
 					return;
 				}
 				el.addEventListener("click", () => {
@@ -1342,15 +1355,14 @@ class MoreSheet extends Modal {
 		new Setting(this.contentEl)
 			.setName("Clear sketch")
 			.setDesc("Remove every stroke. This can be undone.")
-			.addButton((b) =>
-				b
-					.setButtonText("Clear")
-					.setDestructive()
-					.onClick(() => {
-						this.close();
-						this.actions.onClear();
-					}),
-			);
+			.addButton((b) => {
+				b.setButtonText("Clear");
+				markDestructive(b);
+				b.onClick(() => {
+					this.close();
+					this.actions.onClear();
+				});
+			});
 
 		// Lives here rather than in the plugin settings because it's something you
 		// reach for mid-sketch when you swap between a finger and the Pencil.

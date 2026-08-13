@@ -277,6 +277,11 @@ input.tabula-rasa-color-input::-moz-color-swatch {
 	background: transparent;
 }
 
+.tabula-rasa-tool-row.is-disabled {
+	opacity: 0.35;
+	pointer-events: none;
+}
+
 /* Same footprint as a toolbar button, so the icons line up in a column. */
 .tabula-rasa-tool-icon {
 	display: inline-flex;
