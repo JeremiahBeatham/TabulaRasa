@@ -238,4 +238,14 @@ Wanted, but deliberately after the community-plugin submission. None of these ar
     export) — still correct, still flagged because the reviewer doesn't read comments.
   - **Not verified on device:** the tool-row class-based dimming should look identical to the inline-style
     version it replaced, but hasn't been seen on a phone.
+- [x] **Third review (v0.13.7) failed** on one error: the v0.13.7 runtime guard around `setDestructive()` didn't
+      help, because the reviewer is a static check — it flags a literal reference to a too-new API wherever it
+      appears in source, guarded or not, and separately flags the guard's own `setWarning()` fallback as
+      deprecated. **The two rules can't both pass while `minAppVersion` stays at 1.4.0** — there is no way to
+      call the 1.13.0+ method from source without the reference being flagged, guard or no guard. Fixed for
+      v0.13.8 by removing `setDestructive()` entirely and going back to plain `setWarning()`, trading the Error
+      for the lower-severity Recommendation, since only one of the two can be cleared without raising
+      `minAppVersion`. **If `minAppVersion` is ever deliberately raised to 1.13.0**, this is worth revisiting
+      alongside the declarative settings API below — both become straightforward at that point, and both are
+      blocked on the same version decision.
 - Until published: install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
