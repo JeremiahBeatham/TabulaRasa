@@ -5,15 +5,15 @@
 ## Current Status
 | Phase | Status |
 |---|---|
-| Shipped (v0.1.x → v0.13.5) | Done — see below |
+| Shipped (v0.1.x → v0.13.8) | Done — see below |
 | Next (UX polish) | Done — #7 and all 5 surface refinements |
 | Later (bigger features) | Done — #13 selection, #14 snapping |
 | Snapping massage pass | Done — v0.13.3 renders it clean, v0.13.5 settles the corners |
-| **Community-plugin submission** | **Next up** |
-| Post-MVP | Text tool, images in a sketch, layers — parked below |
+| Community-plugin submission | **Published** (v0.13.8) |
+| **Post-MVP** | **Next up** — text tool, images in a sketch, layers |
 
 **Active branch:** `main`
-**Last updated:** 2026-08-12
+**Last updated:** 2026-08-13
 
 ---
 
@@ -248,4 +248,6 @@ Wanted, but deliberately after the community-plugin submission. None of these ar
       `minAppVersion`. **If `minAppVersion` is ever deliberately raised to 1.13.0**, this is worth revisiting
       alongside the declarative settings API below — both become straightforward at that point, and both are
       blocked on the same version decision.
-- Until published: install via [BRAT](https://github.com/TfTHacker/obsidian42-brat)
+- [x] **v0.13.8 passed review. Published to the Obsidian community directory.** Installable directly from
+      *Settings → Community plugins* in Obsidian — BRAT is no longer required, though it still works for
+      anyone who prefers update-before-general-release.

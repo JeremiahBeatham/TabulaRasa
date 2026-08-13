@@ -211,17 +211,37 @@ circle is replaced by a clean one. Recognition lives in `src/shapes.ts`, DOM-fre
   exclude the seam reported 2.84px of "wobble" on a geometrically perfect square. Assert cap
   *placement* separately instead.
 
-**Next phase: community-plugin submission.** The snapping massage pass is done (v0.13.4). Text tool,
-images in a sketch and layers are all post-MVP and parked in `docs/PHASES.md` — not started.
+**Published to the Obsidian community plugin directory as of v0.13.8.** Text tool, images in a
+sketch and layers are next, all post-MVP and parked in `docs/PHASES.md` — not started.
 
-**Submission is no longer a PR.** Obsidian retired the `community-plugins.json` PR model against
-`obsidianmd/obsidian-releases` — confirmed by the API itself 404ing on PR creation there, despite a
-fork comparing cleanly. The live process is **community.obsidian.md**: sign in with an Obsidian
-account, connect GitHub, then Plugins → New plugin → the repo URL. That's a personal-account step
-only Jeremiah can do — see `docs/PHASES.md` Distribution for the exact steps. Don't resurrect the
+**Submission is no longer a PR, and the review is automated.** Obsidian retired the
+`community-plugins.json` PR model against `obsidianmd/obsidian-releases` — confirmed by the API
+itself 404ing on PR creation there, despite a fork comparing cleanly. The live process is
+**community.obsidian.md**: sign in with an Obsidian account, connect GitHub, then Plugins → New
+plugin → the repo URL. That's a personal-account step only Jeremiah can do. Don't resurrect the
 fork/PR approach if this comes up again; check the actual docs at
 `obsidianmd/obsidian-developer-docs` first (`docs.obsidian.md` itself is proxy-blocked from this
 session, but its source markdown on GitHub isn't).
+
+Submission then runs an **automated static reviewer** against the source and the latest release —
+took four rounds here (v0.13.5 → v0.13.8) to clear. What it caught, in case a future plugin update
+trips the same things:
+- **It doesn't read code comments or runtime guards.** A `typeof x.method === "function"` check
+  around a too-new API call does not clear a "newer than minAppVersion" error — the checker flags
+  the literal reference regardless of the guard around it. If a deprecated-API replacement is newer
+  than `minAppVersion`, there is no way to call it from source without the flag; either raise
+  `minAppVersion` or don't call it. Two rounds were burned learning this the hard way.
+- **No inline `style.*` assignment**, ever — always a CSS class, toggled with `toggleClass`/`addClass`.
+- **`instanceof HTMLButtonElement`-style checks** should be `.instanceOf(...)`, Obsidian's
+  cross-window-safe version.
+- `manifest.json`'s `authorUrl` must be a personal/org profile, not the plugin's own repo.
+- It wants `actions/attest-build-provenance` run on the release assets in CI.
+- It flags `document.createElement` (wants `createEl`) even where correct — `createEl` needs a
+  parent to append to, which a detached offscreen canvas doesn't have. Left as-is with a comment;
+  the flag doesn't go away, and that's fine.
+- It flags a `PluginSettingTab` with no `getSettingDefinitions()` (the 1.13.0+ declarative settings
+  API) — `display()` is still officially supported pre-1.13.0, so this is deliberately unaddressed
+  while `minAppVersion` stays low. Same underlying tradeoff as the `setDestructive()` one above.
 
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he

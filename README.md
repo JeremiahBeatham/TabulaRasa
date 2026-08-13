@@ -3,8 +3,8 @@
 Simple sketching for [Obsidian](https://obsidian.md).
 Draw directly in your vault — then export your sketches, embed them in notes or keep them as standalone, re-editable files.
 
-> **Status:** feature-complete MVP, preparing for community-plugin submission. Install via
-> [BRAT](https://github.com/TfTHacker/obsidian42-brat) today. See where we are and where
+> **Status:** available in the Obsidian community plugins directory — install it from
+> *Settings → Community plugins* in Obsidian, no BRAT required. See where we are and where
 > we're going in **[docs/PHASES.md](docs/PHASES.md)**.
 
 ## Screenshots
@@ -110,9 +110,14 @@ PNG export resolution.
 
 ## Installation
 
-### Via BRAT (recommended for now)
+### From the community plugins directory (recommended)
 
-Until Tabula Rasa is in the community store, install it with
+1. In Obsidian, open *Settings → Community plugins* and select **Browse**.
+2. Search for **Tabula Rasa** and select **Install**, then **Enable**.
+
+### Via BRAT
+
+To track pre-release builds ahead of the community directory, install with
 [BRAT](https://github.com/TfTHacker/obsidian42-brat): add the beta plugin
 `JeremiahBeatham/TabulaRasa`, then enable **Tabula Rasa** in
 *Settings → Community plugins*. BRAT keeps it updated as new releases ship.
@@ -130,8 +135,7 @@ Obsidian Sync or a git client) and enable it there.
 ## Roadmap
 
 Tabula Rasa is an actively evolving MVP. See **[docs/PHASES.md](docs/PHASES.md)** for the
-full shipped feature set. Next up is preparing for community-plugin submission; a text
-tool, adding images to a sketch, and layers are planned after that.
+full shipped feature set. Next up: a text tool, adding images to a sketch, and layers.
 
 ## Development
 
