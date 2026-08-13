@@ -1,8 +1,7 @@
 # Tabula Rasa
 
-Finger- and Apple Pencil-friendly sketching for [Obsidian](https://obsidian.md).
-Draw the way you do in the native iOS Notes app — directly in your vault — then
-embed sketches in notes or keep them as standalone, re-editable files.
+Simple sketching for [Obsidian](https://obsidian.md).
+Draw directly in your vault — then export your sketches, embed them in notes or keep them as standalone, re-editable files.
 
 > **Status:** feature-complete MVP, preparing for community-plugin submission. Install via
 > [BRAT](https://github.com/TfTHacker/obsidian42-brat) today. See where we are and where
