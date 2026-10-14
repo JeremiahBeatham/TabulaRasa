@@ -1,0 +1,134 @@
+{
+  "color-scheme": {
+    "$type": "string",
+    "$value": "light",
+    "$description": "CSS color-scheme / SwiftUI ColorScheme for this mode."
+  },
+  "$description": "Light mode: overrides every core semantic colour. Warm paper (neutral/10) base, white sheets; amber strokes, focus and accent text deepen to bronze (brand/70) because amber is only 1.55:1 on paper.",
+  "color": {
+    "surface": {
+      "base": {
+        "$value": "{color.neutral.10}"
+      },
+      "canvas": {
+        "$value": "{color.neutral.10}"
+      },
+      "raised": {
+        "$value": "{color.neutral.0}"
+      },
+      "control": {
+        "$value": "{color.neutral.10}"
+      },
+      "scrim": {
+        "$value": "#00000052"
+      }
+    },
+    "text": {
+      "primary": {
+        "$value": "{color.neutral.90}"
+      },
+      "secondary": {
+        "$value": "{color.neutral.70}"
+      },
+      "tertiary": {
+        "$value": "{color.neutral.60}"
+      },
+      "disabled": {
+        "$value": "{color.neutral.40}"
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": "{color.neutral.20}"
+      },
+      "strong": {
+        "$value": "{color.neutral.60}"
+      }
+    },
+    "accent": {
+      "fill": {
+        "$value": "{color.brand.50}"
+      },
+      "fill-pressed": {
+        "$value": "{color.brand.60}"
+      },
+      "on": {
+        "$value": "{color.neutral.90}"
+      },
+      "text": {
+        "$value": "{color.brand.70}"
+      },
+      "focus": {
+        "$value": "{color.brand.70}"
+      }
+    },
+    "action": {
+      "primary-fill": {
+        "$value": "{color.neutral.90}"
+      },
+      "primary-label": {
+        "$value": "{color.neutral.10}"
+      },
+      "secondary-fill": {
+        "$value": "{color.neutral.20}"
+      },
+      "secondary-label": {
+        "$value": "{color.neutral.90}"
+      },
+      "destructive-label": {
+        "$value": "{color.negative.60}"
+      }
+    },
+    "selection": {
+      "stroke": {
+        "$value": "{color.brand.70}"
+      },
+      "fill": {
+        "$value": "#FFBA0452"
+      },
+      "hover": {
+        "$value": "{color.brand.70}"
+      }
+    },
+    "signal": {
+      "info": {
+        "$value": "{color.callout.60}"
+      },
+      "negative": {
+        "$value": "{color.negative.60}"
+      },
+      "caution": {
+        "$value": "{color.negative.50}"
+      },
+      "positive": {
+        "$value": "{color.success.60}"
+      }
+    },
+    "feedback": {
+      "error": {
+        "$value": "{color.negative.60}"
+      },
+      "error-surface": {
+        "$value": "{color.neutral.0}"
+      },
+      "warning": {
+        "$value": "{color.negative.50}"
+      },
+      "warning-surface": {
+        "$value": "{color.neutral.0}"
+      },
+      "success": {
+        "$value": "{color.neutral.90}"
+      },
+      "success-surface": {
+        "$value": "{color.neutral.0}"
+      },
+      "info": {
+        "$value": "{color.neutral.80}"
+      },
+      "info-surface": {
+        "$value": "{color.neutral.0}"
+      }
+    }
+  }
+}

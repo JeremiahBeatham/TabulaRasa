@@ -1,0 +1,26 @@
+group,token,name,hex,r,g,b,oklch_L,oklch_C,oklch_H,lab_L,lab_a,lab_b,source,manufacturer,product,colour_name,colour_code
+Filaments,palette.filament.light-gray,light-gray,#C1C3C8,193,195,200,0.817,0.007,269,78.7,0,-2.8,photo-sampled,TODO,"TODO (line and material, e.g. PLA Basic / PLA Matte / PETG)",TODO (the manufacturer's name for it),TODO (SKU or colour code from the spool label)
+Filaments,palette.filament.orange,orange,#E48C3C,228,140,60,0.719,0.142,59,66.8,29.8,55.5,photo-sampled,TODO,TODO,TODO,TODO
+Filaments,palette.filament.space-gray,space-gray,#4D5152,77,81,82,0.432,0.005,214,34.1,-1.5,-1.2,photo-sampled,TODO,TODO,"TODO (""space gray"" is Jeremiah's name; confirm the manufacturer's)",TODO
+Filaments,palette.filament.black,black,#191919,25,25,25,0.213,0,90,8.8,0,0,photo-sampled,TODO,TODO,TODO,TODO
+Brand anchors,color.brand.50,50,#FFBA04,255,186,4,0.831,0.171,81,80.4,17.1,81.7,verbatim (Beatham Figma),,,,
+Brand anchors,color.neutral.0,0,#FFFFFF,255,255,255,1,0,90,100,0,0,verbatim (Beatham Figma),,,,
+Brand anchors,color.neutral.10,10,#F7F3EE,247,243,238,0.966,0.008,74,96.1,0.7,2.9,verbatim (Beatham Figma),,,,
+Brand anchors,color.neutral.90,90,#201D1A,32,29,26,0.233,0.007,67,11,1,2.6,verbatim (Beatham Figma),,,,
+Brand anchors,color.neutral.100,100,#000000,0,0,0,0,0,0,0,0,0,verbatim (Beatham Figma),,,,
+Palette: gilt,palette.gilt.bench,bench,#110602,17,6,2,0.139,0.025,51,2.3,3,2.7,{color.brown.100},,,,
+Palette: gilt,palette.gilt.walnut,walnut,#2A1804,42,24,4,0.228,0.044,67,10.4,7.6,14,{color.gold.90},,,,
+Palette: gilt,palette.gilt.grain,grain,#4C2D02,76,45,2,0.328,0.07,68,21.9,12.1,30.3,{color.gold.80},,,,
+Palette: gilt,palette.gilt.brass,brass,#F3AD3D,243,173,61,0.796,0.147,75,76.2,19.4,64.7,{color.gold.30},,,,
+Palette: gilt,palette.gilt.brass-light,brass-light,#FADE94,250,222,148,0.907,0.098,90,89.6,2.7,40,{color.gold.20},,,,
+Palette: gilt,palette.gilt.cream,cream,#FCEFCF,252,239,207,0.954,0.044,89,94.9,0.8,17.2,{color.gold.10},,,,
+Palette: two-tone,palette.two-tone.part,part,#C1C3C8,193,195,200,0.817,0.007,269,78.7,0,-2.8,{palette.filament.light-gray},,,,
+Palette: two-tone,palette.two-tone.chrome,chrome,#4D5152,77,81,82,0.432,0.005,214,34.1,-1.5,-1.2,{palette.filament.space-gray},,,,
+Palette: two-tone,palette.two-tone.edge,edge,#191919,25,25,25,0.213,0,90,8.8,0,0,{palette.filament.black},,,,
+Palette: two-tone,palette.two-tone.signal,signal,#E48C3C,228,140,60,0.719,0.142,59,66.8,29.8,55.5,{palette.filament.orange},,,,
+Palette: blueprint,palette.blueprint.ground,ground,#002330,0,35,48,0.239,0.046,227,11.9,-8.5,-12.4,{color.callout.90},,,,
+Palette: blueprint,palette.blueprint.ground-raised,ground-raised,#00364D,0,54,77,0.314,0.065,234,20.4,-9.3,-19.1,{color.callout.80},,,,
+Palette: blueprint,palette.blueprint.line,line,#FFFFFF,255,255,255,1,0,90,100,0,0,{color.neutral.0},,,,
+Palette: blueprint,palette.blueprint.pale,pale,#95C4E3,149,196,227,0.798,0.066,238,76.6,-10.4,-20.8,{color.callout.30},,,,
+Palette: blueprint,palette.blueprint.vellum,vellum,#F0F7FE,240,247,254,0.973,0.012,248,96.9,-1.4,-4.2,{color.callout.10},,,,
+Palette: blueprint,palette.blueprint.pencil,pencil,#E48C3C,228,140,60,0.719,0.142,59,66.8,29.8,55.5,{palette.filament.orange},,,,

@@ -1,0 +1,227 @@
+{
+  "$description": "Every core semantic colour pair the UI draws, checked in every mode for core and every sub-brand by `npm run brand:check`. kind=text → WCAG 1.4.3 AA 4.5:1; kind=graphic → WCAG 1.4.11 non-text 3:1. High-contrast modes must reach 7:1 (text) and 4.5:1 (graphic). Translucent foregrounds are composited over the background first. Every semantic colour must be in a pair or exempt with a reason. Sub-brands add their own pairs in subbrands/<name>/contrast-pairs.json.",
+  "thresholds": {
+    "standard": {
+      "text": 4.5,
+      "graphic": 3
+    },
+    "high-contrast": {
+      "text": 7,
+      "graphic": 4.5
+    }
+  },
+  "exempt": {
+    "color.text.disabled": "Disabled controls are exempt (WCAG 1.4.3); disabled state is also shown by shape and the control is not interactive.",
+    "color.border.subtle": "Decorative dividers; never the only boundary of a control.",
+    "color.surface.scrim": "Dimming layer, not content.",
+    "color.selection.fill": "Decorative tint; the selection stroke carries the contrast.",
+    "color.accent.fill": "State fill; contrast is carried by its accent.on label/glyph (checked), and the selected state also changes the label weight or glyph.",
+    "color.accent.fill-pressed": "Transient pressed state of an accent fill; label checked against it.",
+    "color.feedback.*-surface": "Banner backgrounds; text and icons on them are checked."
+  },
+  "pairs": [
+    {
+      "fg": [
+        "color.text.primary",
+        "color.text.secondary",
+        "color.text.tertiary"
+      ],
+      "bg": [
+        "color.surface.base",
+        "color.surface.raised",
+        "color.surface.control",
+        "color.surface.canvas"
+      ],
+      "kind": "text",
+      "usage": "Body, supporting and hint text on every surface"
+    },
+    {
+      "fg": [
+        "color.accent.text"
+      ],
+      "bg": [
+        "color.surface.base",
+        "color.surface.raised",
+        "color.surface.control",
+        "color.surface.canvas"
+      ],
+      "kind": "text",
+      "usage": "Accent text: the active tab or segment label"
+    },
+    {
+      "fg": [
+        "color.accent.on"
+      ],
+      "bg": [
+        "color.accent.fill",
+        "color.accent.fill-pressed"
+      ],
+      "kind": "text",
+      "usage": "Label on the accent fill (active control, selected chip)"
+    },
+    {
+      "fg": [
+        "color.action.primary-label"
+      ],
+      "bg": [
+        "color.action.primary-fill"
+      ],
+      "kind": "text",
+      "usage": "Primary button"
+    },
+    {
+      "fg": [
+        "color.action.secondary-label"
+      ],
+      "bg": [
+        "color.action.secondary-fill"
+      ],
+      "kind": "text",
+      "usage": "Secondary button"
+    },
+    {
+      "fg": [
+        "color.action.destructive-label"
+      ],
+      "bg": [
+        "color.surface.raised",
+        "color.surface.control"
+      ],
+      "kind": "text",
+      "usage": "Destructive button label"
+    },
+    {
+      "fg": [
+        "color.feedback.error",
+        "color.feedback.warning",
+        "color.feedback.success",
+        "color.feedback.info"
+      ],
+      "bg": [
+        "color.surface.raised"
+      ],
+      "kind": "text",
+      "usage": "Status and error messages in sheets and rows"
+    },
+    {
+      "fg": [
+        "color.feedback.error",
+        "color.feedback.warning",
+        "color.feedback.success",
+        "color.feedback.info"
+      ],
+      "bg": [
+        "color.surface.control"
+      ],
+      "kind": "graphic",
+      "usage": "Status icons inside controls and floating panels"
+    },
+    {
+      "fg": [
+        "color.feedback.error",
+        "color.text.primary"
+      ],
+      "bg": [
+        "color.feedback.error-surface"
+      ],
+      "kind": "text",
+      "usage": "Error banner / failed feature row"
+    },
+    {
+      "fg": [
+        "color.feedback.warning",
+        "color.text.primary"
+      ],
+      "bg": [
+        "color.feedback.warning-surface"
+      ],
+      "kind": "text",
+      "usage": "Warning banner"
+    },
+    {
+      "fg": [
+        "color.feedback.success",
+        "color.text.primary"
+      ],
+      "bg": [
+        "color.feedback.success-surface"
+      ],
+      "kind": "text",
+      "usage": "Success banner"
+    },
+    {
+      "fg": [
+        "color.feedback.info",
+        "color.text.primary"
+      ],
+      "bg": [
+        "color.feedback.info-surface"
+      ],
+      "kind": "text",
+      "usage": "Info banner"
+    },
+    {
+      "fg": [
+        "color.border.strong"
+      ],
+      "bg": [
+        "color.surface.base",
+        "color.surface.raised"
+      ],
+      "kind": "graphic",
+      "usage": "Field and control outlines"
+    },
+    {
+      "fg": [
+        "color.accent.focus"
+      ],
+      "bg": [
+        "color.surface.base",
+        "color.surface.raised",
+        "color.surface.control",
+        "color.surface.canvas"
+      ],
+      "kind": "graphic",
+      "usage": "Focus ring"
+    },
+    {
+      "fg": [
+        "color.selection.stroke",
+        "color.selection.hover"
+      ],
+      "bg": [
+        "color.surface.canvas"
+      ],
+      "kind": "graphic",
+      "usage": "Selection and pre-selection outlines on the canvas"
+    },
+    {
+      "fg": [
+        "color.signal.info",
+        "color.signal.negative",
+        "color.signal.caution",
+        "color.signal.positive"
+      ],
+      "bg": [
+        "color.surface.raised"
+      ],
+      "kind": "text",
+      "usage": "Signal labels next to their glyphs in rows and sheets (a status word, a result)"
+    },
+    {
+      "fg": [
+        "color.signal.info",
+        "color.signal.negative",
+        "color.signal.caution",
+        "color.signal.positive"
+      ],
+      "bg": [
+        "color.surface.base",
+        "color.surface.control",
+        "color.surface.canvas"
+      ],
+      "kind": "graphic",
+      "usage": "Signal glyphs and marks on every surface"
+    }
+  ]
+}

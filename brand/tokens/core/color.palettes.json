@@ -1,0 +1,120 @@
+{
+  "palette": {
+    "$type": "color",
+    "$description": "The Beatham palette library: colour-only palettes a sub-brand may adopt as its secondary or tertiary colours (subbrand.json → palettes). Colour only — no type, radius or style comes with them. For marketing, illustration, previews, packaging and physical parts. They never fill a semantic role (brand:check fails if one does), are exempt from the contrast check and are mode-independent.",
+    "filament": {
+      "$description": "The filaments Jeremiah prints with most, sampled from photos — approximate. Manufacturer names and codes are recorded (or still TODO) in brand/inputs/filaments.json. His mixes: (a) 65 light gray / 25 orange / 10 black or space gray; (b) 60 light gray / 30 space gray or black / 10 orange.",
+      "$extensions": {
+        "beatham": {
+          "proportion": [["light-gray", 65], ["orange", 25], ["black", 10]],
+          "proportionAlt": [["light-gray", 60], ["space-gray", 30], ["orange", 10]],
+          "source": "photo-sampled"
+        }
+      },
+      "light-gray": {
+        "$value": "#C1C3C8",
+        "$description": "Light-gray filament (photo sample). The body of a part."
+      },
+      "orange": {
+        "$value": "#E48C3C",
+        "$description": "Orange filament (photo sample). Only 1.47:1 against light gray — outline or label it with black or space gray."
+      },
+      "space-gray": {
+        "$value": "#4D5152",
+        "$description": "Space-gray filament (photo sample)."
+      },
+      "black": {
+        "$value": "#191919",
+        "$description": "Black filament (photo sample)."
+      }
+    },
+    "gilt": {
+      "$description": "Gilt — a brass rule on a walnut bench. Built from Jeremiah’s gold → brown spectrum. Proportion 70 walnut / 20 cream / 10 brass.",
+      "$extensions": {
+        "beatham": {
+          "proportion": [["walnut", 70], ["cream", 20], ["brass", 10]]
+        }
+      },
+      "bench": {
+        "$value": "{color.brown.100}",
+        "$description": "Deepest ground (his gold swatch 8)."
+      },
+      "walnut": {
+        "$value": "{color.gold.90}",
+        "$description": "Ground (his gold swatch 6)."
+      },
+      "grain": {
+        "$value": "{color.gold.80}",
+        "$description": "Raised surface on walnut."
+      },
+      "brass": {
+        "$value": "{color.gold.30}",
+        "$description": "The accent (his gold swatch 5)."
+      },
+      "brass-light": {
+        "$value": "{color.gold.20}",
+        "$description": "Highlight (his gold swatch 2)."
+      },
+      "cream": {
+        "$value": "{color.gold.10}",
+        "$description": "Paper and type on walnut (his gold swatch 1)."
+      }
+    },
+    "two-tone": {
+      "$description": "Two-Tone — a dark instrument cluster over a light part. Jeremiah’s filament colours, verbatim. Proportion 60 part / 30 chrome / 10 signal (his mix b).",
+      "$extensions": {
+        "beatham": {
+          "proportion": [["part", 60], ["chrome", 30], ["signal", 10]]
+        }
+      },
+      "part": {
+        "$value": "{palette.filament.light-gray}",
+        "$description": "Light-gray filament."
+      },
+      "chrome": {
+        "$value": "{palette.filament.space-gray}",
+        "$description": "Space-gray filament."
+      },
+      "edge": {
+        "$value": "{palette.filament.black}",
+        "$description": "Black filament."
+      },
+      "signal": {
+        "$value": "{palette.filament.orange}",
+        "$description": "Orange filament. Only 1.47:1 against part — outline or label it with edge."
+      }
+    },
+    "blueprint": {
+      "$description": "Blueprint — the drawing office: white lines on deep Callout blue, an orange pencil. Proportion 70 ground / 20 line / 10 pencil.",
+      "$extensions": {
+        "beatham": {
+          "proportion": [["ground", 70], ["line", 20], ["pencil", 10]]
+        }
+      },
+      "ground": {
+        "$value": "{color.callout.90}",
+        "$description": "Deep blueprint ground."
+      },
+      "ground-raised": {
+        "$value": "{color.callout.80}",
+        "$description": "Panels on the ground."
+      },
+      "line": {
+        "$value": "{color.neutral.0}",
+        "$description": "Drawn lines and type."
+      },
+      "pale": {
+        "$value": "{color.callout.30}",
+        "$description": "Construction and secondary lines."
+      },
+      "vellum": {
+        "$value": "{color.callout.10}",
+        "$description": "The light (vellum) version's ground."
+      },
+      "pencil": {
+        "$value": "{palette.filament.orange}",
+        "$description": "Orange filament — what is being marked up."
+      }
+    }
+  }
+}

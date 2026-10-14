@@ -1,0 +1,73 @@
+{
+  "$description": "What is known about each filament in palette.filament, for matching screen colours to real spools. The hex values in brand-inputs.json were sampled from photos, so they are approximate: lighting, white balance and the camera all move them. Until a spool is identified by manufacturer and colour code (and ideally measured with a colorimeter), treat the swatch as a reminder of the colour, not a specification. Fields marked TODO are for Jeremiah.",
+  "printer": {
+    "model": "TODO — HandCAD's docs reference a Bambu Lab A1 mini (180 × 180 × 180 mm bed); confirm that is the printer these filaments run on.",
+    "nozzle": "0.4mm (assumed; brand/tokens/core/size.json → physical.* is sized for it)"
+  },
+  "filaments": {
+    "light-gray": {
+      "sample": "#C1C3C8",
+      "source": "photo-sampled",
+      "manufacturer": "TODO",
+      "product": "TODO (line and material, e.g. PLA Basic / PLA Matte / PETG)",
+      "colourName": "TODO (the manufacturer's name for it)",
+      "colourCode": "TODO (SKU or colour code from the spool label)",
+      "manufacturerHex": "TODO (if the manufacturer publishes one)",
+      "measuredLab": "TODO (L*a*b* D50 from a colorimeter on a printed swatch, if available)",
+      "finish": "TODO (matte / satin / glossy)",
+      "notes": "The body of most parts (65 % in mix a, 60 % in mix b)."
+    },
+    "orange": {
+      "sample": "#E48C3C",
+      "source": "photo-sampled",
+      "manufacturer": "TODO",
+      "product": "TODO",
+      "colourName": "TODO",
+      "colourCode": "TODO",
+      "manufacturerHex": "TODO",
+      "measuredLab": "TODO",
+      "finish": "TODO",
+      "notes": "The accent on a part: what you actuate (25 % in mix a, 10 % in mix b). 1.47:1 against light gray — never adjacent without a dark band or label."
+    },
+    "space-gray": {
+      "sample": "#4D5152",
+      "source": "photo-sampled",
+      "manufacturer": "TODO",
+      "product": "TODO",
+      "colourName": "TODO (\"space gray\" is Jeremiah's name; confirm the manufacturer's)",
+      "colourCode": "TODO",
+      "manufacturerHex": "TODO",
+      "measuredLab": "TODO",
+      "finish": "TODO",
+      "notes": "Structure and chrome (30 % in mix b, or the 10 % in mix a)."
+    },
+    "black": {
+      "sample": "#191919",
+      "source": "photo-sampled",
+      "manufacturer": "TODO",
+      "product": "TODO",
+      "colourName": "TODO",
+      "colourCode": "TODO",
+      "manufacturerHex": "TODO",
+      "measuredLab": "TODO",
+      "finish": "TODO",
+      "notes": "Edges, bands and markings: the colour that makes orange readable on light gray."
+    }
+  },
+  "mixes": [
+    {
+      "id": "a",
+      "name": "Mix a — light part, orange band",
+      "parts": [["light-gray", 65], ["orange", 25], ["black", 10]],
+      "alternate": "black may be space gray",
+      "note": "Orange and light gray sit one lightness step apart (1.47:1): the 10 % black outlines or labels the orange."
+    },
+    {
+      "id": "b",
+      "name": "Mix b — light part, dark chrome, orange signal",
+      "parts": [["light-gray", 60], ["space-gray", 30], ["orange", 10]],
+      "alternate": "space gray may be black",
+      "note": "Orange on space gray is 3.10:1 — fine for shapes and marks, not for text."
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "color": {
+    "$type": "color",
+    "violet": {
+      "10": {
+        "$value": "#F7F1FF"
+      },
+      "20": {
+        "$value": "#E4CFFE"
+      },
+      "30": {
+        "$value": "#D1AAFF"
+      },
+      "40": {
+        "$value": "#B884F1"
+      },
+      "50": {
+        "$value": "#9C64D4"
+      },
+      "60": {
+        "$value": "#8047B5"
+      },
+      "70": {
+        "$value": "#632C92"
+      },
+      "80": {
+        "$value": "#45186B"
+      },
+      "90": {
+        "$value": "#290943"
+      },
+      "$description": "Extended hue — OKLCH hue 305°, lightness-matched to the neutrals. Never used by a core role. A sub-brand may grant it to scoped product roles (analysis, categories, data visualisation), always with a legend or label; the grant counts against the hue budget (brand/rules.json)."
+    },
+    "teal": {
+      "10": {
+        "$value": "#D8FCFE"
+      },
+      "20": {
+        "$value": "#93EBF0"
+      },
+      "30": {
+        "$value": "#32D7DF"
+      },
+      "40": {
+        "$value": "#07B7BE"
+      },
+      "50": {
+        "$value": "#01969C"
+      },
+      "60": {
+        "$value": "#01777C"
+      },
+      "70": {
+        "$value": "#01595D"
+      },
+      "80": {
+        "$value": "#033D3F"
+      },
+      "90": {
+        "$value": "#022325"
+      },
+      "$description": "Extended hue — OKLCH hue 200°, lightness-matched to the neutrals. Never used by a core role. A sub-brand may grant it to scoped product roles (analysis, categories, data visualisation), always with a legend or label; the grant counts against the hue budget (brand/rules.json)."
+    },
+    "orange": {
+      "10": {
+        "$value": "#FEF1EA"
+      },
+      "20": {
+        "$value": "#FECEB4"
+      },
+      "30": {
+        "$value": "#FFA674"
+      },
+      "40": {
+        "$value": "#EE7E34"
+      },
+      "50": {
+        "$value": "#CD6006"
+      },
+      "60": {
+        "$value": "#A44B02"
+      },
+      "70": {
+        "$value": "#7C3700"
+      },
+      "80": {
+        "$value": "#562400"
+      },
+      "90": {
+        "$value": "#331301"
+      },
+      "$description": "Extended hue — OKLCH hue 50°, lightness-matched to the neutrals. Never used by a core role. A sub-brand may grant it to scoped product roles (analysis, categories, data visualisation), always with a legend or label; the grant counts against the hue budget (brand/rules.json)."
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "motion": {
+    "$description": "Crisp: 100–250 ms, standard easing, no overshoot; camera moves 350 ms. A click, not a bounce. Every motion has a Reduce Motion variant.",
+    "sheet": {
+      "duration": {
+        "$value": "{duration.250}",
+        "$type": "duration",
+        "$description": "Bottom sheet present/dismiss and detent changes."
+      },
+      "duration-reduced": {
+        "$value": "{duration.150}",
+        "$type": "duration",
+        "$description": "Reduced: cross-fade, no slide."
+      },
+      "easing": {
+        "$value": "{easing.standard}",
+        "$type": "cubicBezier"
+      }
+    },
+    "selection": {
+      "duration": {
+        "$value": "{duration.100}",
+        "$type": "duration",
+        "$description": "Selection highlight grow-in."
+      },
+      "duration-reduced": {
+        "$value": "{duration.0}",
+        "$type": "duration"
+      },
+      "easing": {
+        "$value": "{easing.standard}",
+        "$type": "cubicBezier"
+      }
+    },
+    "snap": {
+      "duration": {
+        "$value": "{duration.100}",
+        "$type": "duration",
+        "$description": "Something snapping into place (a point to a guide, a card to a slot)."
+      },
+      "duration-reduced": {
+        "$value": "{duration.0}",
+        "$type": "duration"
+      },
+      "easing": {
+        "$value": "{easing.decelerate}",
+        "$type": "cubicBezier"
+      }
+    },
+    "toast": {
+      "duration": {
+        "$value": "{duration.200}",
+        "$type": "duration",
+        "$description": "Toast / error banner in and out."
+      },
+      "duration-reduced": {
+        "$value": "{duration.150}",
+        "$type": "duration",
+        "$description": "Reduced: cross-fade."
+      },
+      "easing": {
+        "$value": "{easing.decelerate}",
+        "$type": "cubicBezier"
+      }
+    },
+    "camera": {
+      "duration": {
+        "$value": "{duration.350}",
+        "$type": "duration",
+        "$description": "Animated 3D or map view changes (standard views, zoom to fit)."
+      },
+      "duration-reduced": {
+        "$value": "{duration.0}",
+        "$type": "duration",
+        "$description": "Reduced: cut to the new view."
+      },
+      "easing": {
+        "$value": "{easing.standard}",
+        "$type": "cubicBezier"
+      }
+    }
+  }
+}

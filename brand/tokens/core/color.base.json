@@ -1,0 +1,83 @@
+{
+  "color": {
+    "$type": "color",
+    "neutral": {
+      "0": {
+        "$value": "#FFFFFF",
+        "$description": "Pure white: the top of the light elevation ladder (sheets in light mode)."
+      },
+      "10": {
+        "$value": "#F7F3EE",
+        "$description": "Beatham Brand neutral/10."
+      },
+      "20": {
+        "$value": "#DDD9D4",
+        "$description": "Beatham Brand neutral/20."
+      },
+      "30": {
+        "$value": "#C2BEB9",
+        "$description": "Beatham Brand neutral/30."
+      },
+      "40": {
+        "$value": "#A4A09B",
+        "$description": "Beatham Brand neutral/40."
+      },
+      "50": {
+        "$value": "#87837F",
+        "$description": "Beatham Brand neutral/50."
+      },
+      "60": {
+        "$value": "#6B6863",
+        "$description": "Beatham Brand neutral/60."
+      },
+      "70": {
+        "$value": "#504D49",
+        "$description": "Beatham Brand neutral/70."
+      },
+      "80": {
+        "$value": "#373430",
+        "$description": "Beatham Brand neutral/80."
+      },
+      "90": {
+        "$value": "#201D1A",
+        "$description": "Beatham Brand neutral/90."
+      },
+      "100": {
+        "$value": "#000000",
+        "$description": "True black (OLED off-pixel): the dark-mode base surface. A hardware decision, not a colour one."
+      },
+      "$description": "Beatham warm greys (Figma: Color/Neutral). Higher number = darker. 10–90 are Jeremiah’s values verbatim; 0 (white) and 100 (true black, for OLED) are the ramp ends. Every other ramp is lightness-matched to these steps, so the step-gap rule holds: 40 / 50 / 60 apart ⇒ ≥ 3 / 4.5 / 7:1."
+    },
+    "brand": {
+      "10": {
+        "$value": "#FBF3E4"
+      },
+      "20": {
+        "$value": "#FDE5BE"
+      },
+      "30": {
+        "$value": "#FFD78D"
+      },
+      "40": {
+        "$value": "#FFC95A"
+      },
+      "50": {
+        "$value": "#FFBA04",
+        "$description": "Hero amber."
+      },
+      "60": {
+        "$value": "#CC880C"
+      },
+      "70": {
+        "$value": "#965A16"
+      },
+      "80": {
+        "$value": "#5C3317"
+      },
+      "90": {
+        "$value": "#271303"
+      },
+      "$description": "Beatham amber → brown (Figma: Color/Brand), verbatim — Jeremiah’s original values, never silently replaced. brand/50 #FFBA04 is the hero amber. The default accent ramp: amber marks only what you act on (selection, focus, the active control). Not lightness-matched (10–50 sit within 0.14 L, then 0.15 L steps), so its pairs are checked one by one; the balanced dark end is the generated brown ramp."
+    }
+  }
+}

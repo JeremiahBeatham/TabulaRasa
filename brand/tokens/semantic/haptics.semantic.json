@@ -1,0 +1,34 @@
+{
+  "feedback-haptic": {
+    "$type": "haptic",
+    "$description": "When a Beatham product plays a haptic. Never the only feedback: each also has a visual change.",
+    "snap": {
+      "$value": "{haptic.impact-light}",
+      "$description": "Something snaps into place (a point to a guide, a slider to a detent)."
+    },
+    "confirm": {
+      "$value": "{haptic.impact-medium}",
+      "$description": "An action is applied (a value set, a command sent)."
+    },
+    "complete": {
+      "$value": "{haptic.notification-success}",
+      "$description": "A task or check completes."
+    },
+    "reached": {
+      "$value": "{haptic.impact-soft}",
+      "$description": "A soft threshold is reached (a target value, a step in a sequence)."
+    },
+    "warning": {
+      "$value": "{haptic.notification-warning}",
+      "$description": "Something is about to go wrong."
+    },
+    "error": {
+      "$value": "{haptic.notification-error}",
+      "$description": "Something failed."
+    },
+    "selection-changed": {
+      "$value": "{haptic.selection}",
+      "$description": "Segmented control / picker detent."
+    }
+  }
+}

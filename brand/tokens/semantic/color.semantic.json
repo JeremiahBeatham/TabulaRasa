@@ -1,0 +1,165 @@
+{
+  "color": {
+    "surface": {
+      "base": {
+        "$value": "{color.neutral.100}",
+        "$description": "App background behind everything. True black on OLED in dark mode (neutral/100); warm paper in light."
+      },
+      "canvas": {
+        "$value": "{color.neutral.100}",
+        "$description": "The working canvas — a model, a map, a photo, a game board. True black in dark mode, so the content is the brightest thing on screen."
+      },
+      "raised": {
+        "$value": "{color.neutral.90}",
+        "$description": "Sheets, cards, lists and banners — the one raised layer. Flat: separated by border.subtle, not by shadow."
+      },
+      "control": {
+        "$value": "{color.neutral.80}",
+        "$description": "Controls, floating panels, fields and chips. Dark elevation builds up from black: 100 → 90 → 80."
+      },
+      "scrim": {
+        "$value": "#000000A3",
+        "$description": "Dimming layer under modal sheets (64 % black). Decorative; not a contrast pair."
+      }
+    },
+    "text": {
+      "primary": {
+        "$value": "{color.neutral.10}",
+        "$description": "Body text, labels, values."
+      },
+      "secondary": {
+        "$value": "{color.neutral.30}",
+        "$description": "Supporting text, units, captions."
+      },
+      "tertiary": {
+        "$value": "{color.neutral.40}",
+        "$description": "Placeholder and hint text. Still AA on every surface."
+      },
+      "disabled": {
+        "$value": "{color.neutral.60}",
+        "$description": "Disabled labels. Exempt from WCAG contrast; always paired with a disabled shape/state."
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": "{color.neutral.80}",
+        "$description": "Dividers, card and banner outlines. Decorative (no contrast requirement); flat surfaces separate with this instead of shadow."
+      },
+      "strong": {
+        "$value": "{color.neutral.50}",
+        "$description": "Field outlines and control boundaries that identify a control — 3:1 non-text contrast."
+      }
+    },
+    "accent": {
+      "fill": {
+        "$value": "{color.brand.50}",
+        "$description": "The accent, strictly: the active control, a selected chip or segment, a toggle that is on. Never decoration, links, headings, brand marks or a primary button."
+      },
+      "fill-pressed": {
+        "$value": "{color.brand.40}",
+        "$description": "Pressed state of an accent fill."
+      },
+      "on": {
+        "$value": "{color.neutral.90}",
+        "$description": "Label/icon on an accent fill (dark text on amber)."
+      },
+      "text": {
+        "$value": "{color.brand.40}",
+        "$description": "The accent as text or an icon on a surface: the label of the active control or selected segment only. Links are neutral (underlined)."
+      },
+      "focus": {
+        "$value": "{color.brand.50}",
+        "$description": "Keyboard / Full Keyboard Access focus ring (2 px, offset 2 px)."
+      }
+    },
+    "action": {
+      "primary-fill": {
+        "$value": "{color.neutral.20}",
+        "$description": "Primary button fill (Beatham convention: neutral/20 fill, neutral/80 label in dark). Neutral, so the accent never competes with it."
+      },
+      "primary-label": {
+        "$value": "{color.neutral.80}",
+        "$description": "Primary button label."
+      },
+      "secondary-fill": {
+        "$value": "{color.neutral.80}",
+        "$description": "Secondary button fill."
+      },
+      "secondary-label": {
+        "$value": "{color.neutral.10}",
+        "$description": "Secondary button label."
+      },
+      "destructive-label": {
+        "$value": "{color.negative.30}",
+        "$description": "Destructive button label (always with a trash or xmark glyph). One step lighter than error in dark so it reads on controls."
+      }
+    },
+    "selection": {
+      "stroke": {
+        "$value": "{color.brand.50}",
+        "$description": "Outline of the selected object (a shape, an edge, a card on a canvas)."
+      },
+      "fill": {
+        "$value": "#FFBA043D",
+        "$description": "Selected tint (brand/50 at 24 %). The only tint in the chrome; decorative — the stroke carries the contrast."
+      },
+      "hover": {
+        "$value": "{color.brand.30}",
+        "$description": "Pre-selection (touch-down / pointer hover) outline. Thinner than the selection stroke; in light mode it shares the stroke colour and differs by weight."
+      }
+    },
+    "signal": {
+      "$description": "State colours for marks, glyphs and short labels. Always with a glyph and a label — never colour alone. Two hues in the chrome by default (blue, red); green only for results a person checks. Sub-brands map their product states onto these (brand/rules.json).",
+      "info": {
+        "$value": "{color.callout.40}",
+        "$description": "Blue (Callout): still open, still free, in progress — something you may still change. Pair with an open glyph and a count or label."
+      },
+      "negative": {
+        "$value": "{color.negative.40}",
+        "$description": "Red (Negative): broken — an error, a conflict, a failed result, a destructive outcome. Pair with ✕ or an exclamation glyph."
+      },
+      "caution": {
+        "$value": "{color.negative.20}",
+        "$description": "Light red: about to go wrong — a warning. A lighter step of the same red as negative, with ⚠; told apart by step and glyph, never by colour alone."
+      },
+      "positive": {
+        "$value": "{color.success.40}",
+        "$description": "Green (Success): a result that passed a check. Results only — never “saved” or “sent”, which stay neutral. With ✓ and a label."
+      }
+    },
+    "feedback": {
+      "error": {
+        "$value": "{color.negative.40}",
+        "$description": "Error text/icon with the xmark glyph (✕): full red. Name the thing, the reason and the fix."
+      },
+      "error-surface": {
+        "$value": "{color.neutral.90}",
+        "$description": "Error banner: flat — the raised surface with a border; the glyph and title carry the red."
+      },
+      "warning": {
+        "$value": "{color.negative.20}",
+        "$description": "UI warning text/icon with the triangle glyph (⚠): a lighter red step than error — told apart from errors by step and glyph, never by colour alone."
+      },
+      "warning-surface": {
+        "$value": "{color.neutral.90}",
+        "$description": "Warning banner: flat (raised surface + border)."
+      },
+      "success": {
+        "$value": "{color.neutral.10}",
+        "$description": "Success text/icon with the checkmark glyph: neutral in the chrome (saved, sent, exported). Green is reserved for signal.positive results."
+      },
+      "success-surface": {
+        "$value": "{color.neutral.90}",
+        "$description": "Success banner: flat."
+      },
+      "info": {
+        "$value": "{color.neutral.20}",
+        "$description": "Informational text/icon with the info glyph: neutral."
+      },
+      "info-surface": {
+        "$value": "{color.neutral.90}",
+        "$description": "Info banner: flat."
+      }
+    }
+  }
+}

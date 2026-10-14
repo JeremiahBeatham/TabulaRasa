@@ -1,0 +1,58 @@
+{
+  "space": {
+    "$type": "dimension",
+    "$description": "4 pt base grid. Between components: 8 · 16 · 24 · 32 · 40 (the 8 pt rhythm). Within a component: the 4 pt grid, with 2 and 12 allowed there as fine breaks. Anything handed over snaps to the nearest 8.",
+    "0": { "$value": "0px" },
+    "2": { "$value": "2px", "$description": "Fine break: hairline gaps, glyph nudges." },
+    "4": { "$value": "4px", "$description": "Fine break: icon-to-label gap, chip padding." },
+    "8": { "$value": "8px" },
+    "12": { "$value": "12px", "$description": "Within a component only (padding, an invisible hit halo, the watch safe margin) — never between components." },
+    "16": { "$value": "16px" },
+    "24": { "$value": "24px" },
+    "32": { "$value": "32px" },
+    "40": { "$value": "40px" },
+    "48": { "$value": "48px" },
+    "64": { "$value": "64px" }
+  },
+  "radius": {
+    "$type": "dimension",
+    "$description": "Tight radii: 4 controls and chips · 8 cards · 12 floating panels and sheets. Concentric (inner = outer − padding); a radius never clips content.",
+    "0": { "$value": "0px" },
+    "4": { "$value": "4px" },
+    "8": { "$value": "8px" },
+    "12": { "$value": "12px" },
+    "full": { "$value": "9999px", "$description": "Capsule: the system switch only. Never chips, pills or buttons." }
+  },
+  "border": {
+    "width": {
+      "$type": "dimension",
+      "hairline": { "$value": "1px", "$description": "1 px in CSS; 1 / displayScale pt in SwiftUI." },
+      "1": { "$value": "1px" },
+      "2": { "$value": "2px" },
+      "3": { "$value": "3px" }
+    }
+  },
+  "device": {
+    "$type": "dimension",
+    "$description": "Screen widths in points that specimens are shown at. Design in points: every Apple Watch is @2x, every current iPhone @3x.",
+    "iphone-375": { "$value": "375px", "$description": "iPhone SE / mini class (compact)." },
+    "iphone-390": { "$value": "390px", "$description": "iPhone 13–16 (regular)." },
+    "iphone-430": { "$value": "430px", "$description": "iPhone Plus / Pro Max (large)." },
+    "watch-40mm": { "$value": "162px", "$description": "Apple Watch 40 mm (162 × 197 pt) — the tightest screen; if it fits here it fits everywhere." },
+    "watch-41mm": { "$value": "176px", "$description": "Apple Watch 41 mm (176 × 215 pt)." },
+    "watch-45mm": { "$value": "198px", "$description": "Apple Watch 45 mm (198 × 242 pt)." },
+    "watch-49mm": { "$value": "205px", "$description": "Apple Watch Ultra 49 mm (205 × 251 pt)." }
+  },
+  "physical": {
+    "$type": "dimension",
+    "$description": "Physical (3D-printed and printed) sizes in millimetres: starting points for FDM with a 0.4 mm nozzle, to be confirmed with a test print. Never emitted to Swift.",
+    "stroke-min": { "$value": "0.8mm", "$description": "Narrowest raised or recessed stroke in text and marks: two nozzle widths." },
+    "text-cap-min": { "$value": "4mm", "$description": "Smallest cap height for moulded-in text read at arm’s length. Values and scales: JetBrains Mono (dotted zero)." },
+    "text-cap-label": { "$value": "6mm", "$description": "Cap height for a label that must be read without picking the part up (warnings, the speed scale)." },
+    "emboss-depth": { "$value": "0.6mm", "$description": "Raised text and marks: at least three 0.2 mm layers." },
+    "deboss-depth": { "$value": "0.6mm", "$description": "Recessed text: deep enough to hold an inlay or paint fill." },
+    "inlay-depth": { "$value": "0.4mm", "$description": "A contrasting-filament inlay (two layers at 0.2 mm), flush with the face." },
+    "edge-band": { "$value": "1.2mm", "$description": "The dark band that separates orange from light gray on a part, so the two never meet by hue alone." },
+    "label-margin": { "$value": "3mm", "$description": "Clear margin around printed labels and moulded text: the physical safe margin (nothing clipped by a chamfer or fillet)." }
+  }
+}
