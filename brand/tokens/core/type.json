@@ -1,0 +1,186 @@
+{
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "$description": "Four families, one job each: SF Pro for text (SF Compact on watchOS), Instrument Sans for titles only, JetBrains Mono for every number, Bitcount Single for hero numerals only. Bundled faces are SIL OFL 1.1 and live in brand/fonts/ with their licences; `$extensions.beatham.faces` maps a weight to the PostScript name Tokens.swift passes to Font.custom(_:size:relativeTo:), and `fallback` is the system design used when the face isn’t registered.",
+      "sans": {
+        "$value": [
+          "SF Pro Text",
+          "SF Pro",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "system-ui",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif"
+        ],
+        "$description": "Text: SF Pro, the system font — Dynamic Type, Bold Text and SF Symbols weight-matching for free. Nothing to bundle. watchOS sub-brands swap in SF Compact.",
+        "$extensions": {
+          "beatham": {
+            "fallback": "default"
+          }
+        }
+      },
+      "display": {
+        "$value": [
+          "Instrument Sans",
+          "SF Pro Display",
+          "SF Pro",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "system-ui",
+          "sans-serif"
+        ],
+        "$description": "Titles only: Instrument Sans (SIL OFL 1.1). Its build has no ± or µ, so a title never carries a value — numbers go in mono.",
+        "$extensions": {
+          "beatham": {
+            "fallback": "default",
+            "faces": {
+              "600": "InstrumentSans-SemiBold",
+              "700": "InstrumentSans-Bold"
+            },
+            "files": [
+              "instrument-sans/InstrumentSans-SemiBold.ttf",
+              "instrument-sans/InstrumentSans-Bold.ttf"
+            ]
+          }
+        }
+      },
+      "mono": {
+        "$value": [
+          "JetBrains Mono",
+          "SF Mono",
+          "ui-monospace",
+          "Menlo",
+          "Consolas",
+          "monospace"
+        ],
+        "$description": "Every number and value: JetBrains Mono (SIL OFL 1.1) — dotted zero (never confused with O or Ø), tabular, 0.55 x-height. SF Mono is the fallback only. Turn off the `calt` ligatures in expression and code fields.",
+        "$extensions": {
+          "beatham": {
+            "fallback": "monospaced",
+            "faces": {
+              "400": "JetBrainsMono-Regular",
+              "500": "JetBrainsMono-Medium",
+              "600": "JetBrainsMono-SemiBold"
+            },
+            "files": [
+              "jetbrains-mono/JetBrainsMono-Regular.ttf",
+              "jetbrains-mono/JetBrainsMono-Medium.ttf",
+              "jetbrains-mono/JetBrainsMono-SemiBold.ttf"
+            ]
+          }
+        }
+      },
+      "hero": {
+        "$value": [
+          "Bitcount Single",
+          "JetBrains Mono",
+          "SF Mono",
+          "ui-monospace",
+          "monospace"
+        ],
+        "$description": "Hero numerals only: Bitcount Single (SIL OFL 1.1), a round-dot matrix face — a summary figure, a big readout, a pairing code, marketing. One per screen at most; never body text or inline values. Covers 0–9 . , − ± ° Ø × µ and m.",
+        "$extensions": {
+          "beatham": {
+            "fallback": "monospaced",
+            "faces": {
+              "400": "BitcountSingle-Regular"
+            },
+            "files": [
+              "bitcount-single/BitcountSingle-Variable.ttf"
+            ]
+          }
+        }
+      }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "regular": {
+        "$value": 400
+      },
+      "medium": {
+        "$value": 500
+      },
+      "semibold": {
+        "$value": 600
+      },
+      "bold": {
+        "$value": 700
+      }
+    },
+    "size": {
+      "11": {
+        "$value": "11px"
+      },
+      "12": {
+        "$value": "12px"
+      },
+      "13": {
+        "$value": "13px"
+      },
+      "15": {
+        "$value": "15px"
+      },
+      "16": {
+        "$value": "16px"
+      },
+      "17": {
+        "$value": "17px"
+      },
+      "20": {
+        "$value": "20px"
+      },
+      "22": {
+        "$value": "22px"
+      },
+      "28": {
+        "$value": "28px"
+      },
+      "34": {
+        "$value": "34px"
+      },
+      "56": {
+        "$value": "56px",
+        "$description": "Hero numerals (Bitcount Single). Scales with Dynamic Type relative to Large Title."
+      },
+      "$type": "dimension",
+      "$description": "Apple Dynamic Type sizes at the default (Large) content size."
+    },
+    "leading": {
+      "$type": "number",
+      "$description": "Line-height multipliers for text outside the Dynamic Type styles (web body copy, long-form). The type.* styles carry their own exact values.",
+      "tight": {
+        "$value": 1.2,
+        "$description": "Titles and single-line controls."
+      },
+      "normal": {
+        "$value": 1.4,
+        "$description": "UI text and short paragraphs."
+      },
+      "relaxed": {
+        "$value": 1.5,
+        "$description": "Long-form reading on the web."
+      }
+    },
+    "tracking": {
+      "$type": "dimension",
+      "$description": "Letter-spacing for text outside the type.* styles. Titles tighten with size; nothing else is tracked except small caps labels.",
+      "tight": {
+        "$value": "-0.5px",
+        "$description": "Large titles (matches type.large-title)."
+      },
+      "snug": {
+        "$value": "-0.2px",
+        "$description": "Sheet and section titles."
+      },
+      "normal": {
+        "$value": "0px"
+      },
+      "wide": {
+        "$value": "0.5px",
+        "$description": "Uppercase labels at 11–12 px only."
+      }
+    }
+  }
+}

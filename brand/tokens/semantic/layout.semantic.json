@@ -1,0 +1,115 @@
+{
+  "layout": {
+    "$type": "dimension",
+    "touch-target-min": {
+      "$value": "44px",
+      "$description": "Apple HIG minimum hit target. Visual size may be smaller; hit area never is."
+    },
+    "screen-margin": {
+      "$value": "{space.16}",
+      "$description": "Leading/trailing content margin inside the safe area."
+    },
+    "gutter": {
+      "$value": "{space.8}",
+      "$description": "Between adjacent components: grid columns, controls in a row, chips."
+    },
+    "within": {
+      "$value": "{space.4}",
+      "$description": "Inside a component: icon-to-label gap, chip padding, stacked label + value."
+    },
+    "stack-gap": {
+      "$value": "{space.8}",
+      "$description": "Vertical gap between rows in a list or a form section (compact)."
+    },
+    "section-gap": {
+      "$value": "{space.16}",
+      "$description": "Gap between sections on a screen or sheet (compact everywhere, sheets included)."
+    },
+    "hud-inset": {
+      "$value": "{space.8}",
+      "$description": "Inset of floating panels (toolbars, HUDs) from the safe-area edge."
+    },
+    "hit-halo": {
+      "$value": "{space.12}",
+      "$description": "Invisible extra hit radius around small on-canvas marks and chips — within a component, so the 4 pt grid applies. The rule it serves: every hit area is ≥ 44 pt."
+    },
+    "thumb-zone": {
+      "$value": "33%",
+      "$type": "string",
+      "$description": "Primary actions live in the bottom third of a phone screen (one hand, one thumb)."
+    },
+    "$description": "Compact everywhere: 8 pt between components, 4 pt within. Touch targets stay ≥ 44 pt."
+  },
+  "radius": {
+    "control": {
+      "$value": "{radius.4}",
+      "$type": "dimension",
+      "$description": "Buttons, fields, segmented controls, tool buttons."
+    },
+    "chip": {
+      "$value": "{radius.4}",
+      "$type": "dimension",
+      "$description": "Chips, badges, status pills, filter chips: square-shouldered — the smallest radius."
+    },
+    "card": {
+      "$value": "{radius.8}",
+      "$type": "dimension",
+      "$description": "Cards, list groups, banners."
+    },
+    "hud": {
+      "$value": "{radius.12}",
+      "$type": "dimension",
+      "$description": "Floating panels and toolbars over a canvas."
+    },
+    "sheet": {
+      "$value": "{radius.12}",
+      "$type": "dimension",
+      "$description": "Top corners of bottom sheets — set with .presentationCornerRadius so sheets match the tight scale."
+    },
+    "$description": "Tight 4 / 8 / 12. Concentric: an inner radius is the outer radius minus the padding."
+  },
+  "elevation": {
+    "1": {
+      "$value": {
+        "color": "#00000000",
+        "offsetX": "0px",
+        "offsetY": "0px",
+        "blur": "0px",
+        "spread": "0px"
+      },
+      "$description": "Flat: cards, rows, banners. No shadow — use border.subtle."
+    },
+    "2": {
+      "$value": {
+        "color": "#00000029",
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "12px",
+        "spread": "0px"
+      },
+      "$description": "Floating over the canvas: toolbars, HUD panels, sheets."
+    },
+    "$type": "shadow",
+    "$description": "Flat: two layers. Surfaces separate by the neutral ladder and a hairline border; a shadow only lifts what floats over the canvas."
+  },
+  "material": {
+    "$type": "material",
+    "$description": "Custom Beatham type (not in DTCG): system materials for overlays on a canvas. ios = SwiftUI Material; blur + opacity approximate it in CSS over color.surface.control.",
+    "hud": {
+      "$value": {
+        "ios": "thickMaterial",
+        "blur": "20px",
+        "opacity": 0.92
+      },
+      "$description": "Floating panels and toolbars: near-opaque so they read as flat panels over the canvas."
+    },
+    "sheet": {
+      "$value": {
+        "ios": "regularMaterial",
+        "blur": "30px",
+        "opacity": 0.86
+      },
+      "$description": "Bottom sheets at the medium detent over the canvas."
+    }
+  }
+}

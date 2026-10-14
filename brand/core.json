@@ -1,0 +1,59 @@
+{
+  "name": "core",
+  "label": "Beatham",
+  "status": "core",
+  "product": "The Beatham core brand",
+  "thesis": "Precise, restrained, made by hand. Neutral carries the work; one warm amber marks what you touch.",
+  "summary": "The core every Beatham product inherits — apps, sites, watch faces and printed parts. It sets the rules (colour budget, accent rule, contrast, type jobs, spacing, shape, motion) and the raw material (Jeremiah’s ramps, the filament palette, four OFL faces). Each product layers a sub-brand on top: its own palettes, product roles and proportion, inside the same rules.",
+  "pillars": [
+    {
+      "name": "Precise",
+      "body": "Name the thing, the number and the fix. Every value has its unit; every state has a glyph and a label, never colour alone."
+    },
+    {
+      "name": "Restrained",
+      "body": "Flat, few layers, tight corners. Neutral carries ninety per cent of a screen; colour is a budget, not a palette."
+    },
+    {
+      "name": "Made by hand",
+      "body": "Warm greys, a hero amber, filament colours from the bench. The same system runs from a watch face to a printed part."
+    }
+  ],
+  "platforms": ["web", "ios", "macos", "watchos", "print"],
+  "palettes": {
+    "accent": "brand",
+    "secondary": ["gilt", "two-tone"],
+    "tertiary": ["blueprint", "filament"]
+  },
+  "proportion": {
+    "name": "90 / 7 / 3",
+    "parts": [
+      { "label": "neutral — surfaces, text, borders", "pct": 90, "color": "color.neutral.50" },
+      { "label": "accent — what you act on", "pct": 7, "color": "color.brand.50" },
+      { "label": "signals — blue open, red broken", "pct": 3, "color": ["color.callout.50", "color.negative.50"] }
+    ]
+  },
+  "type": [
+    "SF Pro for all text (SF Compact on watchOS). Instrument Sans for titles only — it has no ± or µ, so titles never carry values.",
+    "JetBrains Mono for every number and value (dotted zero, tabular). Bitcount Single for one hero numeral per screen at most.",
+    "Apple Dynamic Type steps; bundled faces scale with Font.custom(_:size:relativeTo:) and fall back to SF."
+  ],
+  "do": [
+    "Build every surface from the neutral ladder: true black → neutral/90 → neutral/80 in dark, paper → white in light.",
+    "Use the accent for the one thing being acted on: the selected segment, the active control, the focus ring.",
+    "Pair every state colour with a glyph and a word.",
+    "Take every visual value from a token. Run npm run brand:check before you push."
+  ],
+  "dont": [
+    "Use amber for links, headings, logos, icons or the primary button.",
+    "Add a hue to the chrome without a role, a grant and a reason.",
+    "Clip content with a corner radius, or stack shadows to show hierarchy.",
+    "Copy a hex value into a component, or edit a generated file."
+  ],
+  "identity": {
+    "wordmark": { "status": "not-defined", "note": "The Beatham name set in type. Not yet drawn." },
+    "icon": { "status": "not-defined", "note": "The Beatham icon: app icon, favicon, small mark. Not yet drawn." },
+    "logo": { "status": "not-defined", "note": "The Beatham logo lockup (icon plus wordmark). Not yet drawn." },
+    "rules": { "status": "provisional", "note": "Clear space and minimum size use the core mark.* tokens until a mark exists. On-colour use and don'ts are written with the mark." }
+  }
+}

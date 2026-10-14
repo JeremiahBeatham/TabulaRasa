@@ -1,0 +1,155 @@
+{
+  "opacity": {
+    "$type": "number",
+    "$description": "Opacity steps for tints, disabled content and scrims. Colour roles that already carry alpha (selection fill, scrim) stay as they are; use these only where a role does not exist. Never for text: text takes a text role.",
+    "8": {
+      "$value": 0.08,
+      "$description": "Hover wash on a neutral control."
+    },
+    "16": {
+      "$value": 0.16,
+      "$description": "Pressed wash; subtle tint."
+    },
+    "24": {
+      "$value": 0.24,
+      "$description": "Selection fill (matches selection.fill)."
+    },
+    "40": {
+      "$value": 0.4,
+      "$description": "Disabled content and controls."
+    },
+    "64": {
+      "$value": 0.64,
+      "$description": "Scrim behind a sheet or modal."
+    }
+  },
+  "icon": {
+    "$type": "dimension",
+    "$description": "Icon sizes in points (SF Symbols or custom symbols on Apple's templates) and the stroke custom symbols are drawn with. Targets stay at least 44 pt whatever the glyph size.",
+    "size-16": {
+      "$value": "16px",
+      "$description": "Inline with text; chips and status glyphs."
+    },
+    "size-24": {
+      "$value": "24px",
+      "$description": "Default: toolbar and tab bar glyphs."
+    },
+    "size-40": {
+      "$value": "40px",
+      "$description": "Large controls and list thumbnails."
+    },
+    "size-80": {
+      "$value": "80px",
+      "$description": "Empty states and onboarding."
+    },
+    "stroke-regular": {
+      "$value": "1.5px",
+      "$description": "Custom symbols and web icons at 24: matches SF Symbols Regular."
+    },
+    "stroke-bold": {
+      "$value": "2px",
+      "$description": "Custom symbols for Bold Text and high contrast."
+    }
+  },
+  "focus": {
+    "$type": "dimension",
+    "$description": "Focus ring geometry. Colour is the accent.focus role: focus is something you act on, so it is the one place the accent marks a keyboard or pointer target.",
+    "width": {
+      "$value": "2px",
+      "$description": "Ring stroke."
+    },
+    "offset": {
+      "$value": "2px",
+      "$description": "Gap between the control's edge and the ring, so the ring never touches or clips the control."
+    }
+  },
+  "breakpoint": {
+    "$type": "dimension",
+    "$description": "Web only: min-width breakpoints. Mobile first; the compact layout is the default and needs no query. CSS cannot use a custom property in a media query, so read these from tokens.json (Tailwind config, JS) rather than var().",
+    "sm": {
+      "$value": "480px",
+      "$description": "Large phones in landscape, small tablets in portrait."
+    },
+    "md": {
+      "$value": "768px",
+      "$description": "Tablets."
+    },
+    "lg": {
+      "$value": "1024px",
+      "$description": "Small laptops."
+    },
+    "xl": {
+      "$value": "1280px",
+      "$description": "Desktop."
+    }
+  },
+  "grid": {
+    "$description": "Web only: layout columns by width. Gutter is layout.gutter and the page margin is layout.screen-margin, so the grid adds no new spacing values.",
+    "columns-compact": {
+      "$type": "number",
+      "$value": 4,
+      "$description": "Below md."
+    },
+    "columns-regular": {
+      "$type": "number",
+      "$value": 8,
+      "$description": "md up to lg."
+    },
+    "columns-wide": {
+      "$type": "number",
+      "$value": 12,
+      "$description": "lg and up."
+    },
+    "max-width": {
+      "$type": "dimension",
+      "$value": "1120px",
+      "$description": "Content measure on wide screens: 12 columns of 72 plus 11 gutters of 8, with room for the 16 margin each side."
+    }
+  },
+  "layer": {
+    "$type": "number",
+    "$description": "Web only: z-index scale. Two visual layers in the design (flat), so these exist for stacking order only. Always a token, never a literal.",
+    "base": {
+      "$value": 0
+    },
+    "raised": {
+      "$value": 10,
+      "$description": "Sticky headers, floating toolbars and HUDs."
+    },
+    "overlay": {
+      "$value": 20,
+      "$description": "Menus and popovers."
+    },
+    "sheet": {
+      "$value": 30,
+      "$description": "Scrim and sheet."
+    },
+    "toast": {
+      "$value": 40,
+      "$description": "Toasts and banners above a sheet."
+    },
+    "tooltip": {
+      "$value": 50
+    }
+  },
+  "mark": {
+    "$type": "dimension",
+    "$description": "Starting rules for the Beatham mark. No mark is defined yet, so these are provisional geometry rules (sizes and clear space) to be confirmed or replaced when the wordmark, icon and logo are drawn. They live here so every sub-brand has the same slots.",
+    "size-min": {
+      "$value": "16px",
+      "$description": "Smallest on-screen size of the icon alone (favicon size)."
+    },
+    "wordmark-size-min": {
+      "$value": "80px",
+      "$description": "Smallest on-screen width of icon with wordmark."
+    },
+    "clear-space": {
+      "$value": "8px",
+      "$description": "Minimum clear space on every side at 32 px; scales with the mark (a quarter of its width)."
+    },
+    "print-size-min": {
+      "$value": "8mm",
+      "$description": "Smallest printed or moulded mark; keep its edges 3 mm from a part's edge (physical.label-margin)."
+    }
+  }
+}

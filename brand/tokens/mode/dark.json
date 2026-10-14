@@ -1,0 +1,8 @@
+{
+  "color-scheme": {
+    "$type": "string",
+    "$value": "dark",
+    "$description": "CSS color-scheme / SwiftUI ColorScheme for this mode."
+  },
+  "$description": "Dark is the reference mode (dark-first): semantic/ holds the dark values, so this file only sets the colour scheme."
+}

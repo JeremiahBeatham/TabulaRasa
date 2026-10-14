@@ -1,0 +1,19 @@
+{
+  "duration": {
+    "$type": "duration",
+    "0": { "$value": "0ms", "$description": "Instant — reduced-motion replacement for movement." },
+    "100": { "$value": "100ms" },
+    "150": { "$value": "150ms" },
+    "200": { "$value": "200ms" },
+    "250": { "$value": "250ms" },
+    "350": { "$value": "350ms" },
+    "500": { "$value": "500ms" }
+  },
+  "easing": {
+    "$type": "cubicBezier",
+    "standard": { "$value": [0.2, 0, 0, 1], "$description": "Default for on-screen changes." },
+    "decelerate": { "$value": [0, 0, 0, 1], "$description": "Things entering (sheets, toasts)." },
+    "accelerate": { "$value": [0.3, 0, 1, 1], "$description": "Things leaving." },
+    "linear": { "$value": [0, 0, 1, 1], "$description": "Progress and cross-fades." }
+  }
+}

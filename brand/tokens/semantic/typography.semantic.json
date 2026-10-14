@@ -1,0 +1,240 @@
+{
+  "type": {
+    "$type": "typography",
+    "$description": "Type scale on Apple Dynamic Type text styles at the default (Large) size. $extensions.beatham.textStyle names the SwiftUI Font.TextStyle each role scales relative to. Titles in Instrument Sans (display), text in SF Pro (sans), every number in JetBrains Mono (mono, tabular), hero numerals in Bitcount Single (hero).",
+    "large-title": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": "{font.size.34}",
+        "fontWeight": "{font.weight.bold}",
+        "lineHeight": 1.2059,
+        "letterSpacing": "-0.5px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "largeTitle",
+          "lineHeightPt": 41,
+          "tabular": false
+        }
+      },
+      "$description": "The largest title on a screen. Instrument Sans — titles never carry values."
+    },
+    "title-1": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": "{font.size.28}",
+        "fontWeight": "{font.weight.bold}",
+        "lineHeight": 1.2143,
+        "letterSpacing": "-0.3px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "title",
+          "lineHeightPt": 34,
+          "tabular": false
+        }
+      }
+    },
+    "title-2": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": "{font.size.22}",
+        "fontWeight": "{font.weight.semibold}",
+        "lineHeight": 1.2727,
+        "letterSpacing": "-0.2px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "title2",
+          "lineHeightPt": 28,
+          "tabular": false
+        }
+      },
+      "$description": "Sheet titles."
+    },
+    "title-3": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": "{font.size.20}",
+        "fontWeight": "{font.weight.semibold}",
+        "lineHeight": 1.25,
+        "letterSpacing": "-0.1px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "title3",
+          "lineHeightPt": 25,
+          "tabular": false
+        }
+      }
+    },
+    "headline": {
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": "{font.size.17}",
+        "fontWeight": "{font.weight.semibold}",
+        "lineHeight": 1.2941,
+        "letterSpacing": "-0.43px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "headline",
+          "lineHeightPt": 22,
+          "tabular": false
+        }
+      },
+      "$description": "Section headers, row titles."
+    },
+    "body": {
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": "{font.size.17}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.2941,
+        "letterSpacing": "-0.43px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "body",
+          "lineHeightPt": 22,
+          "tabular": false
+        }
+      },
+      "$description": "Default text."
+    },
+    "callout": {
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": "{font.size.16}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.3125,
+        "letterSpacing": "-0.31px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "callout",
+          "lineHeightPt": 21,
+          "tabular": false
+        }
+      }
+    },
+    "subheadline": {
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": "{font.size.15}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.3333,
+        "letterSpacing": "-0.23px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "subheadline",
+          "lineHeightPt": 20,
+          "tabular": false
+        }
+      },
+      "$description": "Field labels, supporting rows."
+    },
+    "footnote": {
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": "{font.size.13}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.3846,
+        "letterSpacing": "-0.08px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "footnote",
+          "lineHeightPt": 18,
+          "tabular": false
+        }
+      }
+    },
+    "caption-1": {
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": "{font.size.12}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.3333,
+        "letterSpacing": "0px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "caption",
+          "lineHeightPt": 16,
+          "tabular": false
+        }
+      },
+      "$description": "Toolbar labels."
+    },
+    "caption-2": {
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": "{font.size.11}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.1818,
+        "letterSpacing": "0.06px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "caption2",
+          "lineHeightPt": 13,
+          "tabular": false
+        }
+      },
+      "$description": "Smallest allowed; badges only."
+    },
+    "numeric-field": {
+      "$value": {
+        "fontFamily": "{font.family.mono}",
+        "fontSize": "{font.size.17}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.2941,
+        "letterSpacing": "0px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "body",
+          "lineHeightPt": 22,
+          "tabular": true
+        }
+      },
+      "$description": "Numeric and expression fields (JetBrains Mono, tabular; calt off)."
+    },
+    "numeric-caption": {
+      "$value": {
+        "fontFamily": "{font.family.mono}",
+        "fontSize": "{font.size.12}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.3333,
+        "letterSpacing": "0px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "caption",
+          "lineHeightPt": 16,
+          "tabular": true
+        }
+      },
+      "$description": "Units, counts, coordinates, codes (JetBrains Mono)."
+    },
+    "hero-numeral": {
+      "$value": {
+        "fontFamily": "{font.family.hero}",
+        "fontSize": "{font.size.56}",
+        "fontWeight": "{font.weight.regular}",
+        "lineHeight": 1.0714,
+        "letterSpacing": "0px"
+      },
+      "$extensions": {
+        "beatham": {
+          "textStyle": "largeTitle",
+          "lineHeightPt": 60,
+          "tabular": true
+        }
+      },
+      "$description": "Hero numerals (Bitcount Single, dot matrix): a summary figure, a big readout, a pairing code, marketing. One number per screen at most; never body text or inline values."
+    }
+  }
+}

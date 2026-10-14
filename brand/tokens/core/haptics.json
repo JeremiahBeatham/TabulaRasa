@@ -1,0 +1,48 @@
+{
+  "haptic": {
+    "$type": "haptic",
+    "$description": "Custom Beatham type (not in DTCG): { generator: impact | notification | selection, style }. Maps to UIImpactFeedbackGenerator / UINotificationFeedbackGenerator / UISelectionFeedbackGenerator on iOS and WKHapticType on watchOS. Web has no equivalent; the guidelines document them only.",
+    "impact-light": {
+      "$value": {
+        "generator": "impact",
+        "style": "light"
+      }
+    },
+    "impact-medium": {
+      "$value": {
+        "generator": "impact",
+        "style": "medium"
+      }
+    },
+    "impact-soft": {
+      "$value": {
+        "generator": "impact",
+        "style": "soft"
+      }
+    },
+    "notification-success": {
+      "$value": {
+        "generator": "notification",
+        "style": "success"
+      }
+    },
+    "notification-warning": {
+      "$value": {
+        "generator": "notification",
+        "style": "warning"
+      }
+    },
+    "notification-error": {
+      "$value": {
+        "generator": "notification",
+        "style": "error"
+      }
+    },
+    "selection": {
+      "$value": {
+        "generator": "selection",
+        "style": "default"
+      }
+    }
+  }
+}

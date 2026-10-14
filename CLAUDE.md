@@ -246,3 +246,6 @@ trips the same things:
 **Artifacts: only on request.** Jeremiah deploys his own interactive tools and doesn't want work
 sitting at hosted URLs by default. Build tools as files in `docs/tools/` and publish only when he
 explicitly asks for an artifact.
+
+## Brand
+Identity and marketing only. `brand/` is vendored from BeathamBase (core, pruned) by `npm run brand:sync` and never edited here; it feeds the README, the community-directory page and the future icon. **The plugin UI does not adopt it**: it inherits Obsidian's own look (CSS variables from the host theme), so the brand's `brand:check` values lint is intentionally not wired into this repo. A custom icon is a later job, drawn from core (`mark.*` tokens, `docs/BRAND.md`).

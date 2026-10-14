@@ -1,0 +1,74 @@
+{
+  "color-scheme": {
+    "$type": "string",
+    "$value": "dark",
+    "$description": "CSS color-scheme / SwiftUI ColorScheme for this mode."
+  },
+  "$description": "Increase Contrast, dark. Layered on dark. Targets 7:1 text and 4.5:1 graphics.",
+  "color": {
+    "surface": {
+      "canvas": {
+        "$value": "{color.neutral.100}"
+      }
+    },
+    "text": {
+      "secondary": {
+        "$value": "{color.neutral.10}"
+      },
+      "tertiary": {
+        "$value": "{color.neutral.20}"
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": "{color.neutral.60}"
+      },
+      "strong": {
+        "$value": "{color.neutral.30}"
+      }
+    },
+    "accent": {
+      "text": {
+        "$value": "{color.brand.30}"
+      }
+    },
+    "action": {
+      "destructive-label": {
+        "$value": "{color.negative.20}"
+      }
+    },
+    "selection": {
+      "hover": {
+        "$value": "{color.brand.20}"
+      }
+    },
+    "signal": {
+      "info": {
+        "$value": "{color.callout.30}"
+      },
+      "negative": {
+        "$value": "{color.negative.30}"
+      },
+      "caution": {
+        "$value": "{color.negative.10}"
+      },
+      "positive": {
+        "$value": "{color.success.30}"
+      }
+    },
+    "feedback": {
+      "error": {
+        "$value": "{color.negative.30}"
+      },
+      "warning": {
+        "$value": "{color.negative.10}"
+      },
+      "success": {
+        "$value": "{color.neutral.10}"
+      },
+      "info": {
+        "$value": "{color.neutral.10}"
+      }
+    }
+  }
+}
