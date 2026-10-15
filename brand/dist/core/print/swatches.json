@@ -28,12 +28,12 @@
             "b": -2.8
           },
           "description": "Light-gray filament (photo sample). The body of a part.",
-          "source": "photo-sampled",
-          "manufacturer": "TODO",
-          "product": "TODO (line and material, e.g. PLA Basic / PLA Matte / PETG)",
-          "colourName": "TODO (the manufacturer's name for it)",
-          "colourCode": "TODO (SKU or colour code from the spool label)",
-          "note": "The body of most parts (65 % in mix a, 60 % in mix b)."
+          "source": "identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled",
+          "manufacturer": "OVERTURE",
+          "product": "Easy PLA, 1.75 mm, 1 kg, cardboard spool",
+          "colourName": "Rock White (speckled light gray)",
+          "colourCode": "not on the listing: read the SKU or colour code from the spool label",
+          "note": "The body of most parts (65 % in mix a, 60 % in mix b). Rock White is flecked, so a printed swatch will read slightly darker and busier than the flat sample."
         },
         {
           "group": "Filaments",
@@ -56,11 +56,11 @@
             "b": 55.5
           },
           "description": "Orange filament (photo sample). Only 1.47:1 against light gray — outline or label it with black or space gray.",
-          "source": "photo-sampled",
-          "manufacturer": "TODO",
-          "product": "TODO",
-          "colourName": "TODO",
-          "colourCode": "TODO",
+          "source": "identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled",
+          "manufacturer": "OVERTURE",
+          "product": "Easy PLA, 1.75 mm, 1 kg, cardboard spool",
+          "colourName": "Pumpkin Orange",
+          "colourCode": "not on the listing: read the SKU or colour code from the spool label",
           "note": "The accent on a part: what you actuate (25 % in mix a, 10 % in mix b). 1.47:1 against light gray — never adjacent without a dark band or label."
         },
         {
@@ -84,11 +84,11 @@
             "b": -1.2
           },
           "description": "Space-gray filament (photo sample).",
-          "source": "photo-sampled",
-          "manufacturer": "TODO",
-          "product": "TODO",
-          "colourName": "TODO (\"space gray\" is Jeremiah's name; confirm the manufacturer's)",
-          "colourCode": "TODO",
+          "source": "identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled",
+          "manufacturer": "OVERTURE",
+          "product": "Easy PLA, 1.75 mm, 1 kg, cardboard spool",
+          "colourName": "Space Grey",
+          "colourCode": "not on the listing: read the SKU or colour code from the spool label",
           "note": "Structure and chrome (30 % in mix b, or the 10 % in mix a)."
         },
         {
@@ -112,11 +112,11 @@
             "b": 0
           },
           "description": "Black filament (photo sample).",
-          "source": "photo-sampled",
-          "manufacturer": "TODO",
-          "product": "TODO",
-          "colourName": "TODO",
-          "colourCode": "TODO",
+          "source": "identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled",
+          "manufacturer": "OVERTURE",
+          "product": "Easy PLA, 1.75 mm, 1 kg, cardboard spool",
+          "colourName": "Black",
+          "colourCode": "not on the listing: read the SKU or colour code from the spool label",
           "note": "Edges, bands and markings: the colour that makes orange readable on light gray."
         }
       ]
@@ -631,26 +631,6 @@
   ],
   "mixes": [
     {
-      "id": "a",
-      "name": "Mix a — light part, orange band",
-      "parts": [
-        [
-          "light-gray",
-          65
-        ],
-        [
-          "orange",
-          25
-        ],
-        [
-          "black",
-          10
-        ]
-      ],
-      "alternate": "black may be space gray",
-      "note": "Orange and light gray sit one lightness step apart (1.47:1): the 10 % black outlines or labels the orange."
-    },
-    {
       "id": "b",
       "name": "Mix b — light part, dark chrome, orange signal",
       "parts": [
@@ -669,10 +649,30 @@
       ],
       "alternate": "space gray may be black",
       "note": "Orange on space gray is 3.10:1 — fine for shapes and marks, not for text."
+    },
+    {
+      "id": "a",
+      "name": "Mix a — light part, orange band",
+      "parts": [
+        [
+          "light-gray",
+          65
+        ],
+        [
+          "orange",
+          25
+        ],
+        [
+          "black",
+          10
+        ]
+      ],
+      "alternate": "black may be space gray",
+      "note": "Orange and light gray sit one lightness step apart (1.47:1): the 10 % black outlines or labels the orange."
     }
   ],
   "printer": {
-    "model": "TODO — HandCAD's docs reference a Bambu Lab A1 mini (180 × 180 × 180 mm bed); confirm that is the printer these filaments run on.",
+    "model": "Bambu Lab A1 mini (180 × 180 × 180 mm bed), confirmed by Jeremiah 2026-10-14",
     "nozzle": "0.4mm (assumed; brand/tokens/core/size.json → physical.* is sized for it)"
   },
   "matrix": [

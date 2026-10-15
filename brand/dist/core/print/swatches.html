@@ -37,7 +37,7 @@
   <p class="k">Beatham · print &amp; physical · core</p>
   <h1>Beatham — swatches and physical rules</h1>
   <p>sRGB values from the brand tokens. A screen is never the reference for paper or filament: match spools by manufacturer colour code, then compare against a printed proof under daylight (D50). Photo-sampled values are approximate. Fields marked TODO are for Jeremiah (<code>brand/inputs/filaments.json</code>).</p>
-  <p class="note">Printer: TODO — HandCAD's docs reference a Bambu Lab A1 mini (180 × 180 × 180 mm bed); confirm that is the printer these filaments run on. · nozzle 0.4mm (assumed; brand/tokens/core/size.json → physical.* is sized for it)</p>
+  <p class="note">Printer: Bambu Lab A1 mini (180 × 180 × 180 mm bed), confirmed by Jeremiah 2026-10-14 · nozzle 0.4mm (assumed; brand/tokens/core/size.json → physical.* is sized for it)</p>
 
   <h2>Filaments</h2>
   <p>Photo-sampled — approximate. Match spools by manufacturer colour code, then by a printed proof.</p>
@@ -49,7 +49,7 @@
           <span>RGB 193 195 200</span>
           <span>L*a*b* (D50) 78.7 0 -2.8</span>
           <span>OKLCH 0.817 0.007 269°</span>
-          <span class="todo">TODO · TODO (the manufacturer's name for it) · TODO (SKU or colour code from the spool label)</span>
+          <span class="todo">OVERTURE · Rock White (speckled light gray) · not on the listing: read the SKU or colour code from the spool label</span>
           <span class="q">palette.filament.light-gray</span>
         </figcaption>
       </figure>
@@ -60,7 +60,7 @@
           <span>RGB 228 140 60</span>
           <span>L*a*b* (D50) 66.8 29.8 55.5</span>
           <span>OKLCH 0.719 0.142 59°</span>
-          <span class="todo">TODO · TODO · TODO</span>
+          <span class="todo">OVERTURE · Pumpkin Orange · not on the listing: read the SKU or colour code from the spool label</span>
           <span class="q">palette.filament.orange</span>
         </figcaption>
       </figure>
@@ -71,7 +71,7 @@
           <span>RGB 77 81 82</span>
           <span>L*a*b* (D50) 34.1 -1.5 -1.2</span>
           <span>OKLCH 0.432 0.005 214°</span>
-          <span class="todo">TODO · TODO (&quot;space gray&quot; is Jeremiah's name; confirm the manufacturer's) · TODO</span>
+          <span class="todo">OVERTURE · Space Grey · not on the listing: read the SKU or colour code from the spool label</span>
           <span class="q">palette.filament.space-gray</span>
         </figcaption>
       </figure>
@@ -82,7 +82,7 @@
           <span>RGB 25 25 25</span>
           <span>L*a*b* (D50) 8.8 0 0</span>
           <span>OKLCH 0.213 0 90°</span>
-          <span class="todo">TODO · TODO · TODO</span>
+          <span class="todo">OVERTURE · Black · not on the listing: read the SKU or colour code from the spool label</span>
           <span class="q">palette.filament.black</span>
         </figcaption>
       </figure>
@@ -339,12 +339,12 @@
   <p>Proportions are coverage on a part: how much of its visible surface each filament takes.</p>
 
       <figure class="mix">
-        <div class="bar"><span style="flex:65;background:#C1C3C8;color:#000000">65</span><span style="flex:25;background:#E48C3C;color:#000000">25</span><span style="flex:10;background:#191919;color:#FFFFFF">10</span></div>
-        <figcaption><b>Mix a — light part, orange band</b> — 65 light-gray / 25 orange / 10 black (black may be space gray). Orange and light gray sit one lightness step apart (1.47:1): the 10 % black outlines or labels the orange.</figcaption>
-      </figure>
-      <figure class="mix">
         <div class="bar"><span style="flex:60;background:#C1C3C8;color:#000000">60</span><span style="flex:30;background:#4D5152;color:#FFFFFF">30</span><span style="flex:10;background:#E48C3C;color:#000000">10</span></div>
         <figcaption><b>Mix b — light part, dark chrome, orange signal</b> — 60 light-gray / 30 space-gray / 10 orange (space gray may be black). Orange on space gray is 3.10:1 — fine for shapes and marks, not for text.</figcaption>
+      </figure>
+      <figure class="mix">
+        <div class="bar"><span style="flex:65;background:#C1C3C8;color:#000000">65</span><span style="flex:25;background:#E48C3C;color:#000000">25</span><span style="flex:10;background:#191919;color:#FFFFFF">10</span></div>
+        <figcaption><b>Mix a — light part, orange band</b> — 65 light-gray / 25 orange / 10 black (black may be space gray). Orange and light gray sit one lightness step apart (1.47:1): the 10 % black outlines or labels the orange.</figcaption>
       </figure>
 
   <h2>Filament contrast</h2>

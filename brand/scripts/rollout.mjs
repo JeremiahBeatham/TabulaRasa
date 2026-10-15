@@ -14,7 +14,7 @@
 //
 // Which repos: brand/projects.json entries with rollout.adopted = true. Each names its sub-brand
 // (project.subbrand, or rollout.subbrand to override), base branch (rollout.base, default main) and
-// check commands (rollout.checks). Needs `git` and the GitHub CLI `gh` (logged in) unless --local.
+// check commands (rollout.checks) and, when its package.json is in a subfolder, rollout.package. Needs `git` and the GitHub CLI `gh` (logged in) unless --local.
 // It only touches brand/, docs/BRAND.md and the brand:* scripts + one devDependency in package.json.
 // It never edits product code and never merges.
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -75,6 +75,7 @@ const targets = projects
     label: p.label,
     sub: p.rollout.subbrand ?? p.subbrand ?? 'core',
     base: p.rollout.base ?? 'main',
+    pkg: p.rollout.package ?? null, // package.json path when it is not at the repo root, e.g. web/package.json
     checks: p.rollout.checks ?? [],
   }));
 if (!targets.length) {
@@ -104,7 +105,7 @@ function prepare(t) {
   if (local) run('git', ['clone', '--quiet', path.join(local, t.repo), work], os.tmpdir());
   else run('gh', ['repo', 'clone', `${OWNER}/${t.repo}`, work, '--', '--quiet', '--branch', t.base], os.tmpdir());
   run('git', ['checkout', '--quiet', '-B', `brand/sync-${version}`, local ? 'HEAD' : `origin/${t.base}`], work);
-  const out = sh(`node "${path.join(here, 'sync.mjs')}" --from "${baseRepo}" --ref "${ref}" --subbrand ${t.sub} --prune`, work);
+  const out = sh(`node "${path.join(here, 'sync.mjs')}" --from "${baseRepo}" --ref "${ref}" --subbrand ${t.sub} --prune${t.pkg ? ` --package ${t.pkg}` : ''}`, work);
   if (out.status !== 0) throw new Error(out.stderr.trim() || out.stdout.trim());
   const changed = run('git', ['status', '--porcelain'], work)
     .split('\n')

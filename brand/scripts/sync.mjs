@@ -7,6 +7,7 @@
 //   npm run brand:sync -- --ref brand-v1.2.0    a specific tag (or branch)
 //   npm run brand:sync -- --from ../BeathamBase a local checkout (offline; uses its committed --ref)
 //   npm run brand:sync -- --check               exit 1 if brand/ differs from the ref (CI / repo-setup)
+//   npm run brand:sync -- --package web/package.json    the project's package.json is in a subfolder
 //   npm run brand:sync -- --subbrand handcad    also set package.json beatham.subbrand, and vendor ONLY core + that
 //                                               sub-brand (pruned: no site, no other sub-brands, no projects.json),
 //                                               so another sub-brand's release is a zero diff here. --full copies all.
@@ -96,7 +97,7 @@ const version = fs.existsSync(path.join(srcBrand, 'VERSION')) ? fs.readFileSync(
 // ---------- which sub-brand, and what to leave out ----------
 const readJson = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null);
 const sub =
-  opt('subbrand') ?? readJson(path.join(project, 'package.json'))?.beatham?.subbrand ?? readJson(path.join(project, 'brand/SOURCE.json'))?.subbrand ?? null;
+  opt('subbrand') ?? readJson(path.join(project, opt('package') ?? 'package.json'))?.beatham?.subbrand ?? readJson(path.join(project, 'brand/SOURCE.json'))?.subbrand ?? null;
 const prune = !flag('full') && (flag('prune') || Boolean(sub));
 if (flag('prune') && !sub) fail('--prune needs a sub-brand: pass --subbrand <name> (use core for none).');
 if (prune && sub !== 'core' && !fs.existsSync(path.join(srcBrand, 'subbrands', sub))) fail(`${ref} has no sub-brand "${sub}" (brand/subbrands/${sub}).`);
@@ -176,17 +177,21 @@ if (docChanged) {
 }
 
 // ---------- package.json ----------
-const pkgPath = path.join(project, 'package.json');
+// --package web/package.json: the project's package.json is not at the repo root (HandStack web/,
+// Confident confident-web/). The scripts then reach brand/ through a relative path.
+const pkgPath = path.join(project, opt('package') ?? 'package.json');
+const up = path.relative(path.dirname(pkgPath), project);
+const through = (cmd) => (up ? cmd.replace(/brand\//g, `${up}/brand/`) : cmd);
 if (fs.existsSync(pkgPath)) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   const srcPkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
   pkg.scripts = { ...(pkg.scripts ?? {}) };
-  for (const [k, v] of Object.entries(SCRIPTS)) pkg.scripts[k] ??= v;
+  for (const [k, v] of Object.entries(SCRIPTS)) pkg.scripts[k] ??= through(v);
   pkg.devDependencies = { ...(pkg.devDependencies ?? {}), 'style-dictionary': srcPkg.devDependencies['style-dictionary'] };
   pkg.beatham = { ...(pkg.beatham ?? {}), subbrand: sub ?? 'core' };
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 } else {
-  log('  (no package.json: this project consumes brand/dist directly — e.g. add brand/dist/<sub-brand>/Tokens.swift to the Xcode target)');
+  log('  (no package.json: this project consumes brand/dist directly — add brand/dist/<sub-brand>/Tokens.swift and brand/fonts to the Xcode target; or pass --package <path> if its package.json is in a subfolder)');
 }
 fs.rmSync(tmp, { recursive: true, force: true });
 

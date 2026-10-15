@@ -1,8 +1,8 @@
 group,token,name,hex,r,g,b,oklch_L,oklch_C,oklch_H,lab_L,lab_a,lab_b,source,manufacturer,product,colour_name,colour_code
-Filaments,palette.filament.light-gray,light-gray,#C1C3C8,193,195,200,0.817,0.007,269,78.7,0,-2.8,photo-sampled,TODO,"TODO (line and material, e.g. PLA Basic / PLA Matte / PETG)",TODO (the manufacturer's name for it),TODO (SKU or colour code from the spool label)
-Filaments,palette.filament.orange,orange,#E48C3C,228,140,60,0.719,0.142,59,66.8,29.8,55.5,photo-sampled,TODO,TODO,TODO,TODO
-Filaments,palette.filament.space-gray,space-gray,#4D5152,77,81,82,0.432,0.005,214,34.1,-1.5,-1.2,photo-sampled,TODO,TODO,"TODO (""space gray"" is Jeremiah's name; confirm the manufacturer's)",TODO
-Filaments,palette.filament.black,black,#191919,25,25,25,0.213,0,90,8.8,0,0,photo-sampled,TODO,TODO,TODO,TODO
+Filaments,palette.filament.light-gray,light-gray,#C1C3C8,193,195,200,0.817,0.007,269,78.7,0,-2.8,identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled,OVERTURE,"Easy PLA, 1.75 mm, 1 kg, cardboard spool",Rock White (speckled light gray),not on the listing: read the SKU or colour code from the spool label
+Filaments,palette.filament.orange,orange,#E48C3C,228,140,60,0.719,0.142,59,66.8,29.8,55.5,identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled,OVERTURE,"Easy PLA, 1.75 mm, 1 kg, cardboard spool",Pumpkin Orange,not on the listing: read the SKU or colour code from the spool label
+Filaments,palette.filament.space-gray,space-gray,#4D5152,77,81,82,0.432,0.005,214,34.1,-1.5,-1.2,identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled,OVERTURE,"Easy PLA, 1.75 mm, 1 kg, cardboard spool",Space Grey,not on the listing: read the SKU or colour code from the spool label
+Filaments,palette.filament.black,black,#191919,25,25,25,0.213,0,90,8.8,0,0,identified from the Amazon listing 2026-10-14 (title and colour name); sample hex is still photo-sampled,OVERTURE,"Easy PLA, 1.75 mm, 1 kg, cardboard spool",Black,not on the listing: read the SKU or colour code from the spool label
 Brand anchors,color.brand.50,50,#FFBA04,255,186,4,0.831,0.171,81,80.4,17.1,81.7,verbatim (Beatham Figma),,,,
 Brand anchors,color.neutral.0,0,#FFFFFF,255,255,255,1,0,90,100,0,0,verbatim (Beatham Figma),,,,
 Brand anchors,color.neutral.10,10,#F7F3EE,247,243,238,0.966,0.008,74,96.1,0.7,2.9,verbatim (Beatham Figma),,,,
