@@ -34,6 +34,15 @@ export function evaluateRoles(sb) {
   const problems = [];
   const coreKeys = coreRoleKeys();
 
+  // An accent outside the core's allowed list needs an accent grant with a reason.
+  if (!(rules.accent.allowed ?? ['brand', 'neutral']).includes(accent)) {
+    const ag = sb.manifest.rules?.accentGrant;
+    if (!ag || ag.ramp !== accent) problems.push(`${sb.name}: accent "${accent}" is not core-allowed (${(rules.accent.allowed ?? []).join(', ')}): add rules.accentGrant { ramp: "${accent}", reason }`);
+    else if (!ag.reason) problems.push(`${sb.name}: accentGrant for ${accent} has no reason`);
+    if (rules.never.ramps.includes(accent) || rules.never.groups.includes(accent)) problems.push(`${sb.name}: ${accent} can never be an accent`);
+    if (!config.coreRamps.includes(accent)) problems.push(`${sb.name}: accentGrant ramp "${accent}" is not a core ramp`);
+  }
+
   // Grants are checked first: they may never loosen the core rules.
   for (const g of grants) {
     const where = `${sb.name}: grant ${g.ramp} → ${g.roles?.join(', ')}`;

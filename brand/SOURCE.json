@@ -1,10 +1,10 @@
 {
   "$description": "Written by brand:sync — where this copy of the Beatham brand came from. Do not edit brand/ here; change BeathamBase and sync.",
   "repo": "https://github.com/JeremiahBeatham/BeathamBase.git",
-  "ref": "brand-v1.3.1",
-  "commit": "2ceedb355b66e0a980fc4af6d977880d94ef0380",
-  "version": "1.3.1",
+  "ref": "brand-v1.10.0",
+  "commit": "d162303404506d0edcb8b0dc40de3fa6988d8004",
+  "version": "1.10.0",
   "subbrand": "core",
   "pruned": true,
-  "syncedAt": "2026-10-14"
+  "syncedAt": "2026-10-15"
 }

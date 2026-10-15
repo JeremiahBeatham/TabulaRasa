@@ -22,6 +22,7 @@ for (const p of data.projects) {
     if (!p.repo) errors.push(`${id}: rollout needs a repo`);
     if (typeof p.rollout.adopted !== 'boolean') errors.push(`${id}: rollout.adopted must be true or false`);
     if (p.rollout.checks && !Array.isArray(p.rollout.checks)) errors.push(`${id}: rollout.checks must be a list of commands`);
+    if (p.rollout.package && typeof p.rollout.package !== 'string') errors.push(`${id}: rollout.package must be a path`);
     const track = p.rollout.subbrand ?? p.subbrand ?? 'core';
     if (track !== 'core' && !folders.includes(track)) errors.push(`${id}: rollout sub-brand "${track}" has no folder in brand/subbrands`);
   }

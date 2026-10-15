@@ -1,14 +1,25 @@
 {
   "$description": "Beatham core colour rules, enforced for core and every sub-brand by brand/scripts/check-roles.mjs (part of `npm run brand:check`). A sub-brand may add grants (subbrand.json → rules.grants), each with a scope and a reason; it may never loosen the rules below. See docs/BRAND.md.",
   "accent": {
-    "$description": "The accent rule: the accent marks only what you act on — selection, focus, the active control. The sub-brand's accent ramp (subbrand.json → palettes.accent, default brand) may appear in these roles and nowhere else; these roles may use only the accent ramp or neutral.",
-    "roles": ["color.accent.*", "color.selection.*"],
-    "default": "brand"
+    "$description": "The accent rule: the accent marks only what you act on — selection, focus, the active control. The sub-brand's accent ramp (subbrand.json → palettes.accent, default brand) may appear in these roles and nowhere else; these roles may use only the accent ramp or neutral. A sub-brand may take any other core ramp (not gold or brown) as its accent only through an accent grant (subbrand.json → rules.accentGrant: { ramp, reason }); the granted ramp then behaves exactly like brand does for every other sub-brand: it fills accent.* and selection.* and nothing else. The core default stays brand.",
+    "roles": [
+      "color.accent.*",
+      "color.selection.*"
+    ],
+    "default": "brand",
+    "allowed": [
+      "brand",
+      "neutral"
+    ]
   },
   "ramps": {
     "$description": "Which core roles each core ramp may fill. neutral may fill any role. A ramp not listed here (or listed with no roles) fills no core role until a sub-brand grants it.",
-    "neutral": ["*"],
-    "callout": ["color.signal.info"],
+    "neutral": [
+      "*"
+    ],
+    "callout": [
+      "color.signal.info"
+    ],
     "negative": [
       "color.signal.negative",
       "color.signal.caution",
@@ -16,7 +27,9 @@
       "color.feedback.warning",
       "color.action.destructive-label"
     ],
-    "success": ["color.signal.positive"],
+    "success": [
+      "color.signal.positive"
+    ],
     "violet": [],
     "teal": [],
     "orange": [],
@@ -25,20 +38,47 @@
   },
   "never": {
     "$description": "Never in any semantic role, core or sub-brand: these are palette and marketing colours (illustration, packaging, previews).",
-    "ramps": ["gold", "brown"],
-    "groups": ["palette"]
+    "ramps": [
+      "gold",
+      "brown"
+    ],
+    "groups": [
+      "palette"
+    ]
   },
   "hueBudget": {
     "$description": "Distinct non-neutral hues (ramps) that chrome roles may use, not counting the accent. Chrome = core roles + grants with scope \"chrome\". Scoped grants (analysis, data, category, physical, mark) are budgeted separately: each needs a reason and a legend or label wherever it appears.",
     "chrome": 3,
-    "scopes": ["chrome", "analysis", "data", "category", "physical", "mark"]
+    "scopes": [
+      "chrome",
+      "analysis",
+      "data",
+      "category",
+      "physical",
+      "mark"
+    ]
   },
   "proportion": {
     "$description": "Every sub-brand declares a proportion system: what share of a typical screen (or part, or page) each colour covers. Parts must sum to 100. The core default is 90 / 7 / 3 — neutral / accent / signals.",
     "default": [
-      { "label": "neutral — surfaces, text, borders", "pct": 90, "color": "color.neutral.50" },
-      { "label": "accent — what you act on", "pct": 7, "color": "color.brand.50" },
-      { "label": "signals — blue open, red broken", "pct": 3, "color": ["color.callout.50", "color.negative.50"] }
+      {
+        "label": "neutral — surfaces, text, borders",
+        "pct": 90,
+        "color": "color.neutral.50"
+      },
+      {
+        "label": "accent — what you act on",
+        "pct": 7,
+        "color": "color.brand.50"
+      },
+      {
+        "label": "signals — blue open, red broken",
+        "pct": 3,
+        "color": [
+          "color.callout.50",
+          "color.negative.50"
+        ]
+      }
     ]
   }
 }

@@ -50,3 +50,20 @@
   font-style: normal;
   font-display: swap;
 }
+
+/* Aujournuit (Collletttivo, SIL OFL 1.1) — the Culinary sub-brand's face. Regular spacing for body and small text, Airy for large sizes. */
+@font-face {
+  font-family: 'Aujournuit'; /* allow-literal */
+  src: url('./aujournuit/Aujournuit-Regular.woff2') format('woff2'), url('./aujournuit/Aujournuit-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aujournuit Airy'; /* allow-literal */
+  src: url('./aujournuit/Aujournuit-Airy.woff2') format('woff2'), url('./aujournuit/Aujournuit-Airy.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

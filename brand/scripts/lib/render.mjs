@@ -6,6 +6,7 @@ import { config, prefixesFor, resolveSelected, brandDir } from './tokens.mjs';
 import { renderCss, renderSiteCss } from './format-css.mjs';
 import { renderSwift } from './format-swift.mjs';
 import { renderData } from './format-data.mjs';
+import { renderFigma } from './format-figma.mjs';
 import { renderSheet } from './format-sheet.mjs';
 import { printModel, renderPrintCsv, renderPrintHtml, renderPrintJson } from './format-print.mjs';
 import { contrastSummary, evaluateContrast, loadPairSpec } from './contrast.mjs';
@@ -35,6 +36,7 @@ export async function renderAll(only) {
     const dir = `${config.outputs.dist}/${sb.name}`;
     files[`${dir}/tokens.json`] = renderData(resolved, config, prefixes, summary);
     files[`${dir}/sheet.md`] = renderSheet(resolved, config, prefixes, summary);
+    if (sb.manifest.figmaVariables === true) files[`${dir}/figma-variables.json`] = renderFigma(resolved, config);
     if (wants(sb, 'css')) files[`${dir}/tokens.css`] = renderCss(resolved, config, prefixes.css);
     if (wants(sb, 'swift')) files[`${dir}/Tokens.swift`] = renderSwift(resolved, config, prefixes.swift);
     if (wants(sb, 'print')) {
