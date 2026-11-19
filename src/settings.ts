@@ -53,7 +53,7 @@ export const MIN_TAP_TARGET = 44;
 
 export const DEFAULT_SETTINGS: TabulaRasaSettings = {
 	sketchFolder: "Sketches",
-	defaultColor: "#000000",
+	defaultColor: "#000000", // allow-literal: user setting default; ink is user content
 	matchPenColorToTheme: true,
 	defaultBrushSize: 6,
 	palmRejection: true,
@@ -250,7 +250,7 @@ export class TabulaRasaSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.defaultBackground = value
 							? "transparent"
-							: "#ffffff";
+							: "#ffffff"; // allow-literal: user setting for the page background
 						await this.plugin.saveSettings();
 					}),
 			);

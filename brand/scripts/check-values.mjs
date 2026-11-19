@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Tokens are the only source of visual values. Fails if hand-written source in the template
-// starter (src/) or the guidelines site (brand/site/src/) hard-codes a colour, a px length, a font
+// starter (src/) or the guidelines site (brand/site/src/) hard-codes a color, a px length, a font
 // stack or a shadow instead of a --bt-* custom property. rem/em/%/ch/vw/fr are allowed for page
 // layout; px only inside @media queries; a line marked `allow-literal` is skipped (say why).
 // Generated files are exempt.
@@ -12,8 +12,8 @@ import { repoRoot } from './lib/subbrands.mjs';
 const dirs = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const roots = (dirs.length ? dirs : ['src', 'brand/site/src']).map((d) => path.resolve(repoRoot, d)).filter((d) => fs.existsSync(d));
 const rules = [
-  [/#[0-9a-fA-F]{3,8}\b(?![-\w])/, 'hex colour'],
-  [/\b(rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/, 'colour function'],
+  [/#[0-9a-fA-F]{3,8}\b(?![-\w])/, 'hex color'],
+  [/\b(rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/, 'color function'],
   [/(?<![\w-])\d*\.?\d+px\b/, 'px length'],
   [/font-family\s*:(?!\s*(var\(|inherit))/, 'font stack'],
   [/fontFamily\s*:\s*['"](?!var\()/, 'font stack'],
@@ -34,9 +34,23 @@ roots.forEach(walk);
 const problems = [];
 for (const file of files) {
   const lines = fs.readFileSync(file, 'utf8').split('\n');
+  let inBlock = false; // inside a /* … */ comment that spans lines (JSDoc and CSS block comments)
   lines.forEach((line, i) => {
-    if (/^\s*@media/.test(line) || /allow-literal/.test(line)) return;
-    const code = line.replace(/\/\/.*$|\/\*.*?\*\//g, '');
+    let rest = line;
+    if (inBlock) {
+      const end = rest.indexOf('*/');
+      if (end < 0) return;
+      rest = rest.slice(end + 2);
+      inBlock = false;
+    }
+    let code = rest.replace(/\/\*.*?\*\//g, '');
+    const open = code.indexOf('/*');
+    if (open >= 0) {
+      code = code.slice(0, open);
+      inBlock = true;
+    }
+    code = code.replace(/\/\/.*$/, '');
+    if (/^\s*@media/.test(code) || /allow-literal/.test(line)) return;
     for (const [re, what] of rules) {
       if (re.test(code)) problems.push(`${path.relative(repoRoot, file)}:${i + 1}  ${what}: ${line.trim()}`);
     }

@@ -47,12 +47,12 @@
     "$type": "dimension",
     "$description": "Physical (3D-printed and printed) sizes in millimetres: starting points for FDM with a 0.4 mm nozzle, to be confirmed with a test print. Never emitted to Swift.",
     "stroke-min": { "$value": "0.8mm", "$description": "Narrowest raised or recessed stroke in text and marks: two nozzle widths." },
-    "text-cap-min": { "$value": "4mm", "$description": "Smallest cap height for moulded-in text read at arm’s length. Values and scales: JetBrains Mono (dotted zero)." },
+    "text-cap-min": { "$value": "4mm", "$description": "Smallest cap height for molded-in text read at arm’s length. Values and scales: JetBrains Mono (dotted zero)." },
     "text-cap-label": { "$value": "6mm", "$description": "Cap height for a label that must be read without picking the part up (warnings, the speed scale)." },
     "emboss-depth": { "$value": "0.6mm", "$description": "Raised text and marks: at least three 0.2 mm layers." },
     "deboss-depth": { "$value": "0.6mm", "$description": "Recessed text: deep enough to hold an inlay or paint fill." },
     "inlay-depth": { "$value": "0.4mm", "$description": "A contrasting-filament inlay (two layers at 0.2 mm), flush with the face." },
     "edge-band": { "$value": "1.2mm", "$description": "The dark band that separates orange from light gray on a part, so the two never meet by hue alone." },
-    "label-margin": { "$value": "3mm", "$description": "Clear margin around printed labels and moulded text: the physical safe margin (nothing clipped by a chamfer or fillet)." }
+    "label-margin": { "$value": "3mm", "$description": "Clear margin around printed labels and molded text: the physical safe margin (nothing clipped by a chamfer or fillet)." }
   }
 }

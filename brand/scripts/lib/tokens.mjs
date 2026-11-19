@@ -86,39 +86,39 @@ export function loadModeTokens(sb, mode) {
   return tokens;
 }
 
-/** Colour token keys a layer sets. */
-function colourKeys(node, trail = [], out = new Set()) {
+/** Color token keys a layer sets. */
+function colorKeys(node, trail = [], out = new Set()) {
   for (const [k, v] of Object.entries(node)) {
     if (k.startsWith('$')) continue;
     if (isToken(v)) {
       if (trail[0] === 'color') out.add([...trail, k].join('.'));
-    } else if (isGroup(v)) colourKeys(v, [...trail, k], out);
+    } else if (isGroup(v)) colorKeys(v, [...trail, k], out);
   }
   return out;
 }
 
 /**
- * A sub-brand that remaps a core colour role in its base (dark) layer must restate it in every
+ * A sub-brand that remaps a core color role in its base (dark) layer must restate it in every
  * mode where a core mode file overrides that role — otherwise the core's light / high-contrast
  * value would silently leak into the sub-brand.
  */
 function checkLeaks(sb) {
   const changed = new Set();
-  for (const [, layer] of sbLayers(sb)) colourKeys(layer, [], changed);
+  for (const [, layer] of sbLayers(sb)) colorKeys(layer, [], changed);
   const leaks = [];
   for (const [mode, m] of Object.entries(config.modes)) {
     const coreTouched = new Set();
-    for (const rel of m.layers) colourKeys(readCoreLayer(rel), [], coreTouched);
+    for (const rel of m.layers) colorKeys(readCoreLayer(rel), [], coreTouched);
     const ownTouched = new Set();
-    for (const [, layer] of sbModeLayers(sb, mode)) colourKeys(layer, [], ownTouched);
+    for (const [, layer] of sbModeLayers(sb, mode)) colorKeys(layer, [], ownTouched);
     for (const key of changed) if (coreTouched.has(key) && !ownTouched.has(key)) leaks.push(`${key} (${mode})`);
   }
   if (leaks.length) {
-    throw new Error(`sub-brand "${sb.name}" remaps colours whose core mode values would leak in — restate them in its mode files: ${leaks.join(', ')}`);
+    throw new Error(`sub-brand "${sb.name}" remaps colors whose core mode values would leak in — restate them in its mode files: ${leaks.join(', ')}`);
   }
 }
 
-/** Every semantic colour (core and sub-brand) must have a light value too (dark is the reference). */
+/** Every semantic color (core and sub-brand) must have a light value too (dark is the reference). */
 function checkModeCompleteness(sb) {
   const semantic = readCoreLayer('semantic/color.semantic.json');
   const light = readCoreLayer('mode/light.json');

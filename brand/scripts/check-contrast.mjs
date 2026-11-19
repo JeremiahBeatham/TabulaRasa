@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// WCAG contrast for every semantic colour pair (brand/contrast-pairs.json + each sub-brand's own),
-// in every mode, for core and every sub-brand. Also fails if a semantic colour is neither paired nor
+// WCAG contrast for every semantic color pair (brand/contrast-pairs.json + each sub-brand's own),
+// in every mode, for core and every sub-brand. Also fails if a semantic color is neither paired nor
 // exempt with a reason.
 //   node brand/scripts/check-contrast.mjs [--subbrand <name>] [--verbose]
 import { config, resolveSelected, brandDir } from './lib/tokens.mjs';
@@ -19,7 +19,7 @@ for (const resolved of await resolveSelected(argSubbrand())) {
   console.log(
     `${failures.length || uncovered.length ? '✗' : ' '} Contrast ${name.padEnd(15)} ${String(rows.length).padStart(4)} checks, ${failures.length} failing · tightest ${worst.ratio.toFixed(2)}:1 (min ${worst.min}) ${worst.fg} on ${worst.bg} [${worst.mode}]`,
   );
-  if (uncovered.length) console.log(`✗ ${name}: semantic colours with no contrast pair and no exemption: ${uncovered.join(', ')}`);
+  if (uncovered.length) console.log(`✗ ${name}: semantic colors with no contrast pair and no exemption: ${uncovered.join(', ')}`);
   if (failures.length || uncovered.length) failed = true;
 }
 process.exit(failed ? 1 : 0);

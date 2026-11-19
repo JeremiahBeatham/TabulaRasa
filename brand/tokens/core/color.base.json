@@ -44,9 +44,9 @@
       },
       "100": {
         "$value": "#000000",
-        "$description": "True black (OLED off-pixel): the dark-mode base surface. A hardware decision, not a colour one."
+        "$description": "True black (OLED off-pixel): the dark-mode base surface. A hardware decision, not a color one."
       },
-      "$description": "Beatham warm greys (Figma: Color/Neutral). Higher number = darker. 10–90 are Jeremiah’s values verbatim; 0 (white) and 100 (true black, for OLED) are the ramp ends. Every other ramp is lightness-matched to these steps, so the step-gap rule holds: 40 / 50 / 60 apart ⇒ ≥ 3 / 4.5 / 7:1."
+      "$description": "Beatham warm grays (Figma: Color/Neutral). Higher number = darker. 10–90 are Jeremiah’s values verbatim; 0 (white) and 100 (true black, for OLED) are the ramp ends. Every other ramp is lightness-matched to these steps, so the step-gap rule holds: 40 / 50 / 60 apart ⇒ ≥ 3 / 4.5 / 7:1."
     },
     "brand": {
       "10": {

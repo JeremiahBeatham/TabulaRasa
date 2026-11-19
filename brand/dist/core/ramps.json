@@ -1115,7 +1115,7 @@
       },
       "description": "Brown — the dark end of the Beatham amber → brown ramp as its own lightness-matched ramp (HandCAD decisions #3, #26): brand/70 verbatim at 60, brand/90 verbatim at 90, brown/80 is brand/80 moved onto the neutral/80 lightness (hue and chroma kept), and his deepest gold swatch (#110602) is brown/100. Marketing, illustration, packaging and the Gilt palette — never a semantic role."
     },
-    "filament-grey": {
+    "filament-gray": {
       "values": {
         "10": "#F1F4F8",
         "20": "#D7DADE",
@@ -1287,7 +1287,7 @@
           }
         ]
       },
-      "description": "Filament grey — his photo-sampled filaments as a cool grey ramp: light gray (30), space gray (70) and black (90) verbatim; the other steps are the same cool grey (C 0.006, h 262) on the neutral targets. For showing printed parts on screen and the physical roles (subbrand grants, scope physical)."
+      "description": "Filament gray — his photo-sampled filaments as a cool gray ramp: light gray (30), space gray (70) and black (90) verbatim; the other steps are the same cool gray (C 0.006, h 262) on the neutral targets. For showing printed parts on screen and the physical roles (subbrand grants, scope physical)."
     },
     "filament-orange": {
       "values": {
@@ -2099,7 +2099,7 @@
       "H": 269,
       "status": "exact",
       "at": [
-        "filament-grey/30"
+        "filament-gray/30"
       ],
       "reason": null
     },
@@ -2125,7 +2125,7 @@
       "H": 214,
       "status": "exact",
       "at": [
-        "filament-grey/70"
+        "filament-gray/70"
       ],
       "reason": null
     },
@@ -2138,7 +2138,7 @@
       "H": 90,
       "status": "exact",
       "at": [
-        "filament-grey/90"
+        "filament-gray/90"
       ],
       "reason": null
     }

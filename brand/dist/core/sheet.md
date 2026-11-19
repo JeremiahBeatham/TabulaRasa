@@ -3,9 +3,9 @@
 
 **Core** · The Beatham core brand · platforms: web, ios, macos, watchos, print · CSS `--bt-*` · Swift `BTTokens`
 
-> Precise, restrained, made by hand. Neutral carries the work; one warm amber marks what you touch.
+> Serve, spark, delight. Personal tools, made at a workshop bench, that help you bring your ideas to life.
 
-The core every Beatham product inherits — apps, sites, watch faces and printed parts. It sets the rules (colour budget, accent rule, contrast, type jobs, spacing, shape, motion) and the raw material (Jeremiah’s ramps, the filament palette, four OFL faces). Each product layers a sub-brand on top: its own palettes, product roles and proportion, inside the same rules.
+Beatham is the brand of Jeremiah Beatham, a multidisciplinary designer who designs things and experiences, likes helping people, and likes making the work fun. The core is the lowest common denominator: what every Beatham app, site, watch face and printed part inherits. It sets the rules (color budget, accent rule, contrast, type jobs, spacing, shape, motion) and the raw material (the ramps, the filament palette, four OFL faces). Each product layers a brand on top: its own palettes, roles and voice, inside the same rules.
 
 ## Palettes
 - **Accent:** `brand` — accent.fill #FFBA04 dark / #FFBA04 light. Marks only what you act on.
@@ -24,7 +24,7 @@ The core every Beatham product inherits — apps, sites, watch faces and printed
 ## Do
 - Build every surface from the neutral ladder: true black → neutral/90 → neutral/80 in dark, paper → white in light.
 - Use the accent for the one thing being acted on: the selected segment, the active control, the focus ring.
-- Pair every state colour with a glyph and a word.
+- Pair every state color with a glyph and a word.
 - Take every visual value from a token. Run npm run brand:check before you push.
 
 ## Don't
@@ -39,4 +39,4 @@ The core every Beatham product inherits — apps, sites, watch faces and printed
   - tightest in high-contrast-dark: 8.81:1 (min 7) color.text.tertiary on color.surface.control
   - tightest in light: 4.5:1 (min 4.5) color.feedback.warning on color.surface.raised
   - tightest in high-contrast-light: 7.61:1 (min 7) color.text.tertiary on color.surface.base
-- Roles: 144 colour values across 4 modes keep to the hue budget and the accent rule.
+- Roles: 144 color values across 4 modes keep to the hue budget and the accent rule.

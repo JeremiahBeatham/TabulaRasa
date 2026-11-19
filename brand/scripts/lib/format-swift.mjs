@@ -5,7 +5,7 @@
 //   2. SwiftUI extensions (Color, CGFloat, Font, Animation, Material, View) behind
 //      `#if canImport(SwiftUI)`,
 //   3. haptics: UIKit generators on iOS, WatchKit on watchOS.
-// Apps only see semantic colours; core ramps and palettes stay in the tokens and CSS.
+// Apps only see semantic colors; core ramps and palettes stay in the tokens and CSS.
 // Written with the HandCAD names (HC / hc) and re-prefixed at the end (core: BT / bt).
 import { parseHex } from './color.mjs';
 
@@ -31,7 +31,8 @@ function swiftNameHC(t) {
   if (g === 'color') return t.modeDependent ? `Color.hc${pascal(rest)}` : null; // core ramps stay out of apps
   if (g === 'palette') return null; // palettes never enter an app's chrome
   if (g === 'font' && rest[0] === 'family') return `HCTokens.Fonts.${camel(rest.slice(1))}`;
-  if (['space', 'radius', 'layout', 'border', 'device', 'icon', 'focus'].includes(g)) {
+  // control, label, field, dock: HandCAD's tactile control and input sizes (HandCAD ADR-0016); only the handcad layer defines them.
+  if (['space', 'radius', 'layout', 'border', 'device', 'icon', 'focus', 'control', 'label', 'field', 'dock'].includes(g)) {
     return t.type === 'dimension' ? `CGFloat.hc${pascal(t.path)}` : null;
   }
   if (g === 'opacity') return `CGFloat.hc${pascal(t.path)}`; // web-only groups (breakpoint, grid, layer) and mark have no Swift form
@@ -119,7 +120,7 @@ function renderSwiftHC({ tokens, sb }, config) {
   add();
   add(`/// Raw Beatham design-token values (${sb.isCore ? 'core' : sb.manifest.label}). Platform-neutral (no SwiftUI/UIKit) so it also builds on Linux.`);
   add('public enum HCTokens {');
-  add('    /// An sRGB colour as 8-bit channels.');
+  add('    /// An sRGB color as 8-bit channels.');
   add('    public struct RGBA: Sendable, Hashable {');
   add('        public let red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8');
   add('        public init(_ red: UInt8, _ green: UInt8, _ blue: UInt8, _ alpha: UInt8 = 0xFF) {');
@@ -127,7 +128,7 @@ function renderSwiftHC({ tokens, sb }, config) {
   add('        }');
   add('    }');
   add();
-  add('    /// A semantic colour resolved for every mode.');
+  add('    /// A semantic color resolved for every mode.');
   add('    public struct ModeColor: Sendable, Hashable {');
   add('        public let dark: RGBA, highContrastDark: RGBA, light: RGBA, highContrastLight: RGBA');
   add('        public func resolve(dark isDark: Bool, highContrast: Bool) -> RGBA {');
@@ -255,7 +256,7 @@ function renderSwiftHC({ tokens, sb }, config) {
   add('import SwiftUI');
   add();
   add('public extension Color {');
-  add('    /// A colour that follows light/dark and Increase Contrast.');
+  add('    /// A color that follows light/dark and Increase Contrast.');
   add('    init(hcMode c: HCTokens.ModeColor) {');
   add('        #if os(watchOS)');
   add('        // watchOS is always dark (and true black behind everything): the dark value.');

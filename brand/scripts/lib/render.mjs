@@ -45,9 +45,9 @@ export async function renderAll(only) {
       files[`${dir}/print/swatches.csv`] = renderPrintCsv(model);
       files[`${dir}/print/swatches.html`] = renderPrintHtml(model);
     }
-    // For the site's index: the manifest plus a few resolved colours to paint cards with.
+    // For the site's index: the manifest plus a few resolved colors to paint cards with.
     const byKey = new Map(resolved.tokens.map((t) => [t.key, t]));
-    const colourOf = (key) => {
+    const colorOf = (key) => {
       const t = byKey.get(key);
       return t ? (t.modeDependent ? t.raw : { dark: t.raw.dark, light: t.raw.dark }) : null;
     };
@@ -58,12 +58,12 @@ export async function renderAll(only) {
       outputs: Object.keys(files).filter((f) => f.startsWith(`${dir}/`)).map((f) => f.slice(dir.length + 1)),
       summary,
       swatches: {
-        base: colourOf('color.surface.base'),
-        raised: colourOf('color.surface.raised'),
-        text: colourOf('color.text.primary'),
-        secondary: colourOf('color.text.secondary'),
-        accent: colourOf('color.accent.fill'),
-        border: colourOf('color.border.subtle'),
+        base: colorOf('color.surface.base'),
+        raised: colorOf('color.surface.raised'),
+        text: colorOf('color.text.primary'),
+        secondary: colorOf('color.text.secondary'),
+        accent: colorOf('color.accent.fill'),
+        border: colorOf('color.border.subtle'),
       },
       proportion: [sb.manifest.proportion, ...(sb.manifest.proportion.alternates ?? [])].map((system) => ({
         name: system.name,

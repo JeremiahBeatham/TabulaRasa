@@ -3,9 +3,26 @@
  * SF Pro / SF Compact are system fonts and are never embedded. Family names match font.family.* in
  * brand/tokens/core/type.json. Import this once, next to brand/dist/<name>/tokens.css.
  */
+/* Instrument Sans Regular and Medium (SIL OFL 1.1) — body and small text on the Portfolio sub-brand, where it carries the body as well as titles. Instanced from the upstream variable font at wght 400 and 500, wdth 100. */
+@font-face {
+  font-family: 'Instrument Sans'; /* allow-literal */
+  src: url('./instrument-sans/InstrumentSans-Regular.woff2') format('woff2'), url('./instrument-sans/InstrumentSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Instrument Sans'; /* allow-literal */
+  src: url('./instrument-sans/InstrumentSans-Medium.woff2') format('woff2'), url('./instrument-sans/InstrumentSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 @font-face {
   font-family: 'Instrument Sans'; /* allow-literal: @font-face declares the family the token names */
-  src: url('./instrument-sans/InstrumentSans-SemiBold.ttf') format('truetype');
+  src: url('./instrument-sans/InstrumentSans-SemiBold.woff2') format('woff2'), url('./instrument-sans/InstrumentSans-SemiBold.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -13,7 +30,7 @@
 
 @font-face {
   font-family: 'Instrument Sans'; /* allow-literal */
-  src: url('./instrument-sans/InstrumentSans-Bold.ttf') format('truetype');
+  src: url('./instrument-sans/InstrumentSans-Bold.woff2') format('woff2'), url('./instrument-sans/InstrumentSans-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -21,7 +38,7 @@
 
 @font-face {
   font-family: 'JetBrains Mono'; /* allow-literal */
-  src: url('./jetbrains-mono/JetBrainsMono-Regular.ttf') format('truetype');
+  src: url('./jetbrains-mono/JetBrainsMono-Regular.woff2') format('woff2'), url('./jetbrains-mono/JetBrainsMono-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -29,7 +46,7 @@
 
 @font-face {
   font-family: 'JetBrains Mono'; /* allow-literal */
-  src: url('./jetbrains-mono/JetBrainsMono-Medium.ttf') format('truetype');
+  src: url('./jetbrains-mono/JetBrainsMono-Medium.woff2') format('woff2'), url('./jetbrains-mono/JetBrainsMono-Medium.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -37,7 +54,7 @@
 
 @font-face {
   font-family: 'JetBrains Mono'; /* allow-literal */
-  src: url('./jetbrains-mono/JetBrainsMono-SemiBold.ttf') format('truetype');
+  src: url('./jetbrains-mono/JetBrainsMono-SemiBold.woff2') format('woff2'), url('./jetbrains-mono/JetBrainsMono-SemiBold.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -51,7 +68,7 @@
   font-display: swap;
 }
 
-/* Aujournuit (Collletttivo, SIL OFL 1.1) — the Culinary sub-brand's face. Regular spacing for body and small text, Airy for large sizes. */
+/* Aujournuit (Collletttivo, SIL OFL 1.1) — Culinary titles, headings and the wordmark. Airy spacing for large sizes. Body and numbers are Labrada and Grenze. */
 @font-face {
   font-family: 'Aujournuit'; /* allow-literal */
   src: url('./aujournuit/Aujournuit-Regular.woff2') format('woff2'), url('./aujournuit/Aujournuit-Regular.ttf') format('truetype');
@@ -63,6 +80,57 @@
 @font-face {
   font-family: 'Aujournuit Airy'; /* allow-literal */
   src: url('./aujournuit/Aujournuit-Airy.woff2') format('woff2'), url('./aujournuit/Aujournuit-Airy.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Labrada (Omnibus-Type, SIL OFL 1.1) — Culinary body and small text. */
+@font-face {
+  font-family: 'Labrada'; /* allow-literal */
+  src: url('./labrada/Labrada-Regular.woff2') format('woff2'), url('./labrada/Labrada-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Labrada'; /* allow-literal */
+  src: url('./labrada/Labrada-Medium.woff2') format('woff2'), url('./labrada/Labrada-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Labrada'; /* allow-literal */
+  src: url('./labrada/Labrada-SemiBold.woff2') format('woff2'), url('./labrada/Labrada-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Grenze (Omnibus-Type, SIL OFL 1.1) — Culinary numbers. Proportional; tnum is on. */
+@font-face {
+  font-family: 'Grenze'; /* allow-literal */
+  src: url('./grenze/Grenze-Regular.woff2') format('woff2'), url('./grenze/Grenze-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Basteleur Bold and Basteleur Moonlight Regular (Velvetyne, SIL OFL 1.1): the Pip sub-brand's wordmark and display. One real weight each. */
+@font-face {
+  font-family: 'Basteleur'; /* allow-literal */
+  src: url('./basteleur/basteleur-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Basteleur Moonlight'; /* allow-literal */
+  src: url('./basteleur/basteleur-moonlight.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;

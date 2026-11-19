@@ -5,10 +5,14 @@
 //
 //   palettes   generated ramps are fresh; every sub-brand ramp is lightness-matched (step-gap rule)
 //   build      every generated file is byte-identical to a fresh render (never hand-edited)
-//   contrast   every pair passes WCAG AA (7:1 / 4.5:1 in high contrast); every colour paired or exempt
+//   contrast   every pair passes WCAG AA (7:1 / 4.5:1 in high contrast); every color paired or exempt
 //   roles      hue budget, accent rule, grants; gold, brown and palettes never fill a role
+//   cvd        declared ramps, levels and pairs survive protan / deutan / tritan and grayscale (manifest `cvd`)
+//   snippets   mirrored Swift snippets are all shown and type-check against the brand's Tokens.swift (needs Xcode)
 //   projects   brand/projects.json lists every project and every sub-brand once
-//   values     hand-written source uses tokens, never literal colours, px, font stacks or shadows
+//   values     hand-written source uses tokens, never literal colors, px, font stacks or shadows
+//   handcad    every HandCAD token is in the handcad output with the identical value (hard fail); with
+//              --handcad <checkout> (or HANDCAD_DIR), also fails if HandCAD has moved past the mirror
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,13 +22,21 @@ import { argSubbrand } from './lib/subbrands.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const only = argSubbrand();
 const sub = only ? ['--subbrand', only] : [];
+const hi = process.argv.indexOf('--handcad');
+const handcadDir = hi >= 0 ? process.argv[hi + 1] : process.env.HANDCAD_DIR;
+const hasMirror = fs.existsSync(path.join(here, '..', 'subbrands', 'handcad', 'mirror', 'SOURCE.json'));
 const steps = [
   ['palettes', ['palettes.mjs', '--check', ...sub]],
   ['build', ['build.mjs', '--check', ...sub]],
   ['contrast', ['check-contrast.mjs', ...sub]],
   ['roles', ['check-roles.mjs', ...sub]],
+  ['cvd', ['check-cvd.mjs', ...sub]],
+  ['snippets', ['check-snippets.mjs', ...sub]],
   ...(fs.existsSync(path.join(here, '..', 'projects.json')) ? [['projects', ['check-projects.mjs']]] : []), // BeathamBase only: a pruned project copy has no projects.json
   ['values', ['check-values.mjs']],
+  ...((!only || only === 'handcad') && hasMirror
+    ? [['handcad', ['check-handcad-parity.mjs']], ['handcad mirror', ['mirror-handcad.mjs', '--check', ...(handcadDir ? ['--from', handcadDir] : [])]]]
+    : []),
 ];
 const failed = [];
 for (const [name, [script, ...args]] of steps) {

@@ -1,7 +1,7 @@
 {
   "palette": {
     "$type": "color",
-    "$description": "The Beatham palette library: colour-only palettes a sub-brand may adopt as its secondary or tertiary colours (subbrand.json → palettes). Colour only — no type, radius or style comes with them. For marketing, illustration, previews, packaging and physical parts. They never fill a semantic role (brand:check fails if one does), are exempt from the contrast check and are mode-independent.",
+    "$description": "The Beatham palette library: color-only palettes a sub-brand may adopt as its secondary or tertiary colors (subbrand.json → palettes). Color only — no type, radius or style comes with them. For marketing, illustration, previews, packaging and physical parts. They never fill a semantic role (brand:check fails if one does), are exempt from the contrast check and are mode-independent.",
     "filament": {
       "$description": "The filaments Jeremiah prints with most, sampled from photos — approximate. Manufacturer names and codes are recorded (or still TODO) in brand/inputs/filaments.json. His mixes: (a) 65 light gray / 25 orange / 10 black or space gray; (b) 60 light gray / 30 space gray or black / 10 orange.",
       "$extensions": {
@@ -61,7 +61,7 @@
       }
     },
     "two-tone": {
-      "$description": "Two-Tone — a dark instrument cluster over a light part. Jeremiah’s filament colours, verbatim. Proportion 60 part / 30 chrome / 10 signal (his mix b).",
+      "$description": "Two-Tone — a dark instrument cluster over a light part. Jeremiah’s filament colors, verbatim. Proportion 60 part / 30 chrome / 10 signal (his mix b).",
       "$extensions": {
         "beatham": {
           "proportion": [["part", 60], ["chrome", 30], ["signal", 10]]

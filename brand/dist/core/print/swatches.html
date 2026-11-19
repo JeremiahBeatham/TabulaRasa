@@ -36,11 +36,11 @@
 <body>
   <p class="k">Beatham · print &amp; physical · core</p>
   <h1>Beatham — swatches and physical rules</h1>
-  <p>sRGB values from the brand tokens. A screen is never the reference for paper or filament: match spools by manufacturer colour code, then compare against a printed proof under daylight (D50). Photo-sampled values are approximate. Fields marked TODO are for Jeremiah (<code>brand/inputs/filaments.json</code>).</p>
+  <p>sRGB values from the brand tokens. A screen is never the reference for paper or filament: identify spools by maker and color name, then compare against a printed proof under daylight (D50). Photo-sampled values are approximate. Fields marked TODO are for Jeremiah (<code>brand/inputs/filaments.json</code>).</p>
   <p class="note">Printer: Bambu Lab A1 mini (180 × 180 × 180 mm bed), confirmed by Jeremiah 2026-10-14 · nozzle 0.4mm (assumed; brand/tokens/core/size.json → physical.* is sized for it)</p>
 
   <h2>Filaments</h2>
-  <p>Photo-sampled — approximate. Match spools by manufacturer colour code, then by a printed proof.</p>
+  <p>Photo-sampled — approximate. Identify spools by maker and color name, then settle the color with a printed proof.</p>
   <div class="grid">
       <figure class="sw">
         <div class="chip" style="background:#C1C3C8;color:#000000"><span>light-gray</span></div>
@@ -49,7 +49,7 @@
           <span>RGB 193 195 200</span>
           <span>L*a*b* (D50) 78.7 0 -2.8</span>
           <span>OKLCH 0.817 0.007 269°</span>
-          <span class="todo">OVERTURE · Rock White (speckled light gray) · not on the listing: read the SKU or colour code from the spool label</span>
+          <span class="todo">OVERTURE · Rock White (speckled light gray) · none (final, 2026-10-15): the Amazon listing gives no color code; the maker and color name identify the spool</span>
           <span class="q">palette.filament.light-gray</span>
         </figcaption>
       </figure>
@@ -60,7 +60,7 @@
           <span>RGB 228 140 60</span>
           <span>L*a*b* (D50) 66.8 29.8 55.5</span>
           <span>OKLCH 0.719 0.142 59°</span>
-          <span class="todo">OVERTURE · Pumpkin Orange · not on the listing: read the SKU or colour code from the spool label</span>
+          <span class="todo">OVERTURE · Pumpkin Orange · none (final, 2026-10-15): the Amazon listing gives no color code; the maker and color name identify the spool</span>
           <span class="q">palette.filament.orange</span>
         </figcaption>
       </figure>
@@ -71,7 +71,7 @@
           <span>RGB 77 81 82</span>
           <span>L*a*b* (D50) 34.1 -1.5 -1.2</span>
           <span>OKLCH 0.432 0.005 214°</span>
-          <span class="todo">OVERTURE · Space Grey · not on the listing: read the SKU or colour code from the spool label</span>
+          <span class="todo">OVERTURE · Space Grey · none (final, 2026-10-15): the Amazon listing gives no color code; the maker and color name identify the spool</span>
           <span class="q">palette.filament.space-gray</span>
         </figcaption>
       </figure>
@@ -82,7 +82,7 @@
           <span>RGB 25 25 25</span>
           <span>L*a*b* (D50) 8.8 0 0</span>
           <span>OKLCH 0.213 0 90°</span>
-          <span class="todo">OVERTURE · Black · not on the listing: read the SKU or colour code from the spool label</span>
+          <span class="todo">OVERTURE · Black · none (final, 2026-10-15): the Amazon listing gives no color code; the maker and color name identify the spool</span>
           <span class="q">palette.filament.black</span>
         </figcaption>
       </figure>
@@ -348,7 +348,7 @@
       </figure>
 
   <h2>Filament contrast</h2>
-  <p>WCAG 2 contrast between filaments, as a proxy for legibility of inlaid text, printed labels and two-colour marks. Text needs 4.5:1; marks and shapes 3:1. Same-colour embossing has no colour contrast at all: it depends on light and shadow, so it never carries a warning or a value on its own.</p>
+  <p>WCAG 2 contrast between filaments, as a proxy for legibility of inlaid text, printed labels and two-color marks. Text needs 4.5:1; marks and shapes 3:1. Same-color embossing has no color contrast at all: it depends on light and shadow, so it never carries a warning or a value on its own.</p>
   <table>
     <tr><th>text ↓ on →</th><th>light-gray</th><th>orange</th><th>space-gray</th><th>black</th></tr>
     <tr><th>light-gray</th><td class="na">—</td><td style="background:#E48C3C;color:#C1C3C8"><b>Aa 8.0</b><br><small style="color:#000000">1.47:1 · never adjacent</small></td><td style="background:#4D5152;color:#C1C3C8"><b>Aa 8.0</b><br><small style="color:#FFFFFF">4.55:1 · text</small></td><td style="background:#191919;color:#C1C3C8"><b>Aa 8.0</b><br><small style="color:#FFFFFF">9.97:1 · text</small></td></tr>
@@ -361,13 +361,13 @@
   <p>Starting points for FDM with a 0.4 mm nozzle. Confirm each with a test print before a part ships.</p>
   <table class="facts">
     <tr><td>physical.stroke-min</td><td><b>0.8mm</b></td><td>Narrowest raised or recessed stroke in text and marks: two nozzle widths.</td></tr>
-    <tr><td>physical.text-cap-min</td><td><b>4mm</b></td><td>Smallest cap height for moulded-in text read at arm’s length. Values and scales: JetBrains Mono (dotted zero).</td></tr>
+    <tr><td>physical.text-cap-min</td><td><b>4mm</b></td><td>Smallest cap height for molded-in text read at arm’s length. Values and scales: JetBrains Mono (dotted zero).</td></tr>
     <tr><td>physical.text-cap-label</td><td><b>6mm</b></td><td>Cap height for a label that must be read without picking the part up (warnings, the speed scale).</td></tr>
     <tr><td>physical.emboss-depth</td><td><b>0.6mm</b></td><td>Raised text and marks: at least three 0.2 mm layers.</td></tr>
     <tr><td>physical.deboss-depth</td><td><b>0.6mm</b></td><td>Recessed text: deep enough to hold an inlay or paint fill.</td></tr>
     <tr><td>physical.inlay-depth</td><td><b>0.4mm</b></td><td>A contrasting-filament inlay (two layers at 0.2 mm), flush with the face.</td></tr>
     <tr><td>physical.edge-band</td><td><b>1.2mm</b></td><td>The dark band that separates orange from light gray on a part, so the two never meet by hue alone.</td></tr>
-    <tr><td>physical.label-margin</td><td><b>3mm</b></td><td>Clear margin around printed labels and moulded text: the physical safe margin (nothing clipped by a chamfer or fillet).</td></tr>
+    <tr><td>physical.label-margin</td><td><b>3mm</b></td><td>Clear margin around printed labels and molded text: the physical safe margin (nothing clipped by a chamfer or fillet).</td></tr>
   </table>
 </body>
 </html>

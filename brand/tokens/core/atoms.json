@@ -1,7 +1,7 @@
 {
   "opacity": {
     "$type": "number",
-    "$description": "Opacity steps for tints, disabled content and scrims. Colour roles that already carry alpha (selection fill, scrim) stay as they are; use these only where a role does not exist. Never for text: text takes a text role.",
+    "$description": "Opacity steps for tints, disabled content and scrims. Color roles that already carry alpha (selection fill, scrim) stay as they are; use these only where a role does not exist. Never for text: text takes a text role.",
     "8": {
       "$value": 0.08,
       "$description": "Hover wash on a neutral control."
@@ -53,7 +53,7 @@
   },
   "focus": {
     "$type": "dimension",
-    "$description": "Focus ring geometry. Colour is the accent.focus role: focus is something you act on, so it is the one place the accent marks a keyboard or pointer target.",
+    "$description": "Focus ring geometry. Color is the accent.focus role: focus is something you act on, so it is the one place the accent marks a keyboard or pointer target.",
     "width": {
       "$value": "2px",
       "$description": "Ring stroke."
@@ -149,7 +149,7 @@
     },
     "print-size-min": {
       "$value": "8mm",
-      "$description": "Smallest printed or moulded mark; keep its edges 3 mm from a part's edge (physical.label-margin)."
+      "$description": "Smallest printed or molded mark; keep its edges 3 mm from a part's edge (physical.label-margin)."
     }
   }
 }

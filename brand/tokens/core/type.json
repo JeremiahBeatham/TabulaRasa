@@ -2,7 +2,7 @@
   "font": {
     "family": {
       "$type": "fontFamily",
-      "$description": "Four families, one job each: SF Pro for text (SF Compact on watchOS), Instrument Sans for titles only, JetBrains Mono for every number, Bitcount Single for hero numerals only. Bundled faces are SIL OFL 1.1 and live in brand/fonts/ with their licences; `$extensions.beatham.faces` maps a weight to the PostScript name Tokens.swift passes to Font.custom(_:size:relativeTo:), and `fallback` is the system design used when the face isn’t registered.",
+      "$description": "Four families, one job each: SF Pro for text (SF Compact on watchOS), Instrument Sans for titles only, JetBrains Mono for every number, Bitcount Single for hero numerals only. Bundled faces are SIL OFL 1.1 and live in brand/fonts/ with their licenses; `$extensions.beatham.faces` maps a weight to the PostScript name Tokens.swift passes to Font.custom(_:size:relativeTo:), and `fallback` is the system design used when the face isn’t registered.",
       "sans": {
         "$value": [
           "SF Pro Text",

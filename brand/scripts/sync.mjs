@@ -25,7 +25,7 @@ import path from 'node:path';
 
 const DEFAULT_REPO = 'https://github.com/JeremiahBeatham/BeathamBase.git';
 const SKIP = new Set(['node_modules', 'SOURCE.json']);
-const SKIP_PATHS = ['site/dist', 'site/node_modules'];
+const SKIP_PATHS = ['site/dist', 'site/node_modules', 'scripts/release.mjs', 'scripts/rollout.mjs', 'scripts/board.mjs', 'scripts/check-projects.mjs']; // BeathamBase-only: tags are made there, and the others read projects.json
 const SCRIPTS = {
   'brand:build': 'node brand/scripts/build.mjs',
   'brand:check': 'node brand/scripts/check.mjs',

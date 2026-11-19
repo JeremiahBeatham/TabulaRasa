@@ -59,9 +59,9 @@ export const referenceMode = 'dark';
 export const modeGroups = ['color', 'color-scheme'];
 
 /**
- * Core colour ramps under `color.*`: raw values, identical in every mode, never referenced by a
+ * Core color ramps under `color.*`: raw values, identical in every mode, never referenced by a
  * product directly (products use semantic roles). Sub-brands may not redefine them — Jeremiah's
- * colours are anchors. Which roles each ramp may fill: brand/rules.json.
+ * colors are anchors. Which roles each ramp may fill: brand/rules.json.
  */
 export const coreRamps = [
   'neutral',
@@ -74,11 +74,11 @@ export const coreRamps = [
   'violet',
   'teal',
   'orange',
-  'filament-grey',
+  'filament-gray',
   'filament-orange',
 ];
 
-/** Palette groups (top-level `palette.*`): colour only, mode-independent, never a semantic role, never in Swift. */
+/** Palette groups (top-level `palette.*`): color only, mode-independent, never a semantic role, never in Swift. */
 export const paletteGroups = ['palette'];
 
 /** Output naming. A sub-brand may override the prefix (subbrand.json → outputs.prefix) for legacy compatibility. */
