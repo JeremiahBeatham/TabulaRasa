@@ -1,6 +1,6 @@
 // OKLab / OKLCH maths (Björn Ottosson, 2020) for the Pop P1b2 ramp analysis and the
 // OKLCH-corrected palettes in design/proposals/_palettes. sRGB only; out-of-gamut
-// colours are brought in by lowering chroma at fixed L and h (the CSS Color 4 approach,
+// colors are brought in by lowering chroma at fixed L and h (the CSS Color 4 approach,
 // without the JND shortcut).
 import { parseHex, contrast } from './color.mjs';
 
@@ -37,7 +37,7 @@ function linearRgb(L, C, H) {
 
 const inGamut = (L, C, H) => linearRgb(L, C, H).every((v) => v >= -1e-6 && v <= 1 + 1e-6);
 
-/** OKLCH → #RRGGBB, lowering chroma (binary search) until the colour fits sRGB. */
+/** OKLCH → #RRGGBB, lowering chroma (binary search) until the color fits sRGB. */
 export function fromOklch(L, C, H) {
   let c = C;
   if (!inGamut(L, c, H)) {

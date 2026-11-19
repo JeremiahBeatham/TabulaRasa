@@ -3,34 +3,64 @@
   "label": "Beatham",
   "status": "core",
   "product": "The Beatham core brand",
-  "thesis": "Precise, restrained, made by hand. Neutral carries the work; one warm amber marks what you touch.",
-  "summary": "The core every Beatham product inherits — apps, sites, watch faces and printed parts. It sets the rules (colour budget, accent rule, contrast, type jobs, spacing, shape, motion) and the raw material (Jeremiah’s ramps, the filament palette, four OFL faces). Each product layers a sub-brand on top: its own palettes, product roles and proportion, inside the same rules.",
+  "thesis": "Serve, spark, delight. Personal tools, made at a workshop bench, that help you bring your ideas to life.",
+  "summary": "Beatham is the brand of Jeremiah Beatham, a multidisciplinary designer who designs things and experiences, likes helping people, and likes making the work fun. The core is the lowest common denominator: what every Beatham app, site, watch face and printed part inherits. It sets the rules (color budget, accent rule, contrast, type jobs, spacing, shape, motion) and the raw material (the ramps, the filament palette, four OFL faces). Each product layers a brand on top: its own palettes, roles and voice, inside the same rules.",
   "pillars": [
     {
-      "name": "Precise",
-      "body": "Name the thing, the number and the fix. Every value has its unit; every state has a glyph and a label, never colour alone."
+      "name": "Servant",
+      "verb": "Serve",
+      "body": "Help first. Build tools that care for people, their ideas and each other. Simple, straightforward, transparent."
     },
     {
-      "name": "Restrained",
-      "body": "Flat, few layers, tight corners. Neutral carries ninety per cent of a screen; colour is a budget, not a palette."
+      "name": "Innovator",
+      "verb": "Spark",
+      "body": "Ask why not. Make tools you can touch, and make them well, so ideas become things."
     },
     {
-      "name": "Made by hand",
-      "body": "Warm greys, a hero amber, filament colours from the bench. The same system runs from a watch face to a printed part."
+      "name": "Entertainer",
+      "verb": "Delight",
+      "body": "Find joy in the simplest things. How much play a product gets depends on the product."
     }
   ],
-  "platforms": ["web", "ios", "macos", "watchos", "print"],
+  "platforms": [
+    "web",
+    "ios",
+    "macos",
+    "watchos",
+    "print"
+  ],
   "palettes": {
     "accent": "brand",
-    "secondary": ["gilt", "two-tone"],
-    "tertiary": ["blueprint", "filament"]
+    "secondary": [
+      "gilt",
+      "two-tone"
+    ],
+    "tertiary": [
+      "blueprint",
+      "filament"
+    ]
   },
   "proportion": {
     "name": "90 / 7 / 3",
     "parts": [
-      { "label": "neutral — surfaces, text, borders", "pct": 90, "color": "color.neutral.50" },
-      { "label": "accent — what you act on", "pct": 7, "color": "color.brand.50" },
-      { "label": "signals — blue open, red broken", "pct": 3, "color": ["color.callout.50", "color.negative.50"] }
+      {
+        "label": "neutral — surfaces, text, borders",
+        "pct": 90,
+        "color": "color.neutral.50"
+      },
+      {
+        "label": "accent — what you act on",
+        "pct": 7,
+        "color": "color.brand.50"
+      },
+      {
+        "label": "signals — blue open, red broken",
+        "pct": 3,
+        "color": [
+          "color.callout.50",
+          "color.negative.50"
+        ]
+      }
     ]
   },
   "type": [
@@ -41,7 +71,7 @@
   "do": [
     "Build every surface from the neutral ladder: true black → neutral/90 → neutral/80 in dark, paper → white in light.",
     "Use the accent for the one thing being acted on: the selected segment, the active control, the focus ring.",
-    "Pair every state colour with a glyph and a word.",
+    "Pair every state color with a glyph and a word.",
     "Take every visual value from a token. Run npm run brand:check before you push."
   ],
   "dont": [
@@ -51,9 +81,33 @@
     "Copy a hex value into a component, or edit a generated file."
   ],
   "identity": {
-    "wordmark": { "status": "not-defined", "note": "The Beatham name set in type. Not yet drawn." },
-    "icon": { "status": "not-defined", "note": "The Beatham icon: app icon, favicon, small mark. Not yet drawn." },
-    "logo": { "status": "not-defined", "note": "The Beatham logo lockup (icon plus wordmark). Not yet drawn." },
-    "rules": { "status": "provisional", "note": "Clear space and minimum size use the core mark.* tokens until a mark exists. On-colour use and don'ts are written with the mark." }
-  }
+    "wordmark": {
+      "status": "provisional",
+      "note": "BEATHAM in capitals, Instrument Sans Bold, black on light and white on dark. A placeholder until the wordmark is drawn."
+    },
+    "icon": {
+      "status": "provisional",
+      "note": "An amber rounded square (brand.50). A placeholder until the icon is drawn."
+    },
+    "logo": {
+      "status": "not-defined",
+      "note": "The Beatham logo lockup (icon plus wordmark). Not yet drawn."
+    },
+    "rules": {
+      "status": "provisional",
+      "note": "Clear space and minimum size use the core mark.* tokens until a mark exists. On-color use and don'ts are written with the mark."
+    }
+  },
+  "visualSystem": "In the visual system the tenets read as precise (name the thing, the number and the fix), restrained (neutral carries the work) and made by hand (warm grays, a hero amber, filament colors from the bench).",
+  "origin": "Beatham is a maker's workshop. Each product starts from a real person or story: candlelit family game nights became Pip, personal dental care became Confident. The tools are made to be used, so the work stays on the bench in plain view.",
+  "order": "When the archetypes pull apart, Servant wins: helpfulness and clarity beat cleverness and play.",
+  "joy": {
+    "default": "Craft by default, play by invitation.",
+    "body": "Most Beatham products delight by being well considered and satisfying to use: HandCAD, BitBox, ManoMultiplier. Some earn a playful voice, like HandStack. Pip has the most room. Joy lives in the object, in the copy and in small moments, and only when it earns its place."
+  },
+  "refusals": [
+    "No engagement tricks: no streaks, nags or dark patterns.",
+    "No hype or jargon.",
+    "Nothing self-important or self-abasing: don't talk the work up or down."
+  ]
 }

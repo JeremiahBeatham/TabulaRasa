@@ -7,7 +7,7 @@ import Foundation
 
 /// Raw Beatham design-token values (core). Platform-neutral (no SwiftUI/UIKit) so it also builds on Linux.
 public enum BTTokens {
-    /// An sRGB colour as 8-bit channels.
+    /// An sRGB color as 8-bit channels.
     public struct RGBA: Sendable, Hashable {
         public let red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8
         public init(_ red: UInt8, _ green: UInt8, _ blue: UInt8, _ alpha: UInt8 = 0xFF) {
@@ -15,7 +15,7 @@ public enum BTTokens {
         }
     }
 
-    /// A semantic colour resolved for every mode.
+    /// A semantic color resolved for every mode.
     public struct ModeColor: Sendable, Hashable {
         public let dark: RGBA, highContrastDark: RGBA, light: RGBA, highContrastLight: RGBA
         public func resolve(dark isDark: Bool, highContrast: Bool) -> RGBA {
@@ -70,13 +70,13 @@ public enum BTTokens {
         public static let selectionStroke = ModeColor(dark: RGBA(0xFF, 0xBA, 0x04), highContrastDark: RGBA(0xFF, 0xBA, 0x04), light: RGBA(0x96, 0x5A, 0x16), highContrastLight: RGBA(0x5C, 0x33, 0x17))
         /// Selected tint (brand/50 at 24 %). The only tint in the chrome; decorative — the stroke carries the contrast.
         public static let selectionFill = ModeColor(dark: RGBA(0xFF, 0xBA, 0x04, 0x3D), highContrastDark: RGBA(0xFF, 0xBA, 0x04, 0x3D), light: RGBA(0xFF, 0xBA, 0x04, 0x52), highContrastLight: RGBA(0xFF, 0xBA, 0x04, 0x52))
-        /// Pre-selection (touch-down / pointer hover) outline. Thinner than the selection stroke; in light mode it shares the stroke colour and differs by weight.
+        /// Pre-selection (touch-down / pointer hover) outline. Thinner than the selection stroke; in light mode it shares the stroke color and differs by weight.
         public static let selectionHover = ModeColor(dark: RGBA(0xFF, 0xD7, 0x8D), highContrastDark: RGBA(0xFD, 0xE5, 0xBE), light: RGBA(0x96, 0x5A, 0x16), highContrastLight: RGBA(0x5C, 0x33, 0x17))
         /// Blue (Callout): still open, still free, in progress — something you may still change. Pair with an open glyph and a count or label.
         public static let signalInfo = ModeColor(dark: RGBA(0x58, 0xA3, 0xCC), highContrastDark: RGBA(0x95, 0xC4, 0xE3), light: RGBA(0x17, 0x71, 0x99), highContrastLight: RGBA(0x00, 0x4E, 0x6E))
         /// Red (Negative): broken — an error, a conflict, a failed result, a destructive outcome. Pair with ✕ or an exclamation glyph.
         public static let signalNegative = ModeColor(dark: RGBA(0xF0, 0x76, 0x74), highContrastDark: RGBA(0xEF, 0xAE, 0xA9), light: RGBA(0xBD, 0x00, 0x2C), highContrastLight: RGBA(0x90, 0x00, 0x21))
-        /// Light red: about to go wrong — a warning. A lighter step of the same red as negative, with ⚠; told apart by step and glyph, never by colour alone.
+        /// Light red: about to go wrong — a warning. A lighter step of the same red as negative, with ⚠; told apart by step and glyph, never by color alone.
         public static let signalCaution = ModeColor(dark: RGBA(0xF3, 0xD3, 0xCF), highContrastDark: RGBA(0xFF, 0xF4, 0xF3), light: RGBA(0xE6, 0x22, 0x3E), highContrastLight: RGBA(0x90, 0x00, 0x21))
         /// Green (Success): a result that passed a check. Results only — never “saved” or “sent”, which stay neutral. With ✓ and a label.
         public static let signalPositive = ModeColor(dark: RGBA(0x57, 0xB0, 0x6B), highContrastDark: RGBA(0x96, 0xCA, 0xA0), light: RGBA(0x13, 0x7E, 0x33), highContrastLight: RGBA(0x00, 0x58, 0x1A))
@@ -84,7 +84,7 @@ public enum BTTokens {
         public static let feedbackError = ModeColor(dark: RGBA(0xF0, 0x76, 0x74), highContrastDark: RGBA(0xEF, 0xAE, 0xA9), light: RGBA(0xBD, 0x00, 0x2C), highContrastLight: RGBA(0x61, 0x07, 0x18))
         /// Error banner: flat — the raised surface with a border; the glyph and title carry the red.
         public static let feedbackErrorSurface = ModeColor(dark: RGBA(0x20, 0x1D, 0x1A), highContrastDark: RGBA(0x20, 0x1D, 0x1A), light: RGBA(0xFF, 0xFF, 0xFF), highContrastLight: RGBA(0xFF, 0xFF, 0xFF))
-        /// UI warning text/icon with the triangle glyph (⚠): a lighter red step than error — told apart from errors by step and glyph, never by colour alone.
+        /// UI warning text/icon with the triangle glyph (⚠): a lighter red step than error — told apart from errors by step and glyph, never by color alone.
         public static let feedbackWarning = ModeColor(dark: RGBA(0xF3, 0xD3, 0xCF), highContrastDark: RGBA(0xFF, 0xF4, 0xF3), light: RGBA(0xE6, 0x22, 0x3E), highContrastLight: RGBA(0x90, 0x00, 0x21))
         /// Warning banner: flat (raised surface + border).
         public static let feedbackWarningSurface = ModeColor(dark: RGBA(0x20, 0x1D, 0x1A), highContrastDark: RGBA(0x20, 0x1D, 0x1A), light: RGBA(0xFF, 0xFF, 0xFF), highContrastLight: RGBA(0xFF, 0xFF, 0xFF))
@@ -331,7 +331,7 @@ public enum BTTokens {
 import SwiftUI
 
 public extension Color {
-    /// A colour that follows light/dark and Increase Contrast.
+    /// A color that follows light/dark and Increase Contrast.
     init(btMode c: BTTokens.ModeColor) {
         #if os(watchOS)
         // watchOS is always dark (and true black behind everything): the dark value.
@@ -402,13 +402,13 @@ public extension Color {
     static let btSelectionStroke = Color(btMode: BTTokens.Colors.selectionStroke)
     /// Selected tint (brand/50 at 24 %). The only tint in the chrome; decorative — the stroke carries the contrast.
     static let btSelectionFill = Color(btMode: BTTokens.Colors.selectionFill)
-    /// Pre-selection (touch-down / pointer hover) outline. Thinner than the selection stroke; in light mode it shares the stroke colour and differs by weight.
+    /// Pre-selection (touch-down / pointer hover) outline. Thinner than the selection stroke; in light mode it shares the stroke color and differs by weight.
     static let btSelectionHover = Color(btMode: BTTokens.Colors.selectionHover)
     /// Blue (Callout): still open, still free, in progress — something you may still change. Pair with an open glyph and a count or label.
     static let btSignalInfo = Color(btMode: BTTokens.Colors.signalInfo)
     /// Red (Negative): broken — an error, a conflict, a failed result, a destructive outcome. Pair with ✕ or an exclamation glyph.
     static let btSignalNegative = Color(btMode: BTTokens.Colors.signalNegative)
-    /// Light red: about to go wrong — a warning. A lighter step of the same red as negative, with ⚠; told apart by step and glyph, never by colour alone.
+    /// Light red: about to go wrong — a warning. A lighter step of the same red as negative, with ⚠; told apart by step and glyph, never by color alone.
     static let btSignalCaution = Color(btMode: BTTokens.Colors.signalCaution)
     /// Green (Success): a result that passed a check. Results only — never “saved” or “sent”, which stay neutral. With ✓ and a label.
     static let btSignalPositive = Color(btMode: BTTokens.Colors.signalPositive)
@@ -416,7 +416,7 @@ public extension Color {
     static let btFeedbackError = Color(btMode: BTTokens.Colors.feedbackError)
     /// Error banner: flat — the raised surface with a border; the glyph and title carry the red.
     static let btFeedbackErrorSurface = Color(btMode: BTTokens.Colors.feedbackErrorSurface)
-    /// UI warning text/icon with the triangle glyph (⚠): a lighter red step than error — told apart from errors by step and glyph, never by colour alone.
+    /// UI warning text/icon with the triangle glyph (⚠): a lighter red step than error — told apart from errors by step and glyph, never by color alone.
     static let btFeedbackWarning = Color(btMode: BTTokens.Colors.feedbackWarning)
     /// Warning banner: flat (raised surface + border).
     static let btFeedbackWarningSurface = Color(btMode: BTTokens.Colors.feedbackWarningSurface)

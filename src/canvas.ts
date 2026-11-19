@@ -239,10 +239,10 @@ export class SketchCanvas {
 	} | null = null;
 
 	// Cached theme colors for the page chrome (refreshed on resize).
-	private pageColor = "#ffffff";
-	private workColor = "#000000";
-	private borderColor = "rgba(0,0,0,0.2)";
-	private accentColor = "#4c8dff";
+	private pageColor = "#ffffff"; // allow-literal: cached fallback until the Obsidian theme color is read
+	private workColor = "#000000"; // allow-literal: cached fallback until the Obsidian theme color is read
+	private borderColor = "rgba(0,0,0,0.2)"; // allow-literal: cached fallback until the Obsidian theme color is read
+	private accentColor = "#4c8dff"; // allow-literal: cached fallback until the Obsidian theme color is read
 
 	constructor(
 		parent: HTMLElement,

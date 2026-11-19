@@ -105,11 +105,11 @@
       },
       "hover": {
         "$value": "{color.brand.30}",
-        "$description": "Pre-selection (touch-down / pointer hover) outline. Thinner than the selection stroke; in light mode it shares the stroke colour and differs by weight."
+        "$description": "Pre-selection (touch-down / pointer hover) outline. Thinner than the selection stroke; in light mode it shares the stroke color and differs by weight."
       }
     },
     "signal": {
-      "$description": "State colours for marks, glyphs and short labels. Always with a glyph and a label — never colour alone. Two hues in the chrome by default (blue, red); green only for results a person checks. Sub-brands map their product states onto these (brand/rules.json).",
+      "$description": "State colors for marks, glyphs and short labels. Always with a glyph and a label — never color alone. Two hues in the chrome by default (blue, red); green only for results a person checks. Sub-brands map their product states onto these (brand/rules.json).",
       "info": {
         "$value": "{color.callout.40}",
         "$description": "Blue (Callout): still open, still free, in progress — something you may still change. Pair with an open glyph and a count or label."
@@ -120,7 +120,7 @@
       },
       "caution": {
         "$value": "{color.negative.20}",
-        "$description": "Light red: about to go wrong — a warning. A lighter step of the same red as negative, with ⚠; told apart by step and glyph, never by colour alone."
+        "$description": "Light red: about to go wrong — a warning. A lighter step of the same red as negative, with ⚠; told apart by step and glyph, never by color alone."
       },
       "positive": {
         "$value": "{color.success.40}",
@@ -138,7 +138,7 @@
       },
       "warning": {
         "$value": "{color.negative.20}",
-        "$description": "UI warning text/icon with the triangle glyph (⚠): a lighter red step than error — told apart from errors by step and glyph, never by colour alone."
+        "$description": "UI warning text/icon with the triangle glyph (⚠): a lighter red step than error — told apart from errors by step and glyph, never by color alone."
       },
       "warning-surface": {
         "$value": "{color.neutral.90}",

@@ -1,8 +1,8 @@
-// Renders brand/dist/<name>/figma-variables.json: the sub-brand's colours as Tokens Studio sets
+// Renders brand/dist/<name>/figma-variables.json: the sub-brand's colors as Tokens Studio sets
 // (one set per mode, plus the mode-independent palettes), which Tokens Studio or a Figma
 // variables import turns into variables. Only for a sub-brand whose manifest sets
 // "figmaVariables": true (a project that lives in Figma: the portfolio, the WAGS plugin).
-// Colours only: a variable in Figma is a value, and every value here is already resolved.
+// Colors only: a variable in Figma is a value, and every value here is already resolved.
 const setPath = (node, parts, token) => {
   let at = node;
   for (const p of parts.slice(0, -1)) at = at[p] ??= {};
@@ -11,18 +11,18 @@ const setPath = (node, parts, token) => {
 
 export function renderFigma(resolved, config) {
   const { sb, modeNames, tokens } = resolved;
-  const colours = tokens.filter((t) => t.type === 'color');
+  const colors = tokens.filter((t) => t.type === 'color');
   const sets = {};
   for (const mode of modeNames) {
     const set = (sets[mode] = {});
-    for (const t of colours) {
+    for (const t of colors) {
       if (t.path[0] === 'palette' || !t.modeDependent && mode !== config.referenceMode) continue;
       const value = String(t.raw[mode] ?? t.raw[config.referenceMode]);
       setPath(set, t.path, { value, type: 'color', description: t.description ?? '' });
     }
   }
   sets.palettes = {};
-  for (const t of colours.filter((x) => x.path[0] === 'palette')) {
+  for (const t of colors.filter((x) => x.path[0] === 'palette')) {
     setPath(sets.palettes, t.path.slice(1), { value: String(t.raw[config.referenceMode]), type: 'color', description: t.description ?? '' });
   }
   const out = {

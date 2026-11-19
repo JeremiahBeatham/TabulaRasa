@@ -1,7 +1,7 @@
-// Colour-role guard: the hue budget and the accent rule are rules, not conventions.
-// For one sub-brand, every semantic colour in every mode may only draw on the ramps its role is
+// Color-role guard: the hue budget and the accent rule are rules, not conventions.
+// For one sub-brand, every semantic color in every mode may only draw on the ramps its role is
 // allowed to use (brand/rules.json + the sub-brand's grants). References between roles are
-// followed to the ramp they land on; literal colours are judged by their RGB.
+// followed to the ramp they land on; literal colors are judged by their RGB.
 import fs from 'node:fs';
 import path from 'node:path';
 import { isToken, loadModeTokens, readCoreLayer, config } from './tokens.mjs';
@@ -21,7 +21,7 @@ function flatten(node, trail = [], out = new Map()) {
   return out;
 }
 
-/** Core semantic colour keys (the "chrome" roles every sub-brand inherits). */
+/** Core semantic color keys (the "chrome" roles every sub-brand inherits). */
 function coreRoleKeys() {
   const out = new Set();
   for (const k of flatten(readCoreLayer('semantic/color.semantic.json')).keys()) out.add(k);
@@ -125,11 +125,11 @@ export function evaluateRoles(sb) {
     problems.push(`${sb.name}: ${chromeHues.size} hues in the chrome (${[...chromeHues].join(', ')}) — the budget is ${rules.hueBudget.chrome}`);
   }
 
-  // Proportion swatches must name real colour tokens.
+  // Proportion swatches must name real color tokens.
   const known = flatten(loadModeTokens(sb, config.referenceMode));
   for (const system of [sb.manifest.proportion, ...(sb.manifest.proportion.alternates ?? [])]) {
     for (const part of system.parts) {
-      for (const key of [part.color].flat()) if (!known.has(key)) problems.push(`${sb.name}: proportion "${system.name}" names unknown colour ${key}`);
+      for (const key of [part.color].flat()) if (!known.has(key)) problems.push(`${sb.name}: proportion "${system.name}" names unknown color ${key}`);
     }
   }
 

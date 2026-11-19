@@ -74,6 +74,6 @@ export function renderSheet(resolved, config, prefixes, summary) {
   add('## Checks');
   add(`- Contrast: ${summary.contrast.checks} pair checks across ${resolved.modeNames.length} modes, ${summary.contrast.failing} failing.`);
   for (const [mode, r] of Object.entries(summary.contrast.tightest)) add(`  - tightest in ${mode}: ${r.ratio}:1 (min ${r.min}) ${r.fg} on ${r.bg}`);
-  add(`- Roles: ${summary.roles.checked} colour values across 4 modes keep to the hue budget and the accent rule.`);
+  add(`- Roles: ${summary.roles.checked} color values across 4 modes keep to the hue budget and the accent rule.`);
   return L.join('\n') + '\n';
 }

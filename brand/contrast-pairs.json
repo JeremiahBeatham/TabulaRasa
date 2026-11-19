@@ -1,5 +1,5 @@
 {
-  "$description": "Every core semantic colour pair the UI draws, checked in every mode for core and every sub-brand by `npm run brand:check`. kind=text → WCAG 1.4.3 AA 4.5:1; kind=graphic → WCAG 1.4.11 non-text 3:1. High-contrast modes must reach 7:1 (text) and 4.5:1 (graphic). Translucent foregrounds are composited over the background first. Every semantic colour must be in a pair or exempt with a reason. Sub-brands add their own pairs in subbrands/<name>/contrast-pairs.json.",
+  "$description": "Every core semantic color pair the UI draws, checked in every mode for core and every sub-brand by `npm run brand:check`. kind=text → WCAG 1.4.3 AA 4.5:1; kind=graphic → WCAG 1.4.11 non-text 3:1. High-contrast modes must reach 7:1 (text) and 4.5:1 (graphic). Translucent foregrounds are composited over the background first. Every semantic color must be in a pair or exempt with a reason. Sub-brands add their own pairs in subbrands/<name>/contrast-pairs.json.",
   "thresholds": {
     "standard": {
       "text": 4.5,

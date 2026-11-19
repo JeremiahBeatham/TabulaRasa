@@ -135,7 +135,7 @@ function normalizeHex(color: string): string {
 	// Expand shorthand #rgb -> #rrggbb.
 	const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(c);
 	if (short) return `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`;
-	return "#000000";
+	return "#000000"; // allow-literal: fallback in a hex normalizer, not chrome
 }
 
 /**
@@ -1032,7 +1032,7 @@ export class SketchView extends TextFileView {
 	private applyThemeDefaultColor(): void {
 		if (!this.plugin.settings.matchPenColorToTheme) return;
 		const isDark = document.body.classList.contains("theme-dark");
-		this.brush.color = isDark ? "#ffffff" : "#000000";
+		this.brush.color = isDark ? "#ffffff" : "#000000"; // allow-literal: pen ink follows the Obsidian theme; ink is user content
 	}
 
 	/** Write the .sketch source now. No PNG is produced — that's export-only. */
@@ -1449,7 +1449,7 @@ class MoreSheet extends Modal {
 		});
 		swatch.value = normalizeHex(
 			this.actions.background === "transparent"
-				? "#1e1e1e"
+				? "#1e1e1e" // allow-literal: swatch shown for a transparent background
 				: this.actions.background,
 		);
 		swatch.addEventListener("input", () =>

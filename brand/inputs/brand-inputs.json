@@ -1,5 +1,5 @@
 {
-  "$description": "Jeremiah's colour inputs, verbatim (never edited by the pipeline; first collected for Pop P1b2, 2026-10-02). Since Pop P1c they are the source of the shipped callout / negative / success / gold / brown ramps (studio/scripts/generate-oklch-palettes.mjs → design/tokens/core/color.ramps.json) and are still layered under the archived round-2 proposals. Never sent to Swift.",
+  "$description": "Jeremiah's color inputs, verbatim (never edited by the pipeline; first collected for Pop P1b2, 2026-10-02). Since Pop P1c they are the source of the shipped callout / negative / success / gold / brown ramps (studio/scripts/generate-oklch-palettes.mjs → design/tokens/core/color.ramps.json) and are still layered under the archived round-2 proposals. Never sent to Swift.",
   "color": {
     "callout": {
       "$type": "color",

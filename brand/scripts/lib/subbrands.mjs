@@ -35,9 +35,9 @@ function validate(m, where) {
     if (!m.identity?.[slot]?.status) throw new Error(`${where}: identity.${slot} needs a status (not-defined, provisional or defined)`);
   }
   for (const prof of m.profiles ?? []) {
-    for (const k of ['name', 'label', 'summary', 'display', 'colours']) if (prof[k] === undefined) throw new Error(`${where}: profile "${prof.name ?? '?'}" is missing ${k}`);
-    if (prof.display.levels && prof.colours.length !== prof.display.levels) throw new Error(`${where}: profile "${prof.name}" declares ${prof.display.levels} levels but lists ${prof.colours.length} colours`);
-    for (const c of prof.colours) if (!/^#[0-9a-fA-F]{6}$/.test(c.hex)) throw new Error(`${where}: profile "${prof.name}" colour "${c.name}" needs a #RRGGBB hex`);
+    for (const k of ['name', 'label', 'summary', 'display', 'colors']) if (prof[k] === undefined) throw new Error(`${where}: profile "${prof.name ?? '?'}" is missing ${k}`);
+    if (prof.display.levels && prof.colors.length !== prof.display.levels) throw new Error(`${where}: profile "${prof.name}" declares ${prof.display.levels} levels but lists ${prof.colors.length} colors`);
+    for (const c of prof.colors) if (!/^#[0-9a-fA-F]{6}$/.test(c.hex)) throw new Error(`${where}: profile "${prof.name}" color "${c.name}" needs a #RRGGBB hex`);
   }
   if (m.status === 'proposal' && !(m.openQuestions?.length > 0)) {
     throw new Error(`${where}: a proposal sub-brand must list openQuestions for Jeremiah`);
@@ -82,8 +82,8 @@ export function readSubbrandLayer(sb, rel) {
   return readJson(path.join(sb.dir, rel));
 }
 
-/** The 9-step colour ramps (color.<name>.10…90, literal hex) a sub-brand defines in its own layers. */
-export function subbrandColourRamps(sb) {
+/** The 9-step color ramps (color.<name>.10…90, literal hex) a sub-brand defines in its own layers. */
+export function subbrandColorRamps(sb) {
   const out = [];
   for (const rel of sb.manifest.layers ?? []) {
     const layer = readSubbrandLayer(sb, rel);

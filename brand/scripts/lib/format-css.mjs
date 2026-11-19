@@ -2,7 +2,7 @@
 //
 // Per-project file (brand/dist/<name>/tokens.css):
 //   - Mode-independent tokens go on :root once.
-//   - Every mode gets a full colour block on an attribute selector, so any element can be scoped
+//   - Every mode gets a full color block on an attribute selector, so any element can be scoped
 //     to a mode (`data-theme` + `data-contrast`) — specimens in several modes side by side.
 //   - Before JS sets data-theme / data-contrast, the OS preference decides (prefers-color-scheme,
 //     prefers-contrast), so a project is on-brand with zero setup.
@@ -92,7 +92,7 @@ export function renderCss(resolved, config, prefix) {
  * The guidelines site's stylesheet. For each sub-brand S:
  *   [data-subbrand=S]                                   mode-independent tokens + dark (default)
  *   [data-subbrand=S][data-theme=M], [data-subbrand=S] [data-theme=M]   each mode, on <html> or a specimen
- * Specimens never nest one sub-brand inside another (the site shows other sub-brands' colours from data).
+ * Specimens never nest one sub-brand inside another (the site shows other sub-brands' colors from data).
  */
 export function renderSiteCss(all, config, prefix) {
   const ref = config.referenceMode;

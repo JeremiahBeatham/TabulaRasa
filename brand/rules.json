@@ -1,5 +1,5 @@
 {
-  "$description": "Beatham core colour rules, enforced for core and every sub-brand by brand/scripts/check-roles.mjs (part of `npm run brand:check`). A sub-brand may add grants (subbrand.json → rules.grants), each with a scope and a reason; it may never loosen the rules below. See docs/BRAND.md.",
+  "$description": "Beatham core color rules, enforced for core and every sub-brand by brand/scripts/check-roles.mjs (part of `npm run brand:check`). A sub-brand may add grants (subbrand.json → rules.grants), each with a scope and a reason; it may never loosen the rules below. See docs/BRAND.md.",
   "accent": {
     "$description": "The accent rule: the accent marks only what you act on — selection, focus, the active control. The sub-brand's accent ramp (subbrand.json → palettes.accent, default brand) may appear in these roles and nowhere else; these roles may use only the accent ramp or neutral. A sub-brand may take any other core ramp (not gold or brown) as its accent only through an accent grant (subbrand.json → rules.accentGrant: { ramp, reason }); the granted ramp then behaves exactly like brand does for every other sub-brand: it fills accent.* and selection.* and nothing else. The core default stays brand.",
     "roles": [
@@ -33,11 +33,11 @@
     "violet": [],
     "teal": [],
     "orange": [],
-    "filament-grey": [],
+    "filament-gray": [],
     "filament-orange": []
   },
   "never": {
-    "$description": "Never in any semantic role, core or sub-brand: these are palette and marketing colours (illustration, packaging, previews).",
+    "$description": "Never in any semantic role, core or sub-brand: these are palette and marketing colors (illustration, packaging, previews).",
     "ramps": [
       "gold",
       "brown"
@@ -59,7 +59,7 @@
     ]
   },
   "proportion": {
-    "$description": "Every sub-brand declares a proportion system: what share of a typical screen (or part, or page) each colour covers. Parts must sum to 100. The core default is 90 / 7 / 3 — neutral / accent / signals.",
+    "$description": "Every sub-brand declares a proportion system: what share of a typical screen (or part, or page) each color covers. Parts must sum to 100. The core default is 90 / 7 / 3 — neutral / accent / signals.",
     "default": [
       {
         "label": "neutral — surfaces, text, borders",

@@ -1,16 +1,16 @@
-// Colour maths shared by the Swift formatter and the WCAG contrast check.
+// Color maths shared by the Swift formatter and the WCAG contrast check.
 
 /** Parses #RGB, #RRGGBB or #RRGGBBAA into 0–255 channels, 0–1 alpha and 0–255 alpha. */
 export function parseHex(hex) {
   const h = String(hex).replace('#', '');
   const full = h.length === 3 ? [...h].map((c) => c + c).join('') : h;
-  if (!/^[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(full)) throw new Error(`Not a hex colour: ${hex}`);
+  if (!/^[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(full)) throw new Error(`Not a hex color: ${hex}`);
   const n = (i) => parseInt(full.slice(i, i + 2), 16);
   const a8 = full.length === 8 ? n(6) : 255;
   return { r: n(0), g: n(2), b: n(4), a: a8 / 255, a8 };
 }
 
-/** Composites a (possibly translucent) colour over an opaque background. */
+/** Composites a (possibly translucent) color over an opaque background. */
 export function over(fg, bg) {
   const mix = (f, b) => Math.round(f * fg.a + b * (1 - fg.a));
   return { r: mix(fg.r, bg.r), g: mix(fg.g, bg.g), b: mix(fg.b, bg.b), a: 1, a8: 255 };
@@ -25,7 +25,7 @@ export function luminance({ r, g, b }) {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-/** WCAG 2.x contrast ratio between two opaque colours. */
+/** WCAG 2.x contrast ratio between two opaque colors. */
 export function contrast(a, b) {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);

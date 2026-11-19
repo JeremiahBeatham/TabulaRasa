@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The hue budget and the accent rule (brand/rules.json), for core and every sub-brand: every
-// semantic colour in every mode may only draw on the ramps its role is allowed (core table plus
+// semantic color in every mode may only draw on the ramps its role is allowed (core table plus
 // the sub-brand's grants, each with a scope and a reason); chrome hues stay within budget; the
 // accent ramp marks only what you act on; gold, brown and palettes never fill a role.
 //   node brand/scripts/check-roles.mjs [--subbrand <name>]

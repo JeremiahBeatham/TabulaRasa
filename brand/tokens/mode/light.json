@@ -4,7 +4,7 @@
     "$value": "light",
     "$description": "CSS color-scheme / SwiftUI ColorScheme for this mode."
   },
-  "$description": "Light mode: overrides every core semantic colour. Warm paper (neutral/10) base, white sheets; amber strokes, focus and accent text deepen to bronze (brand/70) because amber is only 1.55:1 on paper.",
+  "$description": "Light mode: overrides every core semantic color. Warm paper (neutral/10) base, white sheets; amber strokes, focus and accent text deepen to bronze (brand/70) because amber is only 1.55:1 on paper.",
   "color": {
     "surface": {
       "base": {

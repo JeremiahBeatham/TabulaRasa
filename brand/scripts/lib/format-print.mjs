@@ -1,10 +1,10 @@
 // Renders brand/dist/<name>/print/: the print & physical export for a sub-brand whose platforms
 // include "print" (and for the core).
-//   swatches.json   every physical colour with hex, RGB, OKLCH, CIELAB D50, provenance and the
+//   swatches.json   every physical color with hex, RGB, OKLCH, CIELAB D50, provenance and the
 //                   manufacturer fields (TODO until Jeremiah fills brand/inputs/filaments.json)
 //   swatches.csv    the same, one row per swatch (for a spreadsheet or a print shop)
 //   swatches.html   a printable sheet: swatches, mixes, the filament contrast matrix, physical sizes
-// Colours here are sRGB. Printed paper and filament are matched by eye or colorimeter against a
+// Colors here are sRGB. Printed paper and filament are matched by eye or colorimeter against a
 // physical proof — never trust a screen. No CMYK conversion is attempted (it needs the printer's ICC
 // profile); ask the print shop for a proof.
 import fs from 'node:fs';
@@ -36,7 +36,7 @@ function swatch(t, group, ref, extra = {}) {
   };
 }
 
-/** The physical colour set and guidance for one resolved sub-brand. */
+/** The physical color set and guidance for one resolved sub-brand. */
 export function printModel(resolved, config) {
   const ref = config.referenceMode;
   const { sb, tokens } = resolved;
@@ -52,12 +52,12 @@ export function printModel(resolved, config) {
         source: m.source ?? 'photo-sampled',
         manufacturer: m.manufacturer ?? 'TODO',
         product: m.product ?? 'TODO',
-        colourName: m.colourName ?? 'TODO',
-        colourCode: m.colourCode ?? 'TODO',
+        colorName: m.colorName ?? 'TODO',
+        colorCode: m.colorCode ?? 'none',
         note: m.notes ?? '',
       });
     });
-  groups.push({ name: 'Filaments', note: 'Photo-sampled — approximate. Match spools by manufacturer colour code, then by a printed proof.', swatches: filaments });
+  groups.push({ name: 'Filaments', note: 'Photo-sampled — approximate. Identify spools by maker and color name, then settle the color with a printed proof.', swatches: filaments });
 
   const parts = tokens.filter((t) => t.path[0] === 'color' && t.path[1] === 'part');
   if (parts.length) groups.push({ name: 'Physical roles', note: `${sb.manifest.label}: which filament does which job on a part.`, swatches: parts.map((t) => swatch(t, 'Physical roles', ref, { source: t.original })) });
@@ -91,11 +91,11 @@ export function renderPrintJson(model) {
 }
 
 export function renderPrintCsv(model) {
-  const cols = ['group', 'token', 'name', 'hex', 'r', 'g', 'b', 'oklch_L', 'oklch_C', 'oklch_H', 'lab_L', 'lab_a', 'lab_b', 'source', 'manufacturer', 'product', 'colour_name', 'colour_code'];
+  const cols = ['group', 'token', 'name', 'hex', 'r', 'g', 'b', 'oklch_L', 'oklch_C', 'oklch_H', 'lab_L', 'lab_a', 'lab_b', 'source', 'manufacturer', 'product', 'color_name', 'color_code'];
   const q = (v) => (/[",\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? ''));
   const rows = model.groups.flatMap((g) =>
     g.swatches.map((s) =>
-      [g.name, s.token, s.name, s.hex, ...s.rgb, s.oklch.L, s.oklch.C, s.oklch.H, s.labD50.L, s.labD50.a, s.labD50.b, s.source ?? '', s.manufacturer ?? '', s.product ?? '', s.colourName ?? '', s.colourCode ?? ''].map(q).join(','),
+      [g.name, s.token, s.name, s.hex, ...s.rgb, s.oklch.L, s.oklch.C, s.oklch.H, s.labD50.L, s.labD50.a, s.labD50.b, s.source ?? '', s.manufacturer ?? '', s.product ?? '', s.colorName ?? '', s.colorCode ?? ''].map(q).join(','),
     ),
   );
   return [cols.join(','), ...rows].join('\n') + '\n';
@@ -112,7 +112,7 @@ export function renderPrintHtml(model) {
           <span>RGB ${s.rgb.join(' ')}</span>
           <span>L*a*b* (D50) ${s.labD50.L} ${s.labD50.a} ${s.labD50.b}</span>
           <span>OKLCH ${s.oklch.L} ${s.oklch.C} ${s.oklch.H}°</span>
-          ${s.manufacturer ? `<span class="todo">${esc(s.manufacturer)} · ${esc(s.colourName)} · ${esc(s.colourCode)}</span>` : ''}
+          ${s.manufacturer ? `<span class="todo">${esc(s.manufacturer)} · ${esc(s.colorName)} · ${esc(s.colorCode)}</span>` : ''}
           <span class="q">${esc(s.token)}</span>
         </figcaption>
       </figure>`;
@@ -165,7 +165,7 @@ export function renderPrintHtml(model) {
 <body>
   <p class="k">Beatham · print &amp; physical · ${esc(model.subbrand)}</p>
   <h1>${esc(model.label)} — swatches and physical rules</h1>
-  <p>sRGB values from the brand tokens. A screen is never the reference for paper or filament: match spools by manufacturer colour code, then compare against a printed proof under daylight (D50). Photo-sampled values are approximate. Fields marked TODO are for Jeremiah (<code>brand/inputs/filaments.json</code>).</p>
+  <p>sRGB values from the brand tokens. A screen is never the reference for paper or filament: identify spools by maker and color name, then compare against a printed proof under daylight (D50). Photo-sampled values are approximate. Fields marked TODO are for Jeremiah (<code>brand/inputs/filaments.json</code>).</p>
   <p class="note">Printer: ${esc(model.printer.model)} · nozzle ${esc(model.printer.nozzle)}</p>
 ${model.groups
   .map(
@@ -182,7 +182,7 @@ ${model.groups
 ${model.mixes.map(mix).join('')}
 
   <h2>Filament contrast</h2>
-  <p>WCAG 2 contrast between filaments, as a proxy for legibility of inlaid text, printed labels and two-colour marks. Text needs 4.5:1; marks and shapes 3:1. Same-colour embossing has no colour contrast at all: it depends on light and shadow, so it never carries a warning or a value on its own.</p>
+  <p>WCAG 2 contrast between filaments, as a proxy for legibility of inlaid text, printed labels and two-color marks. Text needs 4.5:1; marks and shapes 3:1. Same-color embossing has no color contrast at all: it depends on light and shadow, so it never carries a warning or a value on its own.</p>
   <table>
     <tr><th>text ↓ on →</th>${names.map((n) => `<th>${esc(n)}</th>`).join('')}</tr>
     ${names.map((fg) => `<tr><th>${esc(fg)}</th>${names.map((bg) => cell(fg, bg)).join('')}</tr>`).join('\n    ')}
